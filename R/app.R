@@ -10,6 +10,7 @@
 #' @importFrom shiny tags
 openEditor <- function(...) {
   ui <- bslib::page_navbar(
+
     id = "navbar",
     title = "Pitch Editor",
     selected = "Setup",
@@ -51,6 +52,16 @@ openEditor <- function(...) {
       bslib::input_dark_mode(id = "dark_mode", mode = "dark")
     ),
     bslib::nav_panel(
+      # Remove the annoying borders between all the cards and make the spacing
+      # a bit less overbearing
+      tags$head(
+    tags$style(HTML("
+      .card {
+        --bs-card-spacer-y: 0.5rem;  /* Adjust this value as needed */
+        --bs-card-border-width: none;
+      }
+    "))
+  ),
       title = "Editor",
       gridlayout::grid_container(
         layout = c(
@@ -117,15 +128,15 @@ openEditor <- function(...) {
                     label = "Show Line"
                   ),
                   gridlayout::grid_container(
-                    container_height = "100",
+                    container_height = "80",
                     layout = c(
                       "prevButtonCard saveButtonCard nextButtonCard"
                     ),
                     gap_size = "0px",
                     col_sizes = c(
-                      "0.4fr",
-                      "0.2fr",
-                      "0.4fr"
+                      "0.34fr",
+                      "0.32fr",
+                      "0.34fr"
                     ),
                     row_sizes = c(
                       "1fr"
@@ -163,7 +174,7 @@ openEditor <- function(...) {
                     label = "Toggle Pulses"
                   ),
                   gridlayout::grid_container(
-                    container_height = "170",
+                    container_height = "140",
                     layout = c(
                       "keepButtonCard removeButtonCard",
                       "halfButtonCard doubleButtonCard"
@@ -691,7 +702,6 @@ openEditor <- function(...) {
 
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
-      updateLoadFileColors()
 
       if (!dir.exists(input$inputDirInput)){
         message("Input directory doesnt exist")
@@ -707,6 +717,18 @@ openEditor <- function(...) {
 
       message(paste0("Loading file ", file_to_load))
       loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
+
+      # If the file doesn't contain the specified columns, return null and move
+      # to the settings page
+      if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
+        message("File doesn't contain the specified columns")
+        loadedFile$data <- NULL
+        shiny::updateNavbarPage(session, "navbar", "Settings")
+        return(NULL)
+      }
+
+      updateLoadFileColors()
+
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
 
       if (!file.exists(outFile))
