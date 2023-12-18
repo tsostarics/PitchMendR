@@ -64,13 +64,14 @@ openEditor <- function(...) {
   ),
       title = "Editor",
       gridlayout::grid_container(
+        id = "plotPanel",
         layout = c(
           "num_chicks pulsePlot       ",
           "num_chicks bottomButtonArea"
         ),
         row_sizes = c(
-          "0.7fr",
-          "0.3fr"
+          "0.65fr",
+          "0.35fr"
         ),
         col_sizes = c(
           "250px",
@@ -337,6 +338,14 @@ openEditor <- function(...) {
               palette = "square",
               label = "Color for pulses to REMOVE",
               value = "grey60"
+            ),
+            shiny::sliderInput(
+              inputId = "plotPanelRatio",
+              label = "% of Screen to use for plot panel (decrease for smaller screens)",
+              min = .01,
+              max = .99,
+              value = .65,
+              step = .05
             )
           )
         )
@@ -1076,6 +1085,8 @@ openEditor <- function(...) {
                        }
                      })
 
+
+
     # When the user clicks the Check off Files button, all files currently displayed
     # will have their fileChecked values set to TRUE.
     shiny::observeEvent(input$checkVisibleFilesButton, {
@@ -1147,7 +1158,17 @@ openEditor <- function(...) {
     output$cwd <- shiny::renderText({
       getwd()
     })
+
+    shinyjs::onevent(id = "plotPanelRatio",event = "mouseleave",
+                     expr= {
+                       # message("Changing size of plot window")
+                       vals <- paste0(c(input$plotPanelRatio, 1-input$plotPanelRatio), "fr", collapse = " ")
+                       message(vals)
+                       shinyjs::runjs(paste0('document.getElementById("plotPanel").style.gridTemplateRows = \"', vals , '";'))
+                     })
+
   }
+
 
 
   shiny::shinyApp(ui, server)
