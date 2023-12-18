@@ -103,7 +103,7 @@ openEditor <- function(...) {
             shiny::verbatimTextOutput(outputId = "brushedFileNames")
           )
         ),
-        gridlayout::grid_card_plot(area = "pulsePlot", brush = "plot_brush"),
+        gridlayout::grid_card_plot(area = "pulsePlot", brush = "plot_brush", height = "100%"),
         gridlayout::grid_card(
           area = "bottomButtonArea",
           bslib::card_body(
