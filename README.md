@@ -8,7 +8,8 @@ You can install the development version from GitHub with:
 
 ```r
 # install.packages("devtools")
-devtools::install_github("tsostarics/PulseTransformR", build_vignettes = TRUE)
+devtools::install_github("rstudio/gridlayout")
+devtools::install_github("tsostarics/PulseTransformR")
 ```
 
 ## Usage

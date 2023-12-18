@@ -55,7 +55,7 @@ openEditor <- function(...) {
       # Remove the annoying borders between all the cards and make the spacing
       # a bit less overbearing
       tags$head(
-    tags$style(HTML("
+    tags$style(shiny::HTML("
       .card {
         --bs-card-spacer-y: 0.5rem;  /* Adjust this value as needed */
         --bs-card-border-width: none;
