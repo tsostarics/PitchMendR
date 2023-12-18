@@ -1,0 +1,23 @@
+Package: PulseTransformR
+Title: Fix Pitch Tracking Errors
+Version: 0.0.0.9000
+Authors@R: 
+    person("Thomas", "Sostarics", , "tsostarics@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1178-7967"))
+Description: This package provides an interface to modify pitch samples saved in a csv file. Users can remove spurious tracking errors and non-destructively fix halving/doubling errors.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    bslib,
+    colourpicker,
+    data.table,
+    dplyr,
+    ggplot2,
+    glue,
+    gridlayout,
+    jsonlite,
+    rlang,
+    shiny,
+    shinyjs
