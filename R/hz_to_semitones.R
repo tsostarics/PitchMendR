@@ -39,3 +39,19 @@ hz_to_semitones <- function(hz_vals,
   attr(semitones, "semitones_from") <- .semitones_from
   semitones
 }
+
+#' Variance of semitone difference
+#'
+#' A heuristic calculation of the variance of the sample-to-sample semitone
+#' differences. Contours with fewer extreme changes in semitones will have
+#' lower variance.
+#'
+#' @param x Hz values
+#'
+#' @return Variance of semitone differences
+.var_of_diffs <- function(x) {
+  stats::var(vapply(seq_along(x)[-1],
+             \(i) {
+               hz_to_semitones(x[i], x[i - 1],.quiet = TRUE)
+             }, 1.0))
+}

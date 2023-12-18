@@ -19,5 +19,5 @@ Imports:
     gridlayout,
     jsonlite,
     rlang,
-    shiny,
+    shiny (>= 1.7.4),
     shinyjs
