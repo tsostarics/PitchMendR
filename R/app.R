@@ -416,12 +416,12 @@ openEditor <- function(...) {
                                                              shiny::textInput(
                                                                inputId = "audioDirInput",
                                                                label = "Audio Directory",
-                                                               value = "./mfa_input"
+                                                               value = "./audio"
                                                              ),
                                                              shiny::textInput(
                                                                inputId = "textgridDirInput",
                                                                label = "Textgrid Directory",
-                                                               value = "./mfa_input"
+                                                               value = "./audio"
                                                              ),
                                                            )),
                                      gridlayout::grid_card(

@@ -1,3 +1,6 @@
 ^PulseTransformR\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+audio/
+Praat.exe
+demo_data.csv
