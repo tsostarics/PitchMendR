@@ -1,4 +1,4 @@
-# PulseTransformR
+# PitchMendR
 
 This package provides a shiny app used to modify F0 pitch pulses held in a spreadsheet.
 
@@ -9,7 +9,7 @@ You can install the development version from GitHub with:
 ```r
 # install.packages("devtools")
 devtools::install_github("rstudio/gridlayout")
-devtools::install_github("tsostarics/PulseTransformR")
+devtools::install_github("tsostarics/PitchMendR")
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ devtools::install_github("tsostarics/PulseTransformR")
 You can launch the editor GUI like so:
 
 ```r
-library(PulseTransformR)
+library(PitchMendR)
 openEditor()
 ```
 
