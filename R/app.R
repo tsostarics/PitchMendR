@@ -55,166 +55,62 @@ openEditor <- function(...) {
     "))
       ),
     title = "Editor",
-    gridlayout::grid_container(
-      id = "plotPanel",
-      layout = c(
-        "num_chicks pulsePlot       ",
-        "num_chicks bottomButtonArea"
-      ),
-      row_sizes = c(
-        "0.65fr",
-        "0.35fr"
-      ),
-      col_sizes = c(
-        "250px",
-        "1fr"
-      ),
-      gap_size = "0px",
-      gridlayout::grid_card(
-        area = "num_chicks",
-        bslib::card_header("Plot Settings"),
-        bslib::card_body(
-          shiny::textOutput(outputId = "workingFileOutput"),
-          shiny::uiOutput(outputId = "sizeSliderUI"),
-          shiny::uiOutput(outputId = "alphaSliderUI"),
-          shiny::textInput(
-            inputId = "filterRegex",
-            label = "Plot files matching regex",
-            value = "."
-          ),
-          shiny::actionButton(
-            inputId = "plotMatchesButton",
-            label = "Plot Matches"
-          ),
-          "Number of files plotted:",
-          shiny::textOutput(outputId = "nFilesPlotted"),
-          shiny::actionButton(
-            inputId = "goToBrushButton",
-            label = "Plot Brushed Files"
-          ),
-          shiny::verbatimTextOutput(outputId = "brushedFileNames")
-        )
-      ),
-      gridlayout::grid_card_plot(area = "pulsePlot", click = "plot_click", brush = "plot_brush", height = "100%"),
-      gridlayout::grid_card(
-        area = "bottomButtonArea",
-        bslib::card_body(
-          gap = "0px",
-          gridlayout::grid_container(
-            layout = c(
-              "buttonsTopLeft toggleButtonCard"
-            ),
-            gap_size = "0px",
-            col_sizes = c(
-              "0.5fr",
-              "0.5fr"
-            ),
-            row_sizes = c(
-              "1fr"
-            ),
-            gridlayout::grid_card(
-              area = "buttonsTopLeft",
-              bslib::card_body(
-                gap = "0px",
-                shiny::actionButton(
-                  inputId = "showLineButton",
-                  label = "Show Line"
-                ),
-                gridlayout::grid_container(
-                  container_height = "80",
-                  layout = c(
-                    "prevButtonCard saveButtonCard nextButtonCard"
-                  ),
-                  gap_size = "0px",
-                  col_sizes = c(
-                    "0.34fr",
-                    "0.32fr",
-                    "0.34fr"
-                  ),
-                  row_sizes = c(
-                    "1fr"
-                  ),
-                  gridlayout::grid_card(
-                    area = "prevButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(inputId = "prevButton", label = "<")
-                    )
-                  ),
-                  gridlayout::grid_card(
-                    area = "nextButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(inputId = "nextButton", label = ">")
-                    )
-                  ),
-                  gridlayout::grid_card(
-                    area = "saveButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(
-                        inputId = "saveButton",
-                        shiny::uiOutput(outputId = "saveButtonLabel")
-                      ),
-                    )
-                  )
-                )
-              )
-            ),
-            gridlayout::grid_card(
-              area = "toggleButtonCard",
-              bslib::card_body(
-                gap = "0px",
-                shiny::actionButton(
-                  inputId = "toggleButton",
-                  label = "Toggle Pulses"
-                ),
-                gridlayout::grid_container(
-                  container_height = "140",
-                  layout = c(
-                    "keepButtonCard removeButtonCard",
-                    "halfButtonCard doubleButtonCard"
-                  ),
-                  row_sizes = c(
-                    "0.5fr",
-                    "0.5fr"
-                  ),
-                  col_sizes = c(
-                    "0.5fr",
-                    "0.5fr"
-                  ),
-                  gap_size = "0px",
-                  gridlayout::grid_card(
-                    area = "keepButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(inputId = "keepButton", label = "Keep")
-                    )
-                  ),
-                  gridlayout::grid_card(
-                    area = "removeButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(inputId = "removeButton", label = "Remove")
-                    )
-                  ),
-                  gridlayout::grid_card(
-                    area = "halfButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(
-                        inputId = "halfButton",
-                        label = "Halve Pulses"
+    shiny::fluidRow(
+      bslib::layout_column_wrap(
+        width= NULL,
+        height = NULL, #fill = TRUE,
+        heights_equal = "row",
+        style = htmltools::css(grid_template_columns = "250px 9fr"),
+        bslib::card( height = "88vh",
+                     title = "Plot Settings",
+                     shiny::textOutput(outputId = "workingFileOutput"),
+                     shiny::uiOutput(outputId = "sizeSliderUI"),
+                     shiny::uiOutput(outputId = "alphaSliderUI"),
+                     shiny::textInput(
+                       inputId = "filterRegex",
+                       label = "Plot files matching regex",
+                       value = "."
+                     ),
+                     shiny::actionButton(
+                       inputId = "plotMatchesButton",
+                       label = "Plot Matches"
+                     ),
+                     "Number of files plotted:",
+                     shiny::textOutput(outputId = "nFilesPlotted"),
+                     shiny::actionButton(
+                       inputId = "goToBrushButton",
+                       label = "Plot Brushed Files"
+                     ),
+                     shiny::verbatimTextOutput(outputId = "brushedFileNames"),
+                     width = '10vw'
+        ),
+        bslib::card(shiny::plotOutput("pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%"),fill = TRUE, height="88vh", width = '80vw',
+                    # shiny::fluidRow(#style = "height:20vh;width:90vw",
+                      # Adjust the gap space between the buttons
+                      tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
+                      bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
+                                            bslib::card(fill = TRUE,
+                                                        shiny::fluidRow(
+                                                          shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
+                                                        shiny::fluidRow(
+                                                          shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                          shiny::actionButton(width = "38%", inputId = "saveButton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                          shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
+                                                        )
+
+                                            ),
+                                            bslib::card(fill = TRUE,
+                                                        shiny::fluidRow(
+                                                          shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
+                                                        shiny::fluidRow(
+                                                          shiny::actionButton(width = "48%", inputId = "keepButton", label = "Keep", style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                          shiny::actionButton(width = "48%", inputId = "removeButton", label = "Remove", style = "margin: 1%;margin-top:0%;margin-bottom:0")),
+                                                        shiny::fluidRow(
+                                                          shiny::actionButton(width = "48%", inputId = "halfButton", label = "Halve Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"),
+                                                          shiny::actionButton(width = "48%",inputId = "doubleButton", label = "Double Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"))
+                                            )
                       )
-                    )
-                  ),
-                  gridlayout::grid_card(
-                    area = "doubleButtonCard",
-                    bslib::card_body(
-                      shiny::actionButton(
-                        inputId = "doubleButton",
-                        label = "Double Pulses"
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
+                    # )
         )
       )
     )
@@ -336,7 +232,7 @@ openEditor <- function(...) {
               label = "% of Screen to use for plot panel (decrease for smaller screens)",
               min = .01,
               max = .99,
-              value = .65,
+              value = .70,
               step = .05
             )
           )
@@ -1199,9 +1095,12 @@ openEditor <- function(...) {
     shinyjs::onevent(id = "plotPanelRatio",event = "mouseleave",
                      expr= {
                        # message("Changing size of plot window")
-                       vals <- paste0(c(input$plotPanelRatio, 1-input$plotPanelRatio), "fr", collapse = " ")
-                       message(vals)
-                       shinyjs::runjs(paste0('document.getElementById("plotPanel").style.gridTemplateRows = \"', vals , '";'))
+                       plot_height <- round(input$plotPanelRatio*100,1)
+                       buttons_height <- round((1-input$plotPanelRatio)*100,1)
+                       # vals <- paste0(c(input$plotPanelRatio, 1-input$plotPanelRatio), "fr", collapse = " ")
+                       # message(vals)
+                       shinyjs::runjs(paste0('document.getElementById("pulsePlot").style.height = \"', plot_height , '%";'))
+                       shinyjs::runjs(paste0('document.getElementById("controlButtons").style.height = \"', buttons_height , '%";'))
                      })
 
   }
