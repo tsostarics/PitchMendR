@@ -15,7 +15,7 @@ openEditor <- function(...) {
     title = "Pitch Editor",
     selected = "Setup",
     collapsible = TRUE,
-    theme = bslib::bs_theme(),
+    theme = bslib::bs_theme(version = 5),
     sidebar = bslib::sidebar(
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       title = "Tools",
@@ -35,7 +35,7 @@ openEditor <- function(...) {
       ),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
-        icon = icon('check'),
+        icon = shiny::icon('check'),
         label = "off plotted files"
       ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
@@ -121,22 +121,19 @@ openEditor <- function(...) {
   shiny::column(width = 3,
     bslib::card(
       height = '100%',
-      title = "Column Settings",
-      shiny::textInput(
-        inputId = "filenameColumnInput",
-        label = "Column name containing individual files",
-        value = "Filename"
-      ),
-      shiny::textInput(
-        inputId = "xValColumnInput",
-        label = "X-value column name",
-        value = "t_ms"
-      ),
-      shiny::textInput(
-        inputId = "yValColumnInput",
-        label = "Y-value column name",
-        value = "f0"
-      ),
+      title = "Press button to set column",
+      submitTextInput("filenameColumnInput",
+                      width = "100%",
+                      label ="Column name containing individual files",
+                      value = "Filename"),
+      submitTextInput("xValColumnInput",
+                      width = "100%",
+                      label ="X-value column name",
+                      value = "t_ms"),
+      submitTextInput("yValColumnInput",
+                      width = "100%",
+                      label ="Y-value column name",
+                      value = "f0"),
       shiny::textInput(
         inputId = "selectionColumnInput",
         label = "Name of logical column to use for selection (will be added if it doesn't exist)",
@@ -609,8 +606,9 @@ openEditor <- function(...) {
         loadedFile$data[, pulse_transform := 1.0]
       }
 
-      transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
-      loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]  # Use get from data.table package
+      changeTransformedColumn()
+      # transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
+      # loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]  # Use get from data.table package
 
       fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
@@ -814,6 +812,20 @@ openEditor <- function(...) {
       lastTransformation$pulse_ids <- vals_to_change
       updatePlot()
     })
+
+    changeTransformedColumn <- shiny::reactive({
+      transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
+      loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
+    })
+
+    shiny::observeEvent(input$yValColumnInputButton, {
+      if (is.null(loadedFile$data))
+        return(NULL)
+      message(input$yValColumnInput)
+      changeTransformedColumn()
+      updatePlot()
+
+      })
 
     # Multiply selected points by 0.5 (fixes doubling errors)
     shiny::observeEvent(input$halfButton, {
