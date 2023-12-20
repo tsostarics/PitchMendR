@@ -29,6 +29,7 @@ openEditor <- function(...) {
         inputId = "sendToPraatButton",
         label = "Open Files in Praat",
       ),
+      shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
       shiny::actionButton(
         inputId = "undoTransformButton",
         label = "Undo Transform"
@@ -61,9 +62,10 @@ openEditor <- function(...) {
         width= NULL,
         height = NULL, #fill = TRUE,
         heights_equal = "row",
-        style = htmltools::css(grid_template_columns = "250px 9fr"),
+        style = htmltools::css(grid_template_columns = "275px 9fr"),
         bslib::card( height = "88vh",
                      title = "Plot Settings",
+                     style = css(`scrollbar-width` = "10px"),
                      shiny::textOutput(outputId = "workingFileOutput"),
                      shiny::uiOutput(outputId = "sizeSliderUI"),
                      shiny::uiOutput(outputId = "alphaSliderUI"),
@@ -82,7 +84,7 @@ openEditor <- function(...) {
                        label = "Plot Brushed Files"
                      ),
                      shiny::verbatimTextOutput(outputId = "brushedFileNames"),
-                     width = '10vw'
+                     # width = '10vw'
         ),
         bslib::card(shiny::plotOutput("pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%"),fill = TRUE, height="88vh", width = '80vw',
                     # shiny::fluidRow(#style = "height:20vh;width:90vw",
@@ -403,10 +405,14 @@ openEditor <- function(...) {
     # input$dark_mode
 
     getBrushedPoints <- shiny::reactive({
+      yval <- transformedColumn$name
+      if (!is.null(input$hideToggleInput) && input$hideToggleInput)
+        yval <- input$yValColumnInput
+
       shiny::brushedPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
                            input$plot_brush,
                            xvar = input$xValColumnInput,
-                           yvar = transformedColumn$name)
+                           yvar = yval)
     })
 
 
@@ -422,11 +428,16 @@ openEditor <- function(...) {
         if (input$useFlaggedColumnRadio == "TRUE" && input$colorCodeColumnInput %in% colnames(plot_subset)) {
           plot_subset[, (input$colorCodeColumnInput) := factor(get(input$colorCodeColumnInput))]
         }
+
+        yval <- transformedColumn$name
+        if (!is.null(input$hideToggleInput) && input$hideToggleInput)
+          yval <- input$yValColumnInput
+
         # Set up the main aesthetics for the plot
         p <-
           ggplot2::ggplot(plot_subset,
                           ggplot2::aes(x = !!rlang::sym(input$xValColumnInput),
-                                       y = !!rlang::sym(transformedColumn$name),
+                                       y = !!rlang::sym(yval),
                                        group = !!rlang::sym(input$filenameColumnInput)))
 
         # Add the line if the user wants it, this should go under the points
@@ -494,6 +505,8 @@ openEditor <- function(...) {
 
     # Toggle point on click
     shiny::observeEvent(input$plot_click, {
+      if (is.null(loadedFile$data))
+        return(NULL)
       clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
                                         input$plot_click,
                                         xvar = input$xValColumnInput,
