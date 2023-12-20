@@ -325,44 +325,6 @@ openEditor <- function(...) {
                                      gridlayout::grid_card(
                                        area = "area1",
                                        bslib::card_body(
-                                         "If you have multiple .PitchTier files in the input directory, you can load them into a single dataframe here. This will save a new csv file into the input directory.",
-                                         gridlayout::grid_container(container_height = "150",
-                                                                    layout = c(
-                                                                      "pitchTierPanelLeft pitchTierPanelRight"
-                                                                    ),
-                                                                    row_sizes = c(
-                                                                      "1fr"
-                                                                    ),
-                                                                    col_sizes = c(
-                                                                      "1fr",
-                                                                      "1fr"
-                                                                    ),
-                                                                    gap_size = "0px",
-                                                                    gridlayout::grid_card(
-                                                                      area = "pitchTierPanelLeft",
-                                                                      bslib::card_body(
-                                                                        shiny::textInput(
-                                                                          inputId = "speakerIDInput",
-                                                                          label = "Speaker ID to add",
-                                                                          value = ""
-                                                                        )
-                                                                      )
-                                                                    ),
-                                                                    gridlayout::grid_card(
-                                                                      area = "pitchTierPanelRight",
-                                                                      bslib::card_body(
-                                                                        shiny::textInput(
-                                                                          inputId = "pitchTierRegex",
-                                                                          label = "Load files matching regex",
-                                                                          value = ".+PitchTier$"
-                                                                        )
-                                                                      )
-                                                                    )
-                                         ),
-                                         shiny::actionButton(
-                                           inputId = "processPitchTiersButton",
-                                           label = "Load PitchTiers as CSV"
-                                         ),
                                          shiny::markdown(
                                            mds = c(
                                              "## Flagging samples",
