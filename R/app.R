@@ -285,19 +285,29 @@ openEditor <- function(...) {
                   label = "Praat Path (relative to app.R directory)",
                   value = "./Praat.exe"
                 ),
+                # span(
+                #   `data-toggle` = "tooltip", `data-placement` = "right",
+                #   title = "A tooltip",
+                #   icon("info-circle")
+                # )
+                span(style = "display:inline-block;",
+                  "Glue string to match file names to directory",
+                    id = "glueQuestion",
+                    span(style = "cursor:pointer;", icon("circle-question"))),
                 shiny::textInput(
                   inputId = "fileNameGlue",
-                  label = "Glue string to match file names to directory",
+                  label = NULL,
                   value = "{Speaker}_{Filename}.wav"
                 ),
+                "The following are only used when opening files in Praat.",
                 shiny::textInput(
                   inputId = "audioDirInput",
-                  label = "Audio Directory",
+                  label  = "Audio Directory",
                   value = "./audio"
                 ),
                 shiny::textInput(
                   inputId = "textgridDirInput",
-                  label = "Textgrid Directory",
+                  label = "TextGrid Directory",
                   value = "./audio"
                 )
               )
@@ -985,7 +995,33 @@ openEditor <- function(...) {
                        }
                      })
 
+    shinyjs::onclick(id = "glueQuestion", {
+      shinyWidgets::show_alert(
+        title = "Glue strings",
+        type = 'info',
+        html = TRUE,
+        # theme = "dark",
+        text = tags$span(tags$style(shiny::HTML(
+          'code {
+              color:#c10000;
+              background:#f8f8f8;
+          }
+          '
+        )),
+          shiny::markdown(
+          mds = c(
+          "The `{glue}` package provides a convenient way to interpolate strings, similar to Python's f-strings",
+          "Expressions in {curly braces} will be evaluated and the result will be inserted into the string.",
+          "",
+          "Expressions will be evaluated within the context of the column names of the loaded data.",
+          "Let's say your speaker IDs are stored in a column called
+          `Speaker` and your filenames are stored in a column called `Filename`.
+          If you have speaker IDs `spkr_001` and filenames `11_1_rise.wav`,
+          then the string `audio/Speaker_{Speaker}_{Filename}` will be evaluated as
+          `audio/Speaker_spkr001_11_1_rise.wav`"
+        ))))
 
+    })
 
     # When the user clicks the Check off Files button, all files currently displayed
     # will have their fileChecked values set to TRUE.

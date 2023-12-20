@@ -25,7 +25,7 @@
 #'   option.
 #' @export
 #'
-#' @importFrom htmltools div css
+#' @importFrom htmltools div css span
 submitTextInput <- function(inputId, label, value = "",
                       width = NULL, icon = "share-from-square",
                       placeholder = "Enter text here", disabled = FALSE, ...) {
