@@ -16,7 +16,6 @@ Imports:
     dplyr,
     ggplot2,
     glue,
-    gridlayout,
     jsonlite,
     rlang,
     shiny (>= 1.7.4),

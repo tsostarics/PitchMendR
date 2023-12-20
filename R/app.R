@@ -31,11 +31,12 @@ openEditor <- function(...) {
       ),
       shiny::actionButton(
         inputId = "undoTransformButton",
-        label = "Undo Last Pulse Transformation"
+        label = "Undo Transform"
       ),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
-        label = "Check off all visible files"
+        icon = icon('check'),
+        label = "off plotted files"
       ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
       shiny::uiOutput(outputId = "editedFileSelectUI")
@@ -75,7 +76,6 @@ openEditor <- function(...) {
                        inputId = "plotMatchesButton",
                        label = "Plot Matches"
                      ),
-                     "Number of files plotted:",
                      shiny::textOutput(outputId = "nFilesPlotted"),
                      shiny::actionButton(
                        inputId = "goToBrushButton",
@@ -117,128 +117,118 @@ openEditor <- function(...) {
     ),
     bslib::nav_panel(
       title = "Settings",
-      gridlayout::grid_container(
-        layout = c(
-          "columnSettingsCard settingsPane2 selectionInstructionsCard"
-        ),
-        row_sizes = c(
-          "1fr"
-        ),
-        col_sizes = c(
-          "0.25fr",
-          "0.25fr",
-          "0.5fr"
-        ),
-        gap_size = "10px",
-        gridlayout::grid_card(
-          area = "columnSettingsCard",
-          bslib::card_body(
-            shiny::textInput(
-              inputId = "filenameColumnInput",
-              label = "Column name containing individual files",
-              value = "Filename"
-            ),
-            shiny::textInput(
-              inputId = "xValColumnInput",
-              label = "X-value column name",
-              value = "t_ms"
-            ),
-            shiny::textInput(
-              inputId = "yValColumnInput",
-              label = "Y-value column name",
-              value = "f0"
-            ),
-            shiny::textInput(
-              inputId = "selectionColumnInput",
-              label = "Name of logical column to use for selection (will be added if it doesn't exist)",
-              value = "keep_points",
-              width = "100%"
-            ),
-            shiny::radioButtons(
-              inputId = "useFlaggedColumnRadio",
-              label = "Use column to color code pulses?",
-              choices = list("Yes" = "TRUE", "No" = "FALSE"),
-              width = "100%"
-            ),
-            shiny::textInput(
-              inputId = "colorCodeColumnInput",
-              label = "If Yes, Column to use for color coding. Default ggplot colors will be used.",
-              value = "flagged_samples",
-              width = "100%"
-            ),
-            shiny::radioButtons(
-              inputId = "saveOptionButton",
-              label = "Save on file navigation?",
-              selected = "FALSE",
-              choices = list("Yes" = "TRUE", "No" = "FALSE"),
-              width = "100%"
-            )
-          )
-        ),
-        gridlayout::grid_card(
-          area = "selectionInstructionsCard",
-          bslib::card_body(
-            shiny::markdown(
-              mds = c(
-                "## Selecting points",
-                "",
-                "Upon opening a new dataframe to annotate, a new column (`keep_points`) will be added to the dataframe and filled with `TRUE`.",
-                "",
-                "The pitch pulses for a specified file will be plotted in the main plotting region.
-              Points that you want to keep (`keep_points=TRUE`) will be shown in closed circles, while points you want to remove (`keep_points=TRUE`) will be replaced with an open triangle.
-              You can use the `[Show Line]` toggle button to plot a line through all the retained points.",
-              "",
-              "To remove a point, click and drag to select the desired points, then click the `[Remove]` button.
-              To keep a point, click the `[Keep]` Button.
-              You can click the `[Toggle Pulse]` button to flip the values of the selecteed points (all removed points will be switched to keep, all kept values will be switched to remove).
-              ",
-              "",
-              "## Praat integration",
-              "",
-              "Using the `[Open Files in Praat]` button will open the files that are visible in the plot using the praat executable at the given path.
-              This is accomplished via a `--new-open` system call.
-              This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
-              )
-            )
-          )
-        ),
-        gridlayout::grid_card(
-          area = "settingsPane2",
-          bslib::card_body(
-            "Override default color settings below:",
-            colourpicker::colourInput(
-              inputId = "lineColor",
-              label = "Line color",
-              value = "blue",
-              showColour = "both",
-              palette = "square"
-            ),
-            colourpicker::colourInput(
-              inputId = "keepTrueColor",
-              showColour = "both",
-              palette = "square",
-              label = "Color for pulses to KEEP",
-              value = "black"
-            ),
-            colourpicker::colourInput(
-              inputId = "keepFalseColor",
-              showColour = "both",
-              palette = "square",
-              label = "Color for pulses to REMOVE",
-              value = "grey60"
-            ),
-            shiny::sliderInput(
-              inputId = "plotPanelRatio",
-              label = "% of Screen to use for plot panel (decrease for smaller screens)",
-              min = .01,
-              max = .99,
-              value = .70,
-              step = .05
-            )
-          )
+      shiny::fluidRow(
+  shiny::column(width = 3,
+    bslib::card(
+      height = '100%',
+      title = "Column Settings",
+      shiny::textInput(
+        inputId = "filenameColumnInput",
+        label = "Column name containing individual files",
+        value = "Filename"
+      ),
+      shiny::textInput(
+        inputId = "xValColumnInput",
+        label = "X-value column name",
+        value = "t_ms"
+      ),
+      shiny::textInput(
+        inputId = "yValColumnInput",
+        label = "Y-value column name",
+        value = "f0"
+      ),
+      shiny::textInput(
+        inputId = "selectionColumnInput",
+        label = "Name of logical column to use for selection (will be added if it doesn't exist)",
+        value = "keep_points",
+        width = "100%"
+      ),
+      shiny::radioButtons(
+        inputId = "useFlaggedColumnRadio",
+        label = "Use column to color code pulses?",
+        choices = list("Yes" = "TRUE", "No" = "FALSE"),
+        width = "100%"
+      ),
+      shiny::textInput(
+        inputId = "colorCodeColumnInput",
+        label = "If Yes, Column to use for color coding. Default ggplot colors will be used.",
+        value = "flagged_samples",
+        width = "100%"
+      ),
+      shiny::radioButtons(
+        inputId = "saveOptionButton",
+        label = "Save on file navigation?",
+        selected = "FALSE",
+        choices = list("Yes" = "TRUE", "No" = "FALSE"),
+        width = "100%"
+      )
+    )
+  ),
+  shiny::column(width = 3,
+    bslib::card(
+      height = '100%',
+      title = "Color Settings",
+      "Override default color settings below:",
+      colourpicker::colourInput(
+        inputId = "lineColor",
+        label = "Line color",
+        value = "blue",
+        showColour = "both",
+        palette = "square"
+      ),
+      colourpicker::colourInput(
+        inputId = "keepTrueColor",
+        showColour = "both",
+        palette = "square",
+        label = "Color for pulses to KEEP",
+        value = "black"
+      ),
+      colourpicker::colourInput(
+        inputId = "keepFalseColor",
+        showColour = "both",
+        palette = "square",
+        label = "Color for pulses to REMOVE",
+        value = "grey60"
+      ),
+      shiny::sliderInput(
+        inputId = "plotPanelRatio",
+        label = "% of Screen to use for plot panel (decrease for smaller screens)",
+        min = .01,
+        max = .99,
+        value = .70,
+        step = .05
+      )
+    )
+  ),
+  shiny::column(width = 6,
+    bslib::card(
+      height = '100%',
+      title = "Instructions",
+      shiny::markdown(
+        mds = c(
+          "## Selecting points",
+          "",
+          "Upon opening a new dataframe to annotate, a new column (`keep_points`) will be added to the dataframe and filled with `TRUE`.",
+          "",
+          "The pitch pulses for a specified file will be plotted in the main plotting region.
+        Points that you want to keep (`keep_points=TRUE`) will be shown in closed circles, while points you want to remove (`keep_points=TRUE`) will be replaced with an open triangle.
+        You can use the `[Show Line]` toggle button to plot a line through all the retained points.",
+        "",
+        "To remove a point, click and drag to select the desired points, then click the `[Remove]` button.
+        To keep a point, click the `[Keep]` Button.
+        You can click the `[Toggle Pulse]` button to flip the values of the selecteed points (all removed points will be switched to keep, all kept values will be switched to remove).
+        ",
+        "",
+        "## Praat integration",
+        "",
+        "Using the `[Open Files in Praat]` button will open the files that are visible in the plot using the praat executable at the given path.
+        This is accomplished via a `--new-open` system call.
+        This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
         )
       )
-    ),
+    )
+  )
+)),
     bslib::nav_panel(
       title = "Progress",
       bslib::card(
@@ -273,79 +263,70 @@ openEditor <- function(...) {
         bslib::card_body(
           tags$head(tags$style("body{overflow:hidden;}")),
 
-          gridlayout::grid_container(container_height = "100%",
-                                     tags$head(tags$style("body{overflow:hidden;}")),
-                                     layout = c(
-                                       "area0 area1"
-                                     ),
-                                     row_sizes = c(
-                                       "1fr"
-                                     ),
-                                     col_sizes = c(
-                                       "0.5fr",
-                                       "0.5fr"
-                                     ),
-                                     gap_size = "10px",
-                                     gridlayout::grid_card(area = "area0",
-                                                           bslib::card_body(
-                                                             "Current working directory:",
-                                                             shiny::verbatimTextOutput(outputId = "cwd"),
-                                                             shiny::textInput(
-                                                               inputId = "inputDirInput",
-                                                               label = "Input directory",
-                                                               value = get_example_f0_data(".")
-                                                             ),
-                                                             shiny::textInput(
-                                                               inputId = "outputDirInput",
-                                                               label = "Output directory",
-                                                               value = "."
-                                                             ),
-                                                             shiny::uiOutput(outputId = "availableFilesUI"),
-                                                             shiny::textInput(
-                                                               inputId = "pathToPraat",
-                                                               label = "Praat Path (relative to app.R directory)",
-                                                               value = "./Praat.exe"
-                                                             ),
-                                                             shiny::textInput(
-                                                               inputId = "fileNameGlue",
-                                                               label = "Glue string to match file names to directory",
-                                                               value = "{Speaker}_{Filename}.wav"
-                                                             ),
-                                                             shiny::textInput(
-                                                               inputId = "audioDirInput",
-                                                               label = "Audio Directory",
-                                                               value = "./audio"
-                                                             ),
-                                                             shiny::textInput(
-                                                               inputId = "textgridDirInput",
-                                                               label = "Textgrid Directory",
-                                                               value = "./audio"
-                                                             ),
-                                                           )),
-                                     gridlayout::grid_card(
-                                       area = "area1",
-                                       bslib::card_body(
-                                         shiny::markdown(
-                                           mds = c(
-                                             "## Flagging samples",
-                                             "",
-                                             "Once you have loaded the files, you can use an automated sample-to-sample method to flag samples that are likely to be tracking errors.
-              This method is based on identifying octave jumps between adjacent samples.
-              Note that this method is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
-              "",
-              "If the column `F0_semitones` already exists, it will be used to track errors.
-              If not, this column will be added by computing semitones from the median pitch of all of the speaker's files.
-              Check the settings tab for the column names used for the time, pitch, and filename values.",
-              "",
-              "If the column `flagged_samples` already exists, it will be overwritten."
-                                           )
-                                         ),
-              shiny::actionButton(
-                inputId = "flagSamplesButton",
-                shiny::uiOutput(outputId = "flagSamplesButtonLabel")
-              ),
-                                       )
-                                     )
+          shiny::fluidRow(
+            shiny::column(width = 6,
+              bslib::card(
+                title = "Directory Settings",
+                "Current working directory:",
+                shiny::verbatimTextOutput(outputId = "cwd"),
+                shiny::textInput(
+                  width = "100%",
+                  inputId = "inputDirInput",
+                  label = "Input directory",
+                  value = get_example_f0_data(".")
+                ),
+                shiny::textInput(
+                  inputId = "outputDirInput",
+                  label = "Output directory",
+                  value = "."
+                ),
+                shiny::uiOutput(outputId = "availableFilesUI"),
+                shiny::textInput(
+                  inputId = "pathToPraat",
+                  label = "Praat Path (relative to app.R directory)",
+                  value = "./Praat.exe"
+                ),
+                shiny::textInput(
+                  inputId = "fileNameGlue",
+                  label = "Glue string to match file names to directory",
+                  value = "{Speaker}_{Filename}.wav"
+                ),
+                shiny::textInput(
+                  inputId = "audioDirInput",
+                  label = "Audio Directory",
+                  value = "./audio"
+                ),
+                shiny::textInput(
+                  inputId = "textgridDirInput",
+                  label = "Textgrid Directory",
+                  value = "./audio"
+                )
+              )
+            ),
+            shiny::column(width = 6,
+              bslib::card(
+                title = "Flagging Samples",
+                shiny::markdown(
+                  mds = c(
+                    "## Flagging samples",
+                    "",
+                    "Once you have loaded the files, you can use an automated sample-to-sample method to flag samples that are likely to be tracking errors.
+                    This method is based on identifying octave jumps between adjacent samples.
+                    Note that this method is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
+                    "",
+                    "If the column `F0_semitones` already exists, it will be used to track errors.
+                    If not, this column will be added by computing semitones from the median pitch of all of the speaker's files.
+                    Check the settings tab for the column names used for the time, pitch, and filename values.",
+                    "",
+                    "If the column `flagged_samples` already exists, it will be overwritten."
+                  )
+                ),
+                shiny::actionButton(
+                  inputId = "flagSamplesButton",
+                  shiny::uiOutput(outputId = "flagSamplesButtonLabel")
+                )
+              )
+            )
           )
         )
       )
@@ -723,7 +704,7 @@ openEditor <- function(...) {
 
     # Display the number of files/contours that are currently plotted
     output$nFilesPlotted <- shiny::renderText({
-      sum(fileHandler$isPlotted)
+      paste0("# of files shown: ", sum(fileHandler$isPlotted))
     })
 
     # When the user clicks the plot matches button, plot the files that match the
