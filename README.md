@@ -8,7 +8,6 @@ You can install the development version from GitHub with:
 
 ```r
 # install.packages("devtools")
-devtools::install_github("rstudio/gridlayout")
 devtools::install_github("tsostarics/PitchMendR")
 ```
 
@@ -28,7 +27,7 @@ The input directory will be automatically set to the directory containing a demo
 The output directory is set to the current working directory (`.`)
 Files in the input directory that you can load are shown in the Files Available dropdown box.
 Once you select a file from the box, press the big blue `Load File` button in the top right corner.
-The app assumes the following columns exist by default: 
+The app assumes the following columns exist by default:
 
  - A `Filename` column specifying the individual pitch contours
  - A `t_ms` column to use as the x-axis timestamp values for the pulses
@@ -37,8 +36,6 @@ The app assumes the following columns exist by default:
 These are the default outputs from PraatSauce, which exports a single csv file containing information about multiple processed files.
 If any of these columns are not found in the dataset, you'll be brought to the `Settings` page where you can change the column name mappings.
 Once you've set the column names correctly you can try loading the file again.
-
-Upon successfully loading your file, you will be brought to the `Editor` page, where the first pitch contour in the file will be shown.
 
 ### Editor page
 
@@ -70,4 +67,4 @@ There are three main sections, from right to left::
 ### Tools Sidebar information
 
 As you inspect files, they will be moved from the set of unchecked files to the set of checked files.
-You can mark all plotted files as checked using the `[Check off all visible files]` button.
+You can mark all plotted files as checked using the `[Check off plotted files]` button.
