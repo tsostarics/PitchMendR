@@ -1007,15 +1007,14 @@ openEditor <- function(...) {
         text = tags$div(class = "manual-code",
           shiny::markdown(
           mds = c(
-          "The `{glue}` package provides a convenient way to interpolate strings, similar to Python's f-strings",
+          "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
           "Expressions in {curly braces} will be evaluated and the result will be inserted into the string.",
+          "Here, you can only work with the column names in your data.",
           "",
-          "Expressions will be evaluated within the context of the column names of the loaded data.",
-          "Let's say your speaker IDs are stored in a column called
-          `Speaker` and your filenames are stored in a column called `Filename`.
-          If you have speaker IDs `spkr_001` and filenames `11_1_rise.wav`,
-          then the string `audio/Speaker_{Speaker}_{Filename}` will be evaluated as
-          `audio/Speaker_spkr001_11_1_rise.wav`"
+          "Let's say your speaker IDs and file names are in columns named
+          `Speaker` and `Filename` respectively, with example values `spkr01` and `11_rise.wav`.
+          The string `audio/Speaker_{Speaker}_{Filename}` will then be evaluated as
+          `audio/Speaker_spkr01_11_rise.wav`"
         ))))
 
     })
@@ -1058,8 +1057,7 @@ openEditor <- function(...) {
         if (!data.table::is.data.table(loadedFile$data))
           loadedFile$data <- data.table(loadedFile$data)
         # updatePlotSettingsData()
-        shinyjs::runjs('document.getElementById("flagSamplesButton").style.backgroundColor = "#18864b";')
-        shinyjs::runjs('document.getElementById("flagSamplesButton").style.color = "white";')
+        shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
         flagSamplesIcon$value <- "check"
       }
     })
@@ -1072,8 +1070,8 @@ openEditor <- function(...) {
 
         # Use the columns of the loaded data and the provided glue string to
         # send the files currently displayed in the editor to Praat
-        files_to_open <- glue::glue(input$fileNameGlue,
-                                    .envir = loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],])
+        files_to_open <- glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+                                              input$fileNameGlue)
         files_to_open <- file.path(input$audioDirInput, unique(files_to_open))
 
         if (!is.null(input$textgridDirInput))
