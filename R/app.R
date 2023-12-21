@@ -69,7 +69,6 @@ openEditor <- function(...) {
         style = htmltools::css(grid_template_columns = "275px 9fr"),
         bslib::card( height = "88vh",
                      title = "Plot Settings",
-                     style = css(`scrollbar-width` = "10px"),
                      shiny::textOutput(outputId = "workingFileOutput"),
                      shiny::uiOutput(outputId = "sizeSliderUI"),
                      shiny::uiOutput(outputId = "alphaSliderUI"),
@@ -90,32 +89,32 @@ openEditor <- function(...) {
                      shiny::verbatimTextOutput(outputId = "brushedFileNames"),
                      # width = '10vw'
         ),
-        bslib::card(shiny::plotOutput("pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%"),fill = TRUE, height="88vh", width = '80vw',
+        bslib::card(shiny::plotOutput(outputId = "pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%"),fill = TRUE, height="88vh", width = '80vw',
                     # shiny::fluidRow(#style = "height:20vh;width:90vw",
-                      # Adjust the gap space between the buttons
-                      tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
-                      bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
-                                            bslib::card(fill = TRUE,
-                                                        shiny::fluidRow(
-                                                          shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
-                                                        shiny::fluidRow(
-                                                          shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                          shiny::actionButton(width = "38%", inputId = "saveButton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                          shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
-                                                        )
+                    # Adjust the gap space between the buttons
+                    tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
+                    bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
+                                          bslib::card(fill = TRUE,
+                                                      shiny::fluidRow(
+                                                        shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
+                                                      shiny::fluidRow(
+                                                        shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                        shiny::actionButton(width = "38%", inputId = "saveButton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                        shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
+                                                      )
 
-                                            ),
-                                            bslib::card(fill = TRUE,
-                                                        shiny::fluidRow(
-                                                          shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
-                                                        shiny::fluidRow(
-                                                          shiny::actionButton(width = "48%", inputId = "keepButton", label = "Keep", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                          shiny::actionButton(width = "48%", inputId = "removeButton", label = "Remove", style = "margin: 1%;margin-top:0%;margin-bottom:0")),
-                                                        shiny::fluidRow(
-                                                          shiny::actionButton(width = "48%", inputId = "halfButton", label = "Halve Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"),
-                                                          shiny::actionButton(width = "48%",inputId = "doubleButton", label = "Double Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"))
-                                            )
-                      )
+                                          ),
+                                          bslib::card(fill = TRUE,
+                                                      shiny::fluidRow(
+                                                        shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
+                                                      shiny::fluidRow(
+                                                        shiny::actionButton(width = "48%", inputId = "keepButton", label = "Keep", style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                        shiny::actionButton(width = "48%", inputId = "removeButton", label = "Remove", style = "margin: 1%;margin-top:0%;margin-bottom:0")),
+                                                      shiny::fluidRow(
+                                                        shiny::actionButton(width = "48%", inputId = "halfButton", label = "Halve Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"),
+                                                        shiny::actionButton(width = "48%",inputId = "doubleButton", label = "Double Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"))
+                                          )
+                    )
                     # )
         )
       )
@@ -124,96 +123,103 @@ openEditor <- function(...) {
     bslib::nav_panel(
       title = "Settings",
       shiny::fluidRow(
-  shiny::column(width = 3,
-    bslib::card(
-      height = '100%',
-      title = "Press button to set column",
-      submitTextInput("filenameColumnInput",
-                      width = "100%",
-                      label ="Column name containing individual files",
-                      value = "Filename"),
-      submitTextInput("xValColumnInput",
-                      width = "100%",
-                      label ="X-value column name",
-                      value = "t_ms"),
-      submitTextInput("yValColumnInput",
-                      width = "100%",
-                      label ="Y-value column name",
-                      value = "f0"),
-      shiny::textInput(
-        inputId = "selectionColumnInput",
-        label = "Name of logical column to use for selection (will be added if it doesn't exist)",
-        value = "keep_points",
-        width = "100%"
-      ),
-      shiny::radioButtons(
-        inputId = "useFlaggedColumnRadio",
-        label = "Use column to color code pulses?",
-        choices = list("Yes" = "TRUE", "No" = "FALSE"),
-        width = "100%"
-      ),
-      shiny::textInput(
-        inputId = "colorCodeColumnInput",
-        label = "If Yes, Column to use for color coding. Default ggplot colors will be used.",
-        value = "flagged_samples",
-        width = "100%"
-      ),
-      shiny::radioButtons(
-        inputId = "saveOptionButton",
-        label = "Save on file navigation?",
-        selected = "FALSE",
-        choices = list("Yes" = "TRUE", "No" = "FALSE"),
-        width = "100%"
-      )
-    )
-  ),
-  shiny::column(width = 3,
-    bslib::card(
-      height = '100%',
-      title = "Color Settings",
-      "Override default color settings below:",
-      colourpicker::colourInput(
-        inputId = "lineColor",
-        label = "Line color",
-        value = "blue",
-        showColour = "both",
-        palette = "square"
-      ),
-      colourpicker::colourInput(
-        inputId = "keepTrueColor",
-        showColour = "both",
-        palette = "square",
-        label = "Color for pulses to KEEP",
-        value = "black"
-      ),
-      colourpicker::colourInput(
-        inputId = "keepFalseColor",
-        showColour = "both",
-        palette = "square",
-        label = "Color for pulses to REMOVE",
-        value = "grey60"
-      ),
-      shiny::sliderInput(
-        inputId = "plotPanelRatio",
-        label = "% of Screen to use for plot panel (decrease for smaller screens)",
-        min = .01,
-        max = .99,
-        value = .70,
-        step = .05
-      )
-    )
-  ),
-  shiny::column(width = 6,
-    bslib::card(
-      height = '100%',
-      title = "Instructions",
-      shiny::markdown(
-        mds = c(
-          "## Selecting points",
-          "",
-          "Upon opening a new dataframe to annotate, a new column (`keep_points`) will be added to the dataframe and filled with `TRUE`.",
-          "",
-          "The pitch pulses for a specified file will be plotted in the main plotting region.
+        shiny::column(width = 3,
+                      bslib::card(
+                        height = '100%',
+                        title = "Press button to set column",
+                        shiny::selectizeInput("filenameColumnInput",
+                                              label ="Column name containing individual files",
+                                              choices = "Filename",
+                                              selected = "Filename",
+                                              multiple = FALSE,
+                                              width = "100%"),
+                        shiny::selectizeInput("xValColumnInput",
+                                              label ="X-value column name",
+                                              choices = "t_ms",
+                                              selected = "t_ms",
+                                              multiple = FALSE,
+                                              width = "100%",),
+                        shiny::selectizeInput("yValColumnInput",
+                                              label ="Y-value column name",
+                                              choices = "f0",
+                                              selected = "f0",
+                                              multiple = FALSE,
+                                              width = "100%",),
+                        submitTextInput("selectionColumnInput",
+                                              label = "Column name for keep/remove annotations (will be added if it doesn't exist)",
+                                              value = "keep_pulse",
+                                              width = "100%"
+                        ),
+                        shinyWidgets::materialSwitch(
+                          inputId = "useFlaggedColumnToggle",
+                          label="Color points by column:",
+                          value = TRUE,
+                          inline = TRUE,
+                          status = "info"),
+                        shiny::selectizeInput(
+                          inputId = "colorCodeColumnInput",
+                          label = "Column to use for color coding:",
+                          choices = "flagged_samples",
+                          selected = "flagged_samples",
+                          multiple = FALSE,
+                          width = "100%"
+                        ),
+                        shinyWidgets::materialSwitch(
+                          inputId = "saveOptionButton",
+                          label = "Save on file navigation:",
+                          value = TRUE,
+                          inline = TRUE,
+                          status = "info"
+                        )
+                      )
+        ),
+        shiny::column(width = 3,
+                      bslib::card(
+                        height = '100%',
+                        title = "Color Settings",
+                        "Override default color settings below:",
+                        colourpicker::colourInput(
+                          inputId = "lineColor",
+                          label = "Line color",
+                          value = "blue",
+                          showColour = "both",
+                          palette = "square"
+                        ),
+                        colourpicker::colourInput(
+                          inputId = "keepTrueColor",
+                          showColour = "both",
+                          palette = "square",
+                          label = "Color for pulses to KEEP",
+                          value = "black"
+                        ),
+                        colourpicker::colourInput(
+                          inputId = "keepFalseColor",
+                          showColour = "both",
+                          palette = "square",
+                          label = "Color for pulses to REMOVE",
+                          value = "grey60"
+                        ),
+                        shiny::sliderInput(
+                          inputId = "plotPanelRatio",
+                          label = "% of Screen to use for plot panel (decrease for smaller screens)",
+                          min = .01,
+                          max = .99,
+                          value = .70,
+                          step = .05
+                        )
+                      )
+        ),
+        shiny::column(width = 6,
+                      bslib::card(
+                        height = '100%',
+                        title = "Instructions",
+                        shiny::markdown(
+                          mds = c(
+                            "## Selecting points",
+                            "",
+                            "Upon opening a new dataframe to annotate, a new column (`keep_points`) will be added to the dataframe and filled with `TRUE`.",
+                            "",
+                            "The pitch pulses for a specified file will be plotted in the main plotting region.
         Points that you want to keep (`keep_points=TRUE`) will be shown in closed circles, while points you want to remove (`keep_points=TRUE`) will be replaced with an open triangle.
         You can use the `[Show Line]` toggle button to plot a line through all the retained points.",
         "",
@@ -227,11 +233,11 @@ openEditor <- function(...) {
         "Using the `[Open Files in Praat]` button will open the files that are visible in the plot using the praat executable at the given path.
         This is accomplished via a `--new-open` system call.
         This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
+                          )
+                        )
+                      )
         )
-      )
-    )
-  )
-)),
+      )),
     bslib::nav_panel(
       title = "Progress",
       bslib::card(
@@ -268,62 +274,62 @@ openEditor <- function(...) {
 
           shiny::fluidRow(
             shiny::column(width = 6,
-              bslib::card(
-                title = "Directory Settings",
-                "Current working directory:",
-                shiny::verbatimTextOutput(outputId = "cwd"),
-                shiny::textInput(
-                  width = "100%",
-                  inputId = "inputDirInput",
-                  label = "Input directory",
-                  value = get_example_f0_data(".")
-                ),
-                shiny::textInput(
-                  inputId = "outputDirInput",
-                  label = "Output directory",
-                  value = "."
-                ),
-                shiny::uiOutput(outputId = "availableFilesUI"),
-                shiny::textInput(
-                  inputId = "pathToPraat",
-                  label = "Praat Path (relative to app.R directory)",
-                  value = "./Praat.exe"
-                ),
-                # span(
-                #   `data-toggle` = "tooltip", `data-placement` = "right",
-                #   title = "A tooltip",
-                #   icon("info-circle")
-                # )
-                span(style = "display:inline-block;",
-                  "Glue string to match file names to directory",
-                    id = "glueQuestion",
-                    span(style = "cursor:pointer;", shiny::icon("circle-question"))),
-                shiny::textInput(
-                  inputId = "fileNameGlue",
-                  label = NULL,
-                  value = "{Speaker}_{Filename}.wav"
-                ),
-                "The following are only used when opening files in Praat.",
-                shiny::textInput(
-                  inputId = "audioDirInput",
-                  label  = "Audio Directory",
-                  value = "./audio"
-                ),
-                shiny::textInput(
-                  inputId = "textgridDirInput",
-                  label = "TextGrid Directory",
-                  value = "./audio"
-                )
-              )
+                          bslib::card(
+                            title = "Directory Settings",
+                            "Current working directory:",
+                            shiny::verbatimTextOutput(outputId = "cwd"),
+                            shiny::textInput(
+                              width = "100%",
+                              inputId = "inputDirInput",
+                              label = "Input directory",
+                              value = get_example_f0_data(".")
+                            ),
+                            shiny::textInput(
+                              inputId = "outputDirInput",
+                              label = "Output directory",
+                              value = "."
+                            ),
+                            shiny::uiOutput(outputId = "availableFilesUI"),
+                            shiny::textInput(
+                              inputId = "pathToPraat",
+                              label = "Praat Path (relative to app.R directory)",
+                              value = "./Praat.exe"
+                            ),
+                            # span(
+                            #   `data-toggle` = "tooltip", `data-placement` = "right",
+                            #   title = "A tooltip",
+                            #   icon("info-circle")
+                            # )
+                            span(style = "display:inline-block;",
+                                 "Glue string to match file names to directory",
+                                 id = "glueQuestion",
+                                 span(style = "cursor:pointer;", shiny::icon("circle-question"))),
+                            shiny::textInput(
+                              inputId = "fileNameGlue",
+                              label = NULL,
+                              value = "{Speaker}_{Filename}.wav"
+                            ),
+                            "The following are only used when opening files in Praat.",
+                            shiny::textInput(
+                              inputId = "audioDirInput",
+                              label  = "Audio Directory",
+                              value = "./audio"
+                            ),
+                            shiny::textInput(
+                              inputId = "textgridDirInput",
+                              label = "TextGrid Directory",
+                              value = "./audio"
+                            )
+                          )
             ),
             shiny::column(width = 6,
-              bslib::card(
-                title = "Flagging Samples",
-                shiny::markdown(
-                  mds = c(
-                    "## Flagging samples",
-                    "",
-                    "After loading your data, you can use an automated method to flag potential tracking errors.
+                          bslib::card(
+                            title = "Flagging Samples",
+                            shiny::markdown(
+                              mds = c(
+                                "## Flagging samples",
+                                "",
+                                "After loading your data, you can use an automated method to flag potential tracking errors.
                     This method is based on identifying octave jumps between adjacent samples.
                     Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.
                     It is best used to identify regions of interest that should be investigated for errors.",
@@ -340,13 +346,13 @@ openEditor <- function(...) {
                     "The column `flagged_samples` will be added if it doesn't exist.
                     Once the column is added, or if it already exists, the button will turn green.
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
-                  )
-                ),
-                shiny::actionButton(
-                  inputId = "flagSamplesButton",
-                  shiny::uiOutput(outputId = "flagSamplesButtonLabel")
-                )
-              )
+                              )
+                            ),
+                    shiny::actionButton(
+                      inputId = "flagSamplesButton",
+                      shiny::uiOutput(outputId = "flagSamplesButtonLabel")
+                    )
+                          )
             )
           )
         )
@@ -437,18 +443,34 @@ openEditor <- function(...) {
                            yvar = yval)
     })
 
+    # The plot render will take on these as dependencies, too
+    no_missing_plot_inputs <- reactive({
+      !any(c(is.null(plotFlag$value),
+          is.null(loadedFile$data),
+          is.null(input$alphaSlider),
+          is.null(input$sizeSlider),
+          is.null(input$yValColumnInput),
+          is.null(input$xValColumnInput),
+          is.null(input$filenameColumnInput),
+          is.null(input$selectionColumnInput),
+          is.null(input$useFlaggedColumnToggle),
+          is.null(input$colorCodeColumnInput)))
+    })
 
     output$pulsePlot <- shiny::renderPlot({
-      # Color the points based on the color column
-      # check for alphaSlider ensures that the plot is not rendered before the
-      #   inputs have loaded their initial values
-      if (!is.null(plotFlag$value) & !is.null(loadedFile$data) & !is.null(input$alphaSlider)) {
+      message('Rerendering')
+      if (no_missing_plot_inputs()) {
 
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
 
-        # If the user wants to use the flagged column, make sure it exists and is a factor
-        if (input$useFlaggedColumnRadio == "TRUE" && input$colorCodeColumnInput %in% colnames(plot_subset)) {
-          plot_subset[, (input$colorCodeColumnInput) := factor(get(input$colorCodeColumnInput))]
+        # If the user wants to use the flagged column, make sure it exists
+        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
+          fx <- \(x) x
+          if (length(unique(plot_subset[[input$colorCodeColumnInput]])) <= 2) {
+            fx <- base::factor
+          }
+
+          plot_subset[, (input$colorCodeColumnInput) := fx(get(input$colorCodeColumnInput))]
         }
 
         yval <- transformedColumn$name
@@ -465,30 +487,31 @@ openEditor <- function(...) {
         # Add the line if the user wants it, this should go under the points
         if (plotSettings$showLine) {
           p <- p +
-            ggplot2::geom_line(data =plot_subset[plot_subset$keep_pulse,], color = input$lineColor)
+            ggplot2::geom_line(data =plot_subset[plot_subset[[input$selectionColumnInput]],], color = input$lineColor)
         }
 
         # Add the points, if the user wants to use the flagged column, use it to color the points
         # otherwise just use the keep_pulse column to redundantly code that information
-        if (input$useFlaggedColumnRadio == "TRUE" && input$colorCodeColumnInput %in% colnames(plot_subset)) {
+        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
           p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!rlang::sym(input$colorCodeColumnInput), shape = keep_pulse),
+            ggplot2::geom_point(ggplot2::aes(color = !!rlang::sym(input$colorCodeColumnInput), shape = !!rlang::sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
                                 alpha = input$alphaSlider)
         } else {
           p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = keep_pulse, shape = keep_pulse),
+            ggplot2::geom_point(ggplot2::aes(color = !!rlang::sym(input$selectionColumnInput), shape = !!rlang::sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
                                 alpha = input$alphaSlider)
         }
 
         # If the color column is binary, use the colors specified by the user,
         # otherwise just use the default colors
-        if (input$useFlaggedColumnRadio == "FALSE" ||
-            length(unique(plot_subset[[input$colorCodeColumnInput]])) == 2) {
+        if (!input$useFlaggedColumnToggle ||
+            length(unique(plot_subset[[input$colorCodeColumnInput]])) <= 2) {
           color_values <- c(input$keepFalseColor, input$keepTrueColor)
-          if (input$useFlaggedColumnRadio == "TRUE")
+          if (input$useFlaggedColumnToggle)
             color_values <- rev(color_values)
+
           p <- p +
             ggplot2::scale_color_manual(values = color_values)
         }
@@ -517,12 +540,27 @@ openEditor <- function(...) {
 
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data$keep_pulse[vals_to_change] <- !loadedFile$data$keep_pulse[vals_to_change]
+        loadedFile$data[[input$selectionColumnInput]][vals_to_change] <- !loadedFile$data[[input$selectionColumnInput]][vals_to_change]
         # updatePlotSettingsData()
         selectedPoints$data <- NULL
         updatePlot()
 
       }
+    })
+
+    shiny::observeEvent(input$colorCodeColumnInput, {
+      if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput) | is.null(input$useFlaggedColumnToggle))
+        return(NULL)
+
+      if (input$useFlaggedColumnToggle)
+        updatePlot()
+    })
+
+    shiny::observeEvent(input$useFlaggedColumnToggle, {
+      if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput))
+        return(NULL)
+
+      updatePlot()
     })
 
     # Toggle point on click
@@ -538,7 +576,7 @@ openEditor <- function(...) {
 
       if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
         first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        loadedFile$data$keep_pulse[first_id] <- !loadedFile$data$keep_pulse[first_id]
+        loadedFile$data[[input$selectionColumnInput]][first_id] <- !loadedFile$data[[input$selectionColumnInput]][first_id]
         clickedPoint <- NULL
         updatePlot()
       }
@@ -551,7 +589,7 @@ openEditor <- function(...) {
 
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, keep_pulse := TRUE]
+        loadedFile$data[vals_to_change, (input$selectionColumnInput) := TRUE]
         # updatePlotSettingsData()
         selectedPoints$data <- NULL
         updatePlot()
@@ -567,7 +605,7 @@ openEditor <- function(...) {
       # Toggle the color of the selected points
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, keep_pulse := FALSE]
+        loadedFile$data[vals_to_change, (input$selectionColumnInput) := FALSE]
         # updatePlotSettingsData()
 
         selectedPoints$data <- NULL
@@ -599,6 +637,31 @@ openEditor <- function(...) {
     # different columns and reactive values
     # Install and load the data.table package
 
+    set_selectize_choices <- function(session, inputId, data_ref, input_value, add = FALSE, add_with = TRUE) {
+      reactive({
+        if (is.null(data_ref$data))
+          return(NULL)
+
+        if (add) {
+          if (!input_value %in% colnames(data_ref$data))
+            data_ref$data[, (input_value) := add_with]
+        }
+
+        updateSelectizeInput(session,
+                             inputId = inputId,
+                             choices = colnames(data_ref$data),
+                             selected = ifelse(input_value %in% colnames(data_ref$data),
+                                               input_value,
+                                               colnames(data_ref$data)[1]))
+      }
+      )
+    }
+
+    shiny::observeEvent(input$yValColumnInput, {
+      if (is.null(loadedFile$data))
+        return(NULL)
+      changeTransformedColumn()
+    })
 
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
@@ -619,6 +682,11 @@ openEditor <- function(...) {
       loadedFile$data <- NULL # If previous data was loaded, throw it out
       loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
 
+      set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
+      set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
+      set_selectize_choices(session, "yValColumnInput", loadedFile, input$yValColumnInput)()
+
+
       # If the file doesn't contain the specified columns, return null and move
       # to the settings page
       if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
@@ -633,7 +701,7 @@ openEditor <- function(...) {
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
 
       if (!file.exists(outFile))
-        loadedFile$data[, keep_pulse := get(input$yValColumnInput) > 2]  # Use := operator from data.table package
+        loadedFile$data[, (input$selectionColumnInput) := get(input$yValColumnInput) > 2]  # Use := operator from data.table package
 
       if (!"pulse_id" %in% colnames(loadedFile$data))
         loadedFile$data[, pulse_id := .I]  # Use .I from data.table package
@@ -678,6 +746,8 @@ openEditor <- function(...) {
         flagSamplesIcon$value <- "flag"
       }
 
+      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
+
 
       # shiny::updateNavbarPage(session, "navbar", "Editor")
     })
@@ -720,7 +790,7 @@ openEditor <- function(...) {
       fileHandler$isPlotted[current_max + 1] <- TRUE
 
       # If we have the save-on-next option enabled, save the data
-      if (input$saveOptionButton == "TRUE") {
+      if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, input$fileSelectBox))
       }
 
@@ -742,7 +812,7 @@ openEditor <- function(...) {
       fileHandler$isPlotted[] <- FALSE
       fileHandler$isPlotted[current_min - 1] <- TRUE
 
-      if (input$saveOptionButton == "TRUE") {
+      if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, input$fileSelectBox))
       }
 
@@ -807,11 +877,11 @@ openEditor <- function(...) {
       filtered_data <- loadedFile$data[get(input$yValColumnInput) > 2]
 
       output$percentRemovedText <- shiny::renderText({
-        paste0(round(sum(!filtered_data$keep_pulse) / nrow(filtered_data)*100, 2), "%")
+        paste0(round(sum(!filtered_data[[input$selectionColumnInput]]) / nrow(filtered_data)*100, 2), "%")
       })
 
       output$nEditedFilesText <- shiny::renderText({
-        n_edited <- loadedFile$data[, .(n_edited = sum(!keep_pulse)), by = c(input$filenameColumnInput)][n_edited > 0, .N]
+        n_edited <- loadedFile$data[, .(n_edited = sum(!get(input$selectionColumnInput))), by = c(input$filenameColumnInput)][n_edited > 0, .N]
         paste0(n_edited, " / ", length(unique(filtered_data[[input$filenameColumnInput]])))
       })
 
@@ -820,7 +890,7 @@ openEditor <- function(...) {
           loadedFile$data |>
           dplyr::group_by(dplyr::across(dplyr::all_of(input$filenameColumnInput))) |>
           dplyr::reframe(original_variance = .var_of_diffs(.data[[input$yValColumnInput]][.data[[input$yValColumnInput]]>2]),
-                         new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[['keep_pulse']]])) |>
+                         new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[[input$selectionColumnInput]]])) |>
           dplyr::ungroup()
 
         mean_se1 <- ggplot2::mean_se(variance_values$original_variance, mult = 2)
@@ -833,7 +903,7 @@ openEditor <- function(...) {
 
       output$uneditedFilesText <- shiny::renderText({
         uneditedFiles$filenames <-
-          filtered_data[, .(n_edited = sum(!keep_pulse)), by = c(input$filenameColumnInput)][n_edited == 0, unique(.SD[[input$filenameColumnInput]])]
+          filtered_data[, .(n_edited = sum(!get(input$selectionColumnInput))), by = c(input$filenameColumnInput)][n_edited == 0, unique(.SD[[input$filenameColumnInput]])]
 
         paste(uneditedFiles$filenames, collapse = "\n")
       })
@@ -873,7 +943,7 @@ openEditor <- function(...) {
       changeTransformedColumn()
       updatePlot()
 
-      })
+    })
 
     # Multiply selected points by 0.5 (fixes doubling errors)
     shiny::observeEvent(input$halfButton, {
@@ -1026,17 +1096,17 @@ openEditor <- function(...) {
         type = 'info',
         html = TRUE,
         text = tags$div(class = "manual-code",
-          shiny::markdown(
-          mds = c(
-          "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
-          "Expressions in {curly braces} will be evaluated and the result will be inserted into the string.",
-          "Here, you can only work with the column names in your data.",
-          "",
-          "Let's say your speaker IDs and file names are in columns named
+                        shiny::markdown(
+                          mds = c(
+                            "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
+                            "Expressions in {curly braces} will be evaluated and the result will be inserted into the string.",
+                            "Here, you can only work with the column names in your data.",
+                            "",
+                            "Let's say your speaker IDs and file names are in columns named
           `Speaker` and `Filename` respectively, with example values `spkr01` and `11_rise.wav`.
           The string `audio/Speaker_{Speaker}_{Filename}` will then be evaluated as
           `audio/Speaker_spkr01_11_rise.wav`"
-        ))))
+                          ))))
 
     })
 
@@ -1072,10 +1142,10 @@ openEditor <- function(...) {
         flagSamplesIcon$value <- "hourglass"
         loadedFile$data <-
           flag_potential_errors(loadedFile$data,
-                                                 .unique_file = input$filenameColumnInput,
-                                                 .hz = input$yValColumnInput,
-                                                 .time = input$xValColumnInput,
-                                                 .samplerate = NA)
+                                .unique_file = input$filenameColumnInput,
+                                .hz = input$yValColumnInput,
+                                .time = input$xValColumnInput,
+                                .samplerate = NA)
         loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
         if (!data.table::is.data.table(loadedFile$data))
           loadedFile$data <- data.table(loadedFile$data)
