@@ -177,32 +177,33 @@ openEditor <- function(...) {
                       )
         ),
         shiny::column(width = 3,
-                      bslib::card(
-                        height = '88vh',fill = TRUE,
-                        title = "Color Settings",
-                        "Override default color settings below:",
-                        colourpicker::colourInput(
-                          inputId = "lineColor",
-                          label = "Line color",
-                          value = "blue",
-                          showColour = "both",
-                          palette = "square"
-                        ),
-                        colourpicker::colourInput(
-                          inputId = "keepTrueColor",
-                          showColour = "both",
-                          palette = "square",
-                          label = "Color for pulses to KEEP",
-                          value = "black"
-                        ),
-                        colourpicker::colourInput(
-                          inputId = "keepFalseColor",
-                          showColour = "both",
-                          palette = "square",
-                          label = "Color for pulses to REMOVE",
-                          value = "grey60"
-                        )
-                      )
+                      colorUI("colors"),
+                      # bslib::card(
+                      #   height = '88vh',fill = TRUE,
+                      #   title = "Color Settings",
+                      #   "Override default color settings below:",
+                      #   colourpicker::colourInput(
+                      #     inputId = "lineColor",
+                      #     label = "Line color",
+                      #     value = "blue",
+                      #     showColour = "both",
+                      #     palette = "square"
+                      #   ),
+                      #   colourpicker::colourInput(
+                      #     inputId = "keepTrueColor",
+                      #     showColour = "both",
+                      #     palette = "square",
+                      #     label = "Color for pulses to KEEP",
+                      #     value = "black"
+                      #   ),
+                      #   colourpicker::colourInput(
+                      #     inputId = "keepFalseColor",
+                      #     showColour = "both",
+                      #     palette = "square",
+                      #     label = "Color for pulses to REMOVE",
+                      #     value = "grey60"
+                      #   )
+                      # )
         ),
         shiny::column(width = 6,
                       bslib::card(
@@ -372,86 +373,11 @@ openEditor <- function(...) {
     transformedColumn <- shiny::reactiveValues(name = NULL)
     plotFlag <- shiny::reactiveValues(value = TRUE)
 
-    # Update the color pickers only when the user leaves the input, if we use
-    # observeEvent then the plot will re-render when using updateColourInput
-    # when changing the theme, which we don't want
-    shinyjs::onevent(event = "click", id = 'lineColor', {
-      message("Changing line color")
-      plotSettings$setColors[1] <- input$lineColor
-    })
-
-    shinyjs::onevent(event = "click", id = 'keepTrueColor', {
-      message("Changing true color")
-      plotSettings$setColors[3] <- input$keepTrueColor
-    })
-
-    shinyjs::onevent(event = "click", id = 'keepFalseColor', {
-      message("Changing false color")
-      plotSettings$setColors[2] <- input$keepFalseColor
-    })
-
-    shiny::observeEvent(input$dark_mode, {
-      updateLoadFileColors()
-      if (input$dark_mode == "dark") {
-        # Since we don't have any observers on the color pickers, this does two
-        # things: changes the color picker values to a new color, which does not
-        # cause the plot to re-render; then sets all 3 colors at once for the
-        # plot settings, which causes the plot to re-render ONLY once.
-        colourpicker::updateColourInput(session, "lineColor", value = "#10EBFF")
-        colourpicker::updateColourInput(session, "keepTrueColor", value = "#fdae61")
-        colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
-        plotSettings$setColors <- c("#10EBFF", "#df4461", "#fdae61")
-        plotSettings$themeColors <-
-          ggplot2::theme(
-            panel.background = ggplot2::element_rect(fill = "#1d1f21"),
-            panel.grid.major = ggplot2::element_line(colour = "grey20"),
-            panel.grid.minor = ggplot2::element_line(colour = "grey20"),
-            axis.line = ggplot2::element_line(colour = "grey20"),
-            axis.text.x = ggplot2::element_text(colour = "white"),
-            axis.text.y = ggplot2::element_text(colour = "white"),
-            axis.title.x = ggplot2::element_text(colour = "white"),
-            axis.title.y = ggplot2::element_text(colour = "white"),
-            strip.background = ggplot2::element_rect(fill = "grey20"),
-            strip.text = ggplot2::element_text(colour = "white"),
-            legend.background = ggplot2::element_rect(fill = "grey20"),
-            legend.text = ggplot2::element_text(colour = "white"),
-            legend.title = ggplot2::element_text(colour = "white"),
-            plot.title = ggplot2::element_text(colour = "white"),
-            plot.subtitle = ggplot2::element_text(colour = "white"),
-            plot.caption = ggplot2::element_text(colour = "white"),
-            plot.background = ggplot2::element_rect(fill = "#1d1f21")
-          )
-      } else{
-        colourpicker::updateColourInput(session, "lineColor", value = "blue")
-        colourpicker::updateColourInput(session, "keepTrueColor", value = "#111320")
-        colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
-        plotSettings$setColors <- c("blue", "#df4461",  "#111320")
-
-        plotSettings$themeColors <-
-          ggplot2::theme(
-            panel.background = ggplot2::element_rect(fill = "white"),
-            panel.grid.major = ggplot2::element_line(colour = "grey80"),
-            panel.grid.minor = ggplot2::element_line(colour = "grey80"),
-            axis.line = ggplot2::element_line(colour = "grey80"),
-            axis.text.x = ggplot2::element_text(colour = "black"),
-            axis.text.y = ggplot2::element_text(colour = "black"),
-            axis.title.x = ggplot2::element_text(colour = "black"),
-            axis.title.y = ggplot2::element_text(colour = "black"),
-            strip.background = ggplot2::element_rect(fill = "grey80"),
-            strip.text = ggplot2::element_text(colour = "black"),
-            legend.background = ggplot2::element_rect(fill = "white"),
-            legend.text = ggplot2::element_text(colour = "black"),
-            legend.title = ggplot2::element_text(colour = "black"),
-            plot.title = ggplot2::element_text(colour = "black"),
-            plot.subtitle = ggplot2::element_text(colour = "black"),
-            plot.caption = ggplot2::element_text(colour = "black"),
-            plot.background = ggplot2::element_rect(fill = "white")
-          )
-      }
-      updatePlot()
-    })
-
-    # input$dark_mode
+    colorServer("colors",
+                plotSettings,
+                updatePlot,
+                reactive(input$dark_mode),
+                reactive(input$loadFileButton))
 
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
@@ -641,21 +567,7 @@ openEditor <- function(...) {
     # Whenever the user toggles the dark mode, update the colors of the load file
     # button. It should be blue no matter what if no file is loaded, then fade
     # to an unselected gray color after a file is loaded.
-    updateLoadFileColors <- function() {
-      if (input$loadFileButton > 0){
-        if (input$dark_mode == "dark"){
-          shinyjs::runjs('document.getElementById("loadFileButton").style.backgroundColor = "#2a2c30";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.color = "white";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.borderColor = "black";')
-          # textColor$value <- "white"
-        } else {
-          shinyjs::runjs('document.getElementById("loadFileButton").style.backgroundColor = "#ececec";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.color = "black";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.borderColor = "black";')
-          # textColor$value <- "black"
-        }
-      }
-    }
+
 
     # When the user clicks the load file button, load the file and initialize
     # different columns and reactive values
@@ -720,7 +632,7 @@ openEditor <- function(...) {
         return(NULL)
       }
 
-      updateLoadFileColors()
+      # updateLoadFileColors()
 
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
 
