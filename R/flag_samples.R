@@ -1,10 +1,15 @@
 #' Flag errors wrapper
 #'
-#' Flags potential sample-to-sample errors in F0 data. Uses the algorithm
-#' described in Steffman & Cole (2022) but uses a faster implementation that
-#' doesn't rely on NAs as much. Note however that while this is faster, it is
-#' written to be as close to the original implementation as possible, so there
-#' are some quirks and inefficiencies that remain.
+#' Flags potential sample-to-sample errors in F0 data. Uses a modified version
+#' of the algorithm described in Steffman & Cole (2022). The original algorithm
+#' skips over pairs of samples that are further apart than the sampling rate to
+#' account for voiceless intervals, but this is a bit too stringent for the
+#' purposes of this app. The version here is a bit more lenient, only skipping
+#' pairs that are more than 8 times the sampling rate apart (typically, 80ms).
+#' The multiplier is a ballpark estimate based on some productions of /s/ in fast
+#' speech. What this buys us is identifying regions of interest that may
+#' contain errors. The implementaion here is also much faster than the original
+#' version and doesn't rely on NAs as much.
 #'
 #' @param data Data frame
 #' @param .unique_file Column name containing unique file IDs
@@ -28,16 +33,19 @@ flag_potential_errors <- function(data,
                                   .unique_file = "uniqueID",
                                   .hz = "hz",
                                   .time = 'timepoint',
-                                  .samplerate = 10,
+                                  .samplerate = NA,
                                   .add_semitones = NA,
                                   .speaker = NA,
                                   rise_threshold = 1.2631578947,
                                   fall_threshold = 1.7142857143) {
-  data |>
+
+  datalist <- .convert_time_to_ms(data, .time, .samplerate)
+
+  datalist[['df']] |>
     annotate_errors(.unique_file = .unique_file,
                     .hz = .hz,
                     .time = .time,
-                    .samplerate = .samplerate,
+                    .samplerate = datalist[['samplerate']],
                     .add_semitones = .add_semitones,
                     .speaker = .speaker) |>
     code_carryover_effects(.unique_file = .unique_file,
@@ -48,6 +56,44 @@ flag_potential_errors <- function(data,
     dplyr::ungroup()
 }
 
+#' Convert seconds (probably) to milliseconds
+#'
+#' The flag samples algorithm assumes that the time is in milliseconds, but it
+#' is not uncommon for time to be specified in seconds. This function converts
+#' the time to milliseconds if it is not already in milliseconds and automatically
+#' tries to detect the sampling rate if it is not specified. The sampling rate
+#' is determined by getting the median of the sample-to-sample time differences,
+#' as it's most likely that the VAST majority of these will be the sampling rate
+#'
+#' @param data Dataframe
+#' @param .time column name to use for time
+#' @param .samplerate sampling rate for the unit of time in the dataframe,
+#' so for a 10ms sampling rate with times in ms, this should be 10; if it's
+#' recorded in seconds, this should be 0.01
+#'
+#' @return A list containing the data with the converted time and the sampling
+#' rate in milliseconds
+.convert_time_to_ms <- function(data, .time, .samplerate) {
+  # If the sampling rate is not specified, we need to try and calculate
+  # it ourselves
+  if (is.na(.samplerate))
+    .samplerate <- round(median(diff(data[[.time]])), 4)
+
+
+  # If the differences are less than 1 then the time is probably recorded
+  # in seconds, so we need to convert to milliseconds
+  if (.samplerate < 1) {
+    example_value <- data[[.time]][1]
+    data[[.time]] <- data[[.time]] * 1000
+    .samplerate <-  .samplerate * 1000
+    message("Converting `", .time,  "` to milliseconds",
+            " (", example_value, "s->", example_value*1000, "ms)")
+  }
+
+
+  list('df' = data,
+       'samplerate' = .samplerate)
+}
 
 #' Annotated F0 data via threshold method
 #'
@@ -85,11 +131,13 @@ annotate_errors <- function(data,
                             .unique_file = "uniqueID",
                             .hz = "hz",
                             .time = 'timepoint',
-                            .samplerate = 10,
+                            .samplerate = NA,
                             .add_semitones = NA,
                             .speaker = NA,
                             rise_threshold = 1.2631578947,
                             fall_threshold = 1.7142857143) {
+
+
   time_mutation <-  .samplerate/10
 
   if (is.na(.add_semitones)) {
@@ -121,8 +169,7 @@ annotate_errors <- function(data,
       diff = lead_F0_semitones-F0_semitones,
       time_diff = dplyr::lead(.data[[.time]]) - .data[[.time]],
       ratio_Hz = lead_F0_Hz/.data[[.hz]],
-      # oct_jump = as.numeric(ratio_Hz<0.49|ratio_Hz>1.99), # halving and doubling ratios for octave jump detection
-      err = ifelse(time_diff > .samplerate,0, ## this ignore time differences larger than the time step, e.g., over voiceless intervals.
+      err = ifelse(time_diff > .samplerate*8,0, ## this ignore time differences larger than 8*the time step, e.g., over voiceless intervals.
                    as.integer(diff>0&(abs(diff)*time_mutation)>rise_threshold|
                                 diff<0&(abs(diff)*time_mutation)>fall_threshold)),
       # err_prop_by_ID = mean(err, na.rm = TRUE),

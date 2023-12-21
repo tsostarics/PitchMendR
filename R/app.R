@@ -297,7 +297,7 @@ openEditor <- function(...) {
                 span(style = "display:inline-block;",
                   "Glue string to match file names to directory",
                     id = "glueQuestion",
-                    span(style = "cursor:pointer;", icon("circle-question"))),
+                    span(style = "cursor:pointer;", shiny::icon("circle-question"))),
                 shiny::textInput(
                   inputId = "fileNameGlue",
                   label = NULL,
@@ -323,15 +323,23 @@ openEditor <- function(...) {
                   mds = c(
                     "## Flagging samples",
                     "",
-                    "Once you have loaded the files, you can use an automated sample-to-sample method to flag samples that are likely to be tracking errors.
+                    "After loading your data, you can use an automated method to flag potential tracking errors.
                     This method is based on identifying octave jumps between adjacent samples.
-                    Note that this method is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
+                    Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.
+                    It is best used to identify regions of interest that should be investigated for errors.",
                     "",
-                    "If the column `F0_semitones` already exists, it will be used to track errors.
-                    If not, this column will be added by computing semitones from the median pitch of all of the speaker's files.
+                    "If the column `F0_semitones` already exists, it will be used to identify errors.
+                    If not, this column will be added by computing semitones from the mean pitch of all of the speaker's files.
                     Check the settings tab for the column names used for the time, pitch, and filename values.",
                     "",
-                    "If the column `flagged_samples` already exists, it will be overwritten."
+                    "The algorithm assumes that time is provided in millisecond units (e.g., t=1410ms).
+                    If time is provided in seconds (e.g., t=1.41s) then the time column will be converted to milliseconds.
+                    The sampling rate is computed automatically, but if your time values are not in either seconds or milliseconds,
+                    then it may not work correctly.",
+                    "",
+                    "The column `flagged_samples` will be added if it doesn't exist.
+                    Once the column is added, or if it already exists, the button will turn green.
+                    Clicking it again will rerun the algorithm, and previous values will be overwritten."
                   )
                 ),
                 shiny::actionButton(
@@ -608,6 +616,7 @@ openEditor <- function(...) {
       }
 
       message(paste0("Loading file ", file_to_load))
+      loadedFile$data <- NULL # If previous data was loaded, throw it out
       loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
 
       # If the file doesn't contain the specified columns, return null and move
@@ -657,6 +666,18 @@ openEditor <- function(...) {
       output$workingFileOutput <- shiny::renderText({
         paste0("Working File:\n", input$fileSelectBox)
       })
+
+      # If we've loaded another file in the same session then we need
+      # to reset flag samples button
+
+      if ("flagged_samples" %in% colnames(loadedFile$data)) {
+        shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
+        flagSamplesIcon$value <- "check"
+      } else {
+        shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
+        flagSamplesIcon$value <- "flag"
+      }
+
 
       # shiny::updateNavbarPage(session, "navbar", "Editor")
     })
@@ -1049,11 +1070,13 @@ openEditor <- function(...) {
       message("Flag Samples Pressed")
       if (!is.null(loadedFile$data)) {
         flagSamplesIcon$value <- "hourglass"
-        loadedFile$data <- flag_potential_errors(loadedFile$data,
+        loadedFile$data <-
+          flag_potential_errors(loadedFile$data,
                                                  .unique_file = input$filenameColumnInput,
                                                  .hz = input$yValColumnInput,
                                                  .time = input$xValColumnInput,
-                                                 .samplerate = 10)
+                                                 .samplerate = NA)
+        loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
         if (!data.table::is.data.table(loadedFile$data))
           loadedFile$data <- data.table(loadedFile$data)
         # updatePlotSettingsData()

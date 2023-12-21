@@ -33,7 +33,7 @@ submitTextInput <- function(inputId, label, value = "",
   value <- shiny::restoreInput(id = inputId, default = value)
 
   inputTag <- tags$button(id=paste0(inputId, "Button"),
-                          style = htmltools::css(width = validateCssUnit(width),
+                          style = htmltools::css(width = shiny::validateCssUnit(width),
                                                  `padding-left` = "10px",
                                                  `padding-right` = "10px",
                                                  border = "none"),
@@ -46,7 +46,7 @@ submitTextInput <- function(inputId, label, value = "",
   )
 
   div(class = "form-group shiny-input-container",
-      style = htmltools::css(width = validateCssUnit(width)),
+      style = htmltools::css(width = shiny::validateCssUnit(width)),
       shiny:::shinyInputLabel(inputId, label),
 
       div(class = "input-group",

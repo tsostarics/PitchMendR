@@ -9,7 +9,7 @@ flag_potential_errors(
   .unique_file = "uniqueID",
   .hz = "hz",
   .time = "timepoint",
-  .samplerate = 10,
+  .samplerate = NA,
   .add_semitones = NA,
   .speaker = NA,
   rise_threshold = 1.2631578947,
