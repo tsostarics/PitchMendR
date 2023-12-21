@@ -125,10 +125,10 @@ openEditor <- function(...) {
     ),
     bslib::nav_panel(
       title = "Settings",
-      shiny::fluidRow(
+      shiny::fluidRow(height = "100%",
         shiny::column(width = 3,
                       bslib::card(
-                        height = '100%',
+                        height = '88vh',fill = TRUE,
                         title = "Press button to set column",
                         shiny::selectizeInput("filenameColumnInput",
                                               label ="Column name containing individual files",
@@ -178,7 +178,7 @@ openEditor <- function(...) {
         ),
         shiny::column(width = 3,
                       bslib::card(
-                        height = '100%',
+                        height = '88vh',fill = TRUE,
                         title = "Color Settings",
                         "Override default color settings below:",
                         colourpicker::colourInput(
@@ -206,7 +206,7 @@ openEditor <- function(...) {
         ),
         shiny::column(width = 6,
                       bslib::card(
-                        height = '100%',
+                        height = '88vh',fill = TRUE,
                         title = "Instructions",
                         shiny::markdown(
                           mds = c(
@@ -375,19 +375,19 @@ openEditor <- function(...) {
     # Update the color pickers only when the user leaves the input, if we use
     # observeEvent then the plot will re-render when using updateColourInput
     # when changing the theme, which we don't want
-    shinyjs::onevent(event = "mouseleave", id = 'lineColor', {
+    shinyjs::onevent(event = "click", id = 'lineColor', {
       message("Changing line color")
       plotSettings$setColors[1] <- input$lineColor
     })
 
-    shinyjs::onevent(event = "mouseleave", id = 'keepTrueColor', {
+    shinyjs::onevent(event = "click", id = 'keepTrueColor', {
       message("Changing true color")
-      plotSettings$setColors[3] <- input$lineColor
+      plotSettings$setColors[3] <- input$keepTrueColor
     })
 
-    shinyjs::onevent(event = "mouseleave", id = 'keepFalseColor', {
+    shinyjs::onevent(event = "click", id = 'keepFalseColor', {
       message("Changing false color")
-      plotSettings$setColors[2] <- input$lineColor
+      plotSettings$setColors[2] <- input$keepFalseColor
     })
 
     shiny::observeEvent(input$dark_mode, {
