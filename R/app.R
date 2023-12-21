@@ -7,7 +7,7 @@
 #' @return Nothing
 #' @export
 #'
-#' @importFrom shiny tags
+#' @importFrom shiny tags isolate
 openEditor <- function(...) {
   ui <- bslib::page_navbar(
 
@@ -365,7 +365,8 @@ openEditor <- function(...) {
     # Create a reactive value to store the selected points
     selectedPoints <- shiny::reactiveValues(data = NULL)
     plotSettings <- shiny::reactiveValues(data = NULL,
-                                          themeColors = NULL)
+                                          themeColors = NULL,
+                                          setColors = NULL)
     fileHandler <- shiny::reactiveValues(filenames = NULL,
                                          isPlotted = NULL,
                                          fileChecked = NULL)
@@ -376,12 +377,35 @@ openEditor <- function(...) {
     transformedColumn <- shiny::reactiveValues(name = NULL)
     plotFlag <- shiny::reactiveValues(value = TRUE)
 
+    # Update the color pickers only when the user leaves the input, if we use
+    # observeEvent then the plot will re-render when using updateColourInput
+    # when changing the theme, which we don't want
+    shinyjs::onevent(event = "mouseleave", id = 'lineColor', {
+      message("Changing line color")
+      plotSettings$setColors[1] <- input$lineColor
+    })
+
+    shinyjs::onevent(event = "mouseleave", id = 'keepTrueColor', {
+      message("Changing true color")
+      plotSettings$setColors[3] <- input$lineColor
+    })
+
+    shinyjs::onevent(event = "mouseleave", id = 'keepFalseColor', {
+      message("Changing false color")
+      plotSettings$setColors[2] <- input$lineColor
+    })
+
     shiny::observeEvent(input$dark_mode, {
       updateLoadFileColors()
       if (input$dark_mode == "dark") {
+        # Since we don't have any observers on the color pickers, this does two
+        # things: changes the color picker values to a new color, which does not
+        # cause the plot to re-render; then sets all 3 colors at once for the
+        # plot settings, which causes the plot to re-render ONLY once.
         colourpicker::updateColourInput(session, "lineColor", value = "#10EBFF")
         colourpicker::updateColourInput(session, "keepTrueColor", value = "#fdae61")
         colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
+        plotSettings$setColors <- c("#10EBFF", "#df4461", "#fdae61")
         plotSettings$themeColors <-
           ggplot2::theme(
             panel.background = ggplot2::element_rect(fill = "#1d1f21"),
@@ -406,6 +430,7 @@ openEditor <- function(...) {
         colourpicker::updateColourInput(session, "lineColor", value = "blue")
         colourpicker::updateColourInput(session, "keepTrueColor", value = "#111320")
         colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
+        plotSettings$setColors <- c("blue", "#df4461",  "#111320")
 
         plotSettings$themeColors <-
           ggplot2::theme(
@@ -428,6 +453,7 @@ openEditor <- function(...) {
             plot.background = ggplot2::element_rect(fill = "white")
           )
       }
+      updatePlot()
     })
 
     # input$dark_mode
@@ -462,6 +488,10 @@ openEditor <- function(...) {
       if (no_missing_plot_inputs()) {
 
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+        # These will update when the user changes the color manually with the
+        # color pickers or if the theme is changed.
+        color_values <- plotSettings$setColors[2:3]
+        lineColor <- plotSettings$setColors[1]
 
         # If the user wants to use the flagged column, make sure it exists
         if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
@@ -487,7 +517,7 @@ openEditor <- function(...) {
         # Add the line if the user wants it, this should go under the points
         if (plotSettings$showLine) {
           p <- p +
-            ggplot2::geom_line(data =plot_subset[plot_subset[[input$selectionColumnInput]],], color = input$lineColor)
+            ggplot2::geom_line(data =plot_subset[plot_subset[[input$selectionColumnInput]],], color = lineColor)
         }
 
         # Add the points, if the user wants to use the flagged column, use it to color the points
@@ -508,7 +538,6 @@ openEditor <- function(...) {
         # otherwise just use the default colors
         if (!input$useFlaggedColumnToggle ||
             length(unique(plot_subset[[input$colorCodeColumnInput]])) <= 2) {
-          color_values <- c(input$keepFalseColor, input$keepTrueColor)
           if (input$useFlaggedColumnToggle)
             color_values <- rev(color_values)
 
@@ -747,7 +776,7 @@ openEditor <- function(...) {
       }
 
       set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
-
+      updatePlot()
 
       # shiny::updateNavbarPage(session, "navbar", "Editor")
     })
@@ -911,6 +940,7 @@ openEditor <- function(...) {
     })
 
     updatePlot <- shiny::reactive({
+      observe("keepFalseColor")
       plotFlag$value <- !plotFlag$value
     })
 
