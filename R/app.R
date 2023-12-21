@@ -89,7 +89,10 @@ openEditor <- function(...) {
                      shiny::verbatimTextOutput(outputId = "brushedFileNames"),
                      # width = '10vw'
         ),
-        bslib::card(shiny::plotOutput(outputId = "pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%"),fill = TRUE, height="88vh", width = '80vw',
+        bslib::card(shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%")),
+                    fill = TRUE,
+                    height="88vh",
+                    width = '80vw',
                     # shiny::fluidRow(#style = "height:20vh;width:90vw",
                     # Adjust the gap space between the buttons
                     tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
@@ -198,14 +201,6 @@ openEditor <- function(...) {
                           palette = "square",
                           label = "Color for pulses to REMOVE",
                           value = "grey60"
-                        ),
-                        shiny::sliderInput(
-                          inputId = "plotPanelRatio",
-                          label = "% of Screen to use for plot panel (decrease for smaller screens)",
-                          min = .01,
-                          max = .99,
-                          value = .70,
-                          step = .05
                         )
                       )
         ),
@@ -1213,17 +1208,6 @@ openEditor <- function(...) {
     output$cwd <- shiny::renderText({
       getwd()
     })
-
-    shinyjs::onevent(id = "plotPanelRatio",event = "mouseleave",
-                     expr= {
-                       # message("Changing size of plot window")
-                       plot_height <- round(input$plotPanelRatio*100,1)
-                       buttons_height <- round((1-input$plotPanelRatio)*100,1)
-                       # vals <- paste0(c(input$plotPanelRatio, 1-input$plotPanelRatio), "fr", collapse = " ")
-                       # message(vals)
-                       shinyjs::runjs(paste0('document.getElementById("pulsePlot").style.height = \"', plot_height , '%";'))
-                       shinyjs::runjs(paste0('document.getElementById("controlButtons").style.height = \"', buttons_height , '%";'))
-                     })
 
   }
 
