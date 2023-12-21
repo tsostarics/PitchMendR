@@ -54,6 +54,10 @@ openEditor <- function(...) {
         --bs-card-spacer-y: 0.5rem;  /* Adjust this value as needed */
         --bs-card-border-width: none;
       }
+      .manual-code code{
+      color: #c10000;
+      background-color:#f8f8f8;
+      }
     "))
       ),
     title = "Editor",
@@ -1000,14 +1004,7 @@ openEditor <- function(...) {
         title = "Glue strings",
         type = 'info',
         html = TRUE,
-        # theme = "dark",
-        text = tags$span(tags$style(shiny::HTML(
-          'code {
-              color:#c10000;
-              background:#f8f8f8;
-          }
-          '
-        )),
+        text = tags$div(class = "manual-code",
           shiny::markdown(
           mds = c(
           "The `{glue}` package provides a convenient way to interpolate strings, similar to Python's f-strings",
