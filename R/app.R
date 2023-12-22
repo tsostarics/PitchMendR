@@ -121,9 +121,34 @@ openEditor <- function(...) {
                                                         shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
                                                         shiny::actionButton(width = "38%", inputId = "saveButton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
                                                         shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
-                                                      )
-
-                                          ),
+                                                      ),
+                                                      shiny::fluidRow(
+                                                        shiny::tabsetPanel(type = "hidden",
+                                                                           id = "switchBadges",
+                                                                           shiny::tabPanelBody("showBadges",
+                                                                                               shinyWidgets::checkboxGroupButtons(
+                                                                                                 inputId = "badgeInput",
+                                                                                                 label = NULL,
+                                                                                                 # disabled = TRUE,
+                                                                                                 size = "sm",
+                                                                                                 status = "default ", # Trailing space prevents btn-default from being changed to btn-primary
+                                                                                                 individual = FALSE,
+                                                                                                 choices = c("Unusable", "Needs Attention", "Good Example"),
+                                                                                                 justified = TRUE)),
+                                                                           shiny::tabPanelBody("hideBadges", NULL))),
+                                                      shiny::fluidRow(
+                                                        shiny::tabsetPanel(type = "hidden",
+                                                                           id = "switchNotepad",
+                                                                           shiny::tabPanelBody("showNotepad",
+                                                                                               shiny::textAreaInput(
+                                                                                                 inputId = "notepadInput",
+                                                                                                 label = NULL,
+                                                                                                 width = "100%",
+                                                                                                 height = "20px",
+                                                                                                 resize = "both"
+                                                                                               )),
+                                                                           shiny::tabPanelBody("hideNotepad", NULL)))
+                                                      ),
                                           bslib::card(fill = TRUE,
                                                       shiny::fluidRow(
                                                         shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
@@ -170,9 +195,24 @@ openEditor <- function(...) {
                                                       value = "keep_pulse",
                                                       width = "100%"
                                       ),
+                                      shiny::markdown(mds = "## UI Options"),
                                       shinyWidgets::materialSwitch(
                                         inputId = "saveOptionButton",
                                         label = "Save on file navigation:",
+                                        value = TRUE,
+                                        inline = TRUE,
+                                        status = "info"
+                                      ),
+                                      shinyWidgets::materialSwitch(
+                                        inputId = "useBadgesToggle",
+                                        label = "Add tag buttons:",
+                                        value = TRUE,
+                                        inline = TRUE,
+                                        status = "info"
+                                      ),
+                                      shinyWidgets::materialSwitch(
+                                        inputId = "useNotesToggle",
+                                        label = "Add notepad for annotation:",
                                         value = TRUE,
                                         inline = TRUE,
                                         status = "info"
@@ -679,6 +719,40 @@ openEditor <- function(...) {
       gsub("[*]$", "", file_selection)
     }
 
+
+
+    shiny::observeEvent(input$useNotesToggle, {
+      if (is.null(loadedFile$data))
+        return(NULL)
+
+      if (input$useNotesToggle) {
+        if (!"notes" %in% colnames(loadedFile$data))
+          loadedFile$data[, notes := ""]
+      }
+
+      if (input$useNotesToggle){
+        updateTabsetPanel(inputId = "switchNotepad", selected = "showNotepad")
+      } else {
+        updateTabsetPanel(inputId = "switchNotepad", selected = "hideNotepad")
+      }
+    })
+
+    shiny::observeEvent(input$useBadgesToggle, {
+      if (is.null(loadedFile$data))
+        return(NULL)
+
+      if (input$useBadgesToggle) {
+        if (!"tags" %in% colnames(loadedFile$data))
+          loadedFile$data[, tags := ""]
+      }
+
+      if (input$useBadgesToggle){
+        updateTabsetPanel(inputId = "switchBadges", selected = "showBadges")
+      } else {
+        updateTabsetPanel(inputId = "switchBadges", selected = "hideBadges")
+      }
+    })
+
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
 
@@ -765,10 +839,26 @@ openEditor <- function(...) {
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
       }
 
+      if (input$useBadgesToggle) {
+        if (!"tags" %in% colnames(loadedFile$data))
+          loadedFile$data[, tags := ""]
+        else
+          loadedFile$data[,tags := as.character(tags)]
+      }
+
+      if (input$useNotesToggle) {
+        if (!"notes" %in% colnames(loadedFile$data))
+          loadedFile$data[, notes := ""]
+        else
+          loadedFile$data[,notes := as.character(notes)]
+      }
+
+      updateBadges()
+      updateNotes()
       updatePlot()
 
-      # shiny::updateNavbarPage(session, "navbar", "Editor")
     })
+
 
     toggleShowLine <- reactive({
       plotSettings$showLine <- !plotSettings$showLine
@@ -784,6 +874,7 @@ openEditor <- function(...) {
       message("Save Pressed")
       if (sum(fileHandler$isPlotted) == 1) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+        saveNotes()
       }
 
       if (!dir.exists(input$outputDirInput)){
@@ -806,10 +897,13 @@ openEditor <- function(...) {
       #$ Check off the file that's currently plotted before we move to the next file
       if (sum(fileHandler$isPlotted) == 1) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+        saveNotes()
       }
 
       fileHandler$isPlotted[] <- FALSE
       fileHandler$isPlotted[current_min - 1] <- TRUE
+      updateBadges()
+      updateNotes()
 
       if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
@@ -826,10 +920,13 @@ openEditor <- function(...) {
       # Check off the file that's currently plotted before we move to the next file
       if (sum(fileHandler$isPlotted) == 1) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+        saveNotes()
       }
 
       fileHandler$isPlotted[] <- FALSE
       fileHandler$isPlotted[current_max + 1] <- TRUE
+      updateBadges()
+      updateNotes()
 
       # If we have the save-on-next option enabled, save the data
       if (input$saveOptionButton) {
@@ -849,7 +946,58 @@ openEditor <- function(...) {
 
     })
 
+    badges_to_string <- function(badges){
+      paste0(badges, collapse = "+")
+    }
 
+    string_to_badges <- function(string){
+      if (is.na(string))
+        return(c())
+      strsplit(string, split = "\\+")[[1]]
+    }
+
+    updateBadges <- reactive({
+      shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", selected = c())
+      if (is.null(loadedFile$data)) {
+        shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = TRUE)
+        return(NULL)
+      }
+
+      if (sum(fileHandler$isPlotted) != 1) {
+        shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = TRUE)
+      } else {
+        current_file <- fileHandler$filenames[fileHandler$isPlotted]
+        current_badges <- string_to_badges(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] == current_file, 'tags'][1][[1]])
+        shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = FALSE, selected = current_badges)
+
+      }
+    })
+
+    saveNotes <- reactive({
+      if (sum(fileHandler$isPlotted) == 1) {
+        current_file <- fileHandler$filenames[fileHandler$isPlotted]
+        loadedFile$data[loadedFile$data[[input$filenameColumnInput]] == current_file, notes := input$notepadInput]
+      }
+    })
+
+    updateNotes <- reactive({
+      shiny::updateTextAreaInput(session, "notepadInput", value = "")
+      if (is.null(loadedFile$data)) {
+        shinyjs::disable("notepadInput")
+        return(NULL)
+      }
+
+      if (sum(fileHandler$isPlotted) != 1) {
+        shinyjs::disable("notepadInput")
+      } else {
+        current_file <- fileHandler$filenames[fileHandler$isPlotted]
+        current_note <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] == current_file, 'notes'][1][[1]]
+        message(current_note)
+        shinyjs::enable("notepadInput")
+        shiny::updateTextAreaInput(session, "notepadInput", value = current_note)
+
+      }
+    })
 
     # Display the number of files/contours that are currently plotted
     output$nFilesPlotted <- shiny::renderText({
@@ -865,7 +1013,10 @@ openEditor <- function(...) {
 
     plotMatches <- reactive({
       print(input$filterRegex)
+      saveNotes()
       fileHandler$isPlotted <- grepl(input$filterRegex,fileHandler$filenames)
+      updateBadges()
+      updateNotes()
     })
 
     # Display the filenames of the selected points when the user makes a selection
@@ -899,10 +1050,14 @@ openEditor <- function(...) {
     saveIcon <- shiny::reactiveValues(value = "floppy-disk")
 
     plotBrushed <- reactive({
+      saveNotes()
       brushed_regex <- paste0("(", filesBrushed$filenames, ")", collapse = "|")
       fileHandler$isPlotted <- grepl(brushed_regex,fileHandler$filenames)
 
       message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
+      updateBadges()
+      updateNotes()
+
     })
 
     # When the user clicks the go to brushed button, plot only the files that the
@@ -1243,6 +1398,8 @@ openEditor <- function(...) {
         base::system(systemcall, wait = FALSE)
       }
     })
+
+
 
 
     output$cwd <- shiny::renderText({
