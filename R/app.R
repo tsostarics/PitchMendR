@@ -19,7 +19,7 @@ openEditor <- function(...) {
     sidebar = bslib::sidebar(
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
-      # use_keyboardcss_link(),
+      use_keyboardcss(),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
                                       "r",
@@ -191,14 +191,16 @@ openEditor <- function(...) {
                                         value = TRUE,
                                         inline = TRUE,
                                         status = "info"
-                                      ),
-                                      shinyWidgets::materialSwitch(
-                                        inputId = "useKeysToggle",
-                                        label = "Use keyboard shortcuts:",
-                                        value = TRUE,
-                                        inline = TRUE,
-                                        status = "info"
-                                      )
+                                      ),span(style = "display:inline-block;",
+                                             id = "keysQuestion",
+                                             span(style = "cursor:pointer;", shiny::icon("circle-question")),
+                                             shinyWidgets::materialSwitch(
+                                               inputId = "useKeysToggle",
+                                               label = "Use keyboard shortcuts:",
+                                               value = TRUE,
+                                               inline = TRUE,
+                                               status = "info"
+                                             )),
                                     )
                       ),
                       shiny::column(width = 3,
@@ -368,8 +370,6 @@ openEditor <- function(...) {
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
                               )
                             ),
-                    # kbd_button("a"),
-                    # paste0("Press ", kbd_button("a"), " to flag samples."),
                     shiny::actionButton(
                       inputId = "flagSamplesButton",
                       shiny::uiOutput(outputId = "flagSamplesButtonLabel")
@@ -1238,6 +1238,40 @@ openEditor <- function(...) {
 
     })
 
+    shinyjs::onclick(id = "keysQuestion", {
+      shinyWidgets::show_alert(
+        title = "Keyboard Shortcuts",
+        type = 'info',
+        html = TRUE,
+        text = tagList(
+          tags$div(style = css(`text-align` = "left",
+                               `max-height` = "400px",
+                               `overflow-y` = "scroll"),
+                        shiny::markdown(
+                          mds = c(
+                            "If keyboard shortcuts are turned on, you can use the following on the Editor page:",
+                            inline_kbd_button('f', " - {KEY}: Toggle pulses"),
+                            inline_kbd_button('r', " - {KEY}: Remove pulses"),
+                            inline_kbd_button('e', " - {KEY}: Keep pulses"),
+                            inline_kbd_button('s', " - {KEY}: Show/Hide Line"),
+                            inline_kbd_button('q', " - {KEY}: Go to Previous File"),
+                            inline_kbd_button('w', " - {KEY}: Go to Next File"),
+                            inline_kbd_button('b', " - {KEY}: Plot brushed files"),
+                            inline_kbd_button('d', " - {KEY}: Double selected pulses"),
+                            inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
+                            inline_kbd_button(c("ctrl", "z"), " - {KEY[1]}+{KEY[2]}: Undo last transform"),
+                            inline_kbd_button('space', " - {KEY}: Plot files matching regex")
+                          )),
+                   tags$p(style = css(`font-size` = ".85em",
+                                      `margin-bottom` = "none"),
+                          icon("heart"), "made with ",
+                          tags$a(href = "https://shhdharmen.github.io/keyboard-css/", "keyboard-css"),
+                          " and ",
+                          tags$a(href = "https://github.com/r4fun/keys", "{keys}"))),
+          ))
+
+    })
+
     # When the user clicks the Check off Files button, all files currently displayed
     # will have their fileChecked values set to TRUE.
     shiny::observeEvent(input$checkVisibleFilesButton, {
@@ -1308,8 +1342,6 @@ openEditor <- function(...) {
         base::system(systemcall, wait = FALSE)
       }
     })
-
-
 
 
     output$cwd <- shiny::renderText({
