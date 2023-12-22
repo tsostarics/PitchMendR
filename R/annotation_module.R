@@ -5,7 +5,7 @@ annotationUI <- function(id) {
     shiny::fluidRow(
       shiny::tabsetPanel(type = "hidden",
                          id = ns("switchBadges"),
-                         shiny::tabPanelBody(ns("showBadges"),
+                         shiny::tabPanelBody(value = "showBadges",
                                              shinyWidgets::checkboxGroupButtons(
                                                inputId = ns("badgeInput"),
                                                label = NULL,
@@ -15,11 +15,11 @@ annotationUI <- function(id) {
                                                individual = FALSE,
                                                choices = c("Unusable", "Needs Attention", "Good Example"),
                                                justified = TRUE)),
-                         shiny::tabPanelBody(ns("hideBadges"), NULL))),
+                         shiny::tabPanelBody(value = "hideBadges", NULL))),
     shiny::fluidRow(
       shiny::tabsetPanel(type = "hidden",
                          id = ns("switchNotepad"),
-                         shiny::tabPanelBody(ns("showNotepad"),
+                         shiny::tabPanelBody(value = "showNotepad",
                                              shiny::textAreaInput(
                                                inputId = ns("notepadInput"),
                                                label = NULL,
@@ -27,11 +27,14 @@ annotationUI <- function(id) {
                                                height = "20px",
                                                resize = "both"
                                              )),
-                         shiny::tabPanelBody(ns("hideNotepad"), NULL)))
+                         shiny::tabPanelBody(value = "hideNotepad", NULL)))
   )
 }
 
-annotationServer <- function(id, loadedFile, fileHandler, updatePlot, input_filename) {
+annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
+                             input_filename,
+                             input_noteToggle,
+                             input_badgeToggle) {
   moduleServer(id, function(input, output, session) {
     badges_to_string <- function(badges){
       paste0(badges, collapse = "+")
@@ -92,6 +95,39 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot, input_file
         current_file <- fileHandler$filenames[fileHandler$isPlotted]
 
         loadedFile$data[loadedFile$data[[input_filename()]] == current_file, notes := input$notepadInput]
+      }
+    })
+
+    shiny::observeEvent(input_noteToggle(), {
+      message("note toggle")
+      if (is.null(loadedFile$data))
+        return(NULL)
+
+      if (input_noteToggle()) {
+        if (!"notes" %in% colnames(loadedFile$data))
+          loadedFile$data[, notes := ""]
+      }
+
+      if (input_noteToggle()){
+        updateTabsetPanel(inputId = "switchNotepad", selected = "showNotepad")
+      } else {
+        updateTabsetPanel(inputId = "switchNotepad", selected = "hideNotepad")
+      }
+    })
+
+    shiny::observeEvent(input_badgeToggle(), {
+      if (is.null(loadedFile$data))
+        return(NULL)
+
+      if (input_badgeToggle()) {
+        if (!"tags" %in% colnames(loadedFile$data))
+          loadedFile$data[, tags := ""]
+      }
+
+      if (input_badgeToggle()){
+        updateTabsetPanel(inputId = "switchBadges", selected = "showBadges")
+      } else {
+        updateTabsetPanel(inputId = "switchBadges", selected = "hideBadges")
       }
     })
 

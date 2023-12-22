@@ -434,7 +434,9 @@ openEditor <- function(...) {
                                     loadedFile,
                                     fileHandler,
                                     updatePlot,
-                                    reactive(input$filenameColumnInput))
+                                    reactive(input$filenameColumnInput),
+                                    reactive(input$useNotesToggle),
+                                    reactive(input$useBadgesToggle))
 
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
@@ -702,37 +704,7 @@ openEditor <- function(...) {
 
 
 
-    shiny::observeEvent(input$useNotesToggle, {
-      if (is.null(loadedFile$data))
-        return(NULL)
 
-      if (input$useNotesToggle) {
-        if (!"notes" %in% colnames(loadedFile$data))
-          loadedFile$data[, notes := ""]
-      }
-
-      if (input$useNotesToggle){
-        updateTabsetPanel(inputId = "switchNotepad", selected = "showNotepad")
-      } else {
-        updateTabsetPanel(inputId = "switchNotepad", selected = "hideNotepad")
-      }
-    })
-
-    shiny::observeEvent(input$useBadgesToggle, {
-      if (is.null(loadedFile$data))
-        return(NULL)
-
-      if (input$useBadgesToggle) {
-        if (!"tags" %in% colnames(loadedFile$data))
-          loadedFile$data[, tags := ""]
-      }
-
-      if (input$useBadgesToggle){
-        updateTabsetPanel(inputId = "switchBadges", selected = "showBadges")
-      } else {
-        updateTabsetPanel(inputId = "switchBadges", selected = "hideBadges")
-      }
-    })
 
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
