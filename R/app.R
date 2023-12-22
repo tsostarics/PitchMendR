@@ -190,21 +190,32 @@ openEditor <- function(...) {
                                       fill = TRUE,
                                       title = "Color Settings",
                                       "Override default color settings below:",
-                                    colorUI("colors"),
-                                    shinyWidgets::materialSwitch(
-                                      inputId = "useFlaggedColumnToggle",
-                                      label="Color points by column:",
-                                      value = TRUE,
-                                      inline = TRUE,
-                                      status = "info"),
-                                    shiny::selectizeInput(
-                                      inputId = "colorCodeColumnInput",
-                                      label = "Column to use for color coding:",
-                                      choices = "flagged_samples",
-                                      selected = "flagged_samples",
-                                      multiple = FALSE,
-                                      width = "100%"
-                                    )),
+                                      colorUI("colors"),
+                                      shinyWidgets::materialSwitch(
+                                        inputId = "useFlaggedColumnToggle",
+                                        label="Color points by column:",
+                                        value = FALSE,
+                                        inline = TRUE,
+                                        status = "info"),
+                                      # Tabset panel to hide/show color code column input
+                                      # based on whether the useFlaggedColumnToggle is
+                                      # set to TRUE. Needs to be done this way instead of
+                                      # using uiOutput, otherwise the plot won't
+                                      # render until the user manually goes to the
+                                      # settings tab so the selectize input
+                                      # initializes
+                                      tabsetPanel(type = "hidden",
+                                                  id = "switchColorCode",
+                                                  tabPanelBody("showColorCodeColumnInput",
+                                                               shiny::selectizeInput(
+                                                                 inputId = "colorCodeColumnInput",
+                                                                 label = NULL,
+                                                                 choices = "flagged_samples",
+                                                                 selected = "flagged_samples",
+                                                                 multiple = FALSE,
+                                                                 width = "100%"
+                                                               )),
+                                                  tabPanelBody("hideColorCodeColumnInput", NULL)))
                       ),
                       shiny::column(width = 6,
                                     bslib::card(
@@ -538,11 +549,15 @@ openEditor <- function(...) {
     })
 
     shiny::observeEvent(input$useFlaggedColumnToggle, {
-      if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput))
-        return(NULL)
+      if (input$useFlaggedColumnToggle){
+        updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
+      } else {
+        updateTabsetPanel(inputId = "switchColorCode", selected = "hideColorCodeColumnInput")
+      }
 
       updatePlot()
     })
+
 
     # Toggle point on click
     shiny::observeEvent(input$plot_click, {
@@ -721,6 +736,7 @@ openEditor <- function(...) {
       if ("flagged_samples" %in% colnames(loadedFile$data)) {
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
         flagSamplesIcon$value <- "check"
+        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
       } else {
         shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
         flagSamplesIcon$value <- "flag"
@@ -1161,9 +1177,10 @@ openEditor <- function(...) {
         loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
         if (!data.table::is.data.table(loadedFile$data))
           loadedFile$data <- data.table(loadedFile$data)
-        # updatePlotSettingsData()
+
         shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
         flagSamplesIcon$value <- "check"
+        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
       }
     })
 
