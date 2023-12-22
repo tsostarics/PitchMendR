@@ -37,7 +37,8 @@ openEditor <- function(...) {
       shiny::actionButton(
         inputId = "loadFileButton",
         label = "Load File",
-        style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
+        class = "btn-primary",
+        # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
         shiny::icon("upload")
       ),
       shiny::actionButton(
@@ -415,8 +416,7 @@ openEditor <- function(...) {
     colorServer("colors",
                 plotSettings,
                 updatePlot,
-                reactive(input$dark_mode),
-                reactive(input$loadFileButton))
+                reactive(input$dark_mode))
 
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
@@ -677,6 +677,10 @@ openEditor <- function(...) {
       loadedFile$data <- NULL # If previous data was loaded, throw it out
       loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
 
+      # Upon successful load of the file, change the color of the load file button
+      # so it doesn't stand out as much anymore
+      shinyjs::removeClass("loadFileButton", "btn-primary")
+
       set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
       set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
       set_selectize_choices(session, "yValColumnInput", loadedFile, input$yValColumnInput)()
@@ -691,8 +695,6 @@ openEditor <- function(...) {
         return(NULL)
       }
 
-      # updateLoadFileColors()
-
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
 
       if (!file.exists(outFile))
@@ -706,8 +708,6 @@ openEditor <- function(...) {
       }
 
       changeTransformedColumn()
-      # transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
-      # loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]  # Use get from data.table package
 
       fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))

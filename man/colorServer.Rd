@@ -4,13 +4,7 @@
 \alias{colorServer}
 \title{Color management module server}
 \usage{
-colorServer(
-  id,
-  plotSettings_ref,
-  updatePlot_reactive,
-  dark_mode_in,
-  loadfile_button_in
-)
+colorServer(id, plotSettings_ref, updatePlot_reactive, dark_mode_in)
 }
 \arguments{
 \item{id}{module id}
@@ -21,9 +15,6 @@ colorServer(
 
 \item{dark_mode_in}{A reactive function that returns the current theme,
 should be a reactive wrapper around the dark mode input}
-
-\item{loadfile_button_in}{A reactive function that returns the current,
-should be a reactive wrapper around the load file button input}
 }
 \value{
 A module server function

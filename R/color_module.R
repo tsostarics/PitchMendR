@@ -51,16 +51,13 @@ colorUI <- function(id) {
 #' @param updatePlot_reactive A reactive function that updates the plot
 #' @param dark_mode_in A reactive function that returns the current theme,
 #' should be a reactive wrapper around the dark mode input
-#' @param loadfile_button_in A reactive function that returns the current,
-#' should be a reactive wrapper around the load file button input
 #'
 #' @return A module server function
 #' @importFrom shiny NS
 colorServer <- function(id,
                         plotSettings_ref,
                         updatePlot_reactive,
-                        dark_mode_in,
-                        loadfile_button_in) {
+                        dark_mode_in) {
   moduleServer(id, function(input, output, session) {
     # Update the color pickers only when the user leaves the input, if we use
     # observeEvent then the plot will re-render when using updateColourInput
@@ -141,34 +138,9 @@ colorServer <- function(id,
       updatePlot_reactive()
     })
 
-    updateLoadFileColors <- function() {
-      if (loadfile_button_in() > 0){
-        if (dark_mode_in() == "dark"){
-          shinyjs::runjs('document.getElementById("loadFileButton").style.backgroundColor = "#2a2c30";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.color = "white";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.borderColor = "black";')
-          # textColor$value <- "white"
-        } else {
-          shinyjs::runjs('document.getElementById("loadFileButton").style.backgroundColor = "#ececec";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.color = "black";')
-          shinyjs::runjs('document.getElementById("loadFileButton").style.borderColor = "black";')
-          # textColor$value <- "black"
-        }
-      }
-    }
-
-    shiny::observeEvent(eventExpr = loadfile_button_in(),
-                        once = TRUE,
-                        handlerExpr = {
-                          message("load")
-                          updateLoadFileColors()
-                          set_theme_colors()
-                        })
-
-
     shiny::observeEvent(dark_mode_in(),ignoreInit = TRUE, {
       message("theme")
-      updateLoadFileColors()
+      # updateLoadFileColors()
       set_theme_colors()
     })
 })}
