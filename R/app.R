@@ -758,12 +758,13 @@ openEditor <- function(...) {
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
         flagSamplesIcon$value <- "check"
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
+        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       } else {
         shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
         flagSamplesIcon$value <- "flag"
+        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
       }
 
-      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
       updatePlot()
 
       # shiny::updateNavbarPage(session, "navbar", "Editor")
@@ -1215,7 +1216,7 @@ openEditor <- function(...) {
         shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
         flagSamplesIcon$value <- "check"
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
+        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       }
     })
 
