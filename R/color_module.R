@@ -79,7 +79,6 @@ colorServer <- function(id,
 
     set_theme_colors <- reactive({
       if (dark_mode_in() == "dark") {
-        message('theme')
         # Since we don't have any observers on the color pickers, this does two
         # things: changes the color picker values to a new color, which does not
         # cause the plot to re-render; then sets all 3 colors at once for the
@@ -138,7 +137,7 @@ colorServer <- function(id,
       updatePlot_reactive()
     })
 
-    shiny::observeEvent(dark_mode_in(),ignoreInit = TRUE, {
+    shiny::observeEvent(dark_mode_in(), {
       message("theme")
       # updateLoadFileColors()
       set_theme_colors()

@@ -19,6 +19,7 @@ openEditor <- function(...) {
     sidebar = bslib::sidebar(
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
+      # use_keyboardcss_link(),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
                                       "r",
@@ -205,9 +206,9 @@ openEditor <- function(...) {
                                       # render until the user manually goes to the
                                       # settings tab so the selectize input
                                       # initializes
-                                      tabsetPanel(type = "hidden",
+                                      shiny::tabsetPanel(type = "hidden",
                                                   id = "switchColorCode",
-                                                  tabPanelBody("showColorCodeColumnInput",
+                                                  shiny::tabPanelBody("showColorCodeColumnInput",
                                                                shiny::selectizeInput(
                                                                  inputId = "colorCodeColumnInput",
                                                                  label = NULL,
@@ -216,7 +217,7 @@ openEditor <- function(...) {
                                                                  multiple = FALSE,
                                                                  width = "100%"
                                                                )),
-                                                  tabPanelBody("hideColorCodeColumnInput", NULL)))
+                                                  shiny::tabPanelBody("hideColorCodeColumnInput", NULL)))
                       ),
                       shiny::column(width = 6,
                                     bslib::card(
@@ -304,11 +305,6 @@ openEditor <- function(...) {
                               label = "Praat Path (relative to app.R directory)",
                               value = "./Praat.exe"
                             ),
-                            # span(
-                            #   `data-toggle` = "tooltip", `data-placement` = "right",
-                            #   title = "A tooltip",
-                            #   icon("info-circle")
-                            # )
                             span(style = "display:inline-block;",
                                  "Glue string to match file names to directory",
                                  id = "glueQuestion",
@@ -357,6 +353,8 @@ openEditor <- function(...) {
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
                               )
                             ),
+                    # kbd_button("a"),
+                    # paste0("Press ", kbd_button("a"), " to flag samples."),
                     shiny::actionButton(
                       inputId = "flagSamplesButton",
                       shiny::uiOutput(outputId = "flagSamplesButtonLabel")
@@ -385,7 +383,6 @@ openEditor <- function(...) {
     loadedFile <- shiny::reactiveValues(data = NULL)
     transformedColumn <- shiny::reactiveValues(name = NULL)
     plotFlag <- shiny::reactiveValues(value = TRUE)
-
 
     # Default keybindings, see https://craig.is/killing/mice for valid keys
     boundKeys <- shiny::reactiveValues(
@@ -440,18 +437,15 @@ openEditor <- function(...) {
              is.null(input$filenameColumnInput),
              is.null(input$selectionColumnInput),
              is.null(input$useFlaggedColumnToggle),
-             is.null(input$colorCodeColumnInput)))
+             is.null(input$colorCodeColumnInput),
+             is.null(plotSubset())))
     })
 
-    output$pulsePlot <- shiny::renderPlot({
-      message('Rerendering')
-      if (no_missing_plot_inputs()) {
-
+    plotSubset <- reactive({
+      if (!is.null(input$filenameColumnInput) && !is.null(input$useFlaggedColumnToggle) && !is.null(input$colorCodeColumnInput)) {
+        message("Filtering")
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
-        # These will update when the user changes the color manually with the
-        # color pickers or if the theme is changed.
-        color_values <- plotSettings$setColors[2:3]
-        lineColor <- plotSettings$setColors[1]
+
 
         # If the user wants to use the flagged column, make sure it exists
         if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
@@ -462,6 +456,29 @@ openEditor <- function(...) {
 
           plot_subset[, (input$colorCodeColumnInput) := fx(get(input$colorCodeColumnInput))]
         }
+        plot_subset
+      }
+    })
+
+    output$pulsePlot <- shiny::renderPlot({
+      message('Rerendering')
+      if (no_missing_plot_inputs()) {
+
+        # plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+        # These will update when the user changes the color manually with the
+        # color pickers or if the theme is changed.
+        color_values <- plotSettings$setColors[2:3]
+        lineColor <- plotSettings$setColors[1]
+
+        # If the user wants to use the flagged column, make sure it exists
+        # if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
+        #   fx <- \(x) x
+        #   if (length(unique(plot_subset[[input$colorCodeColumnInput]])) <= 2) {
+        #     fx <- base::factor
+        #   }
+        #
+        #   plot_subset[, (input$colorCodeColumnInput) := fx(get(input$colorCodeColumnInput))]
+        # }
 
         yval <- transformedColumn$name
         if (!is.null(input$hideToggleInput) && input$hideToggleInput)
@@ -469,7 +486,7 @@ openEditor <- function(...) {
 
         # Set up the main aesthetics for the plot
         p <-
-          ggplot2::ggplot(plot_subset,
+          ggplot2::ggplot(plotSubset(),
                           ggplot2::aes(x = !!rlang::sym(input$xValColumnInput),
                                        y = !!rlang::sym(yval),
                                        group = !!rlang::sym(input$filenameColumnInput)))
@@ -477,12 +494,12 @@ openEditor <- function(...) {
         # Add the line if the user wants it, this should go under the points
         if (plotSettings$showLine) {
           p <- p +
-            ggplot2::geom_line(data =plot_subset[plot_subset[[input$selectionColumnInput]],], color = lineColor)
+            ggplot2::geom_line(data =plotSubset()[plotSubset()[[input$selectionColumnInput]],], color = lineColor)
         }
 
         # Add the points, if the user wants to use the flagged column, use it to color the points
         # otherwise just use the keep_pulse column to redundantly code that information
-        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
+        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset())) {
           p <- p +
             ggplot2::geom_point(ggplot2::aes(color = !!rlang::sym(input$colorCodeColumnInput), shape = !!rlang::sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
@@ -497,7 +514,7 @@ openEditor <- function(...) {
         # If the color column is binary, use the colors specified by the user,
         # otherwise just use the default colors
         if (!input$useFlaggedColumnToggle ||
-            length(unique(plot_subset[[input$colorCodeColumnInput]])) <= 2) {
+            length(unique(plotSubset()[[input$colorCodeColumnInput]])) <= 2) {
           if (input$useFlaggedColumnToggle)
             color_values <- rev(color_values)
 
@@ -544,8 +561,9 @@ openEditor <- function(...) {
       if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput) | is.null(input$useFlaggedColumnToggle))
         return(NULL)
 
-      if (input$useFlaggedColumnToggle)
+      if (input$useFlaggedColumnToggle) {
         updatePlot()
+      }
     })
 
     shiny::observeEvent(input$useFlaggedColumnToggle, {
@@ -554,7 +572,6 @@ openEditor <- function(...) {
       } else {
         updateTabsetPanel(inputId = "switchColorCode", selected = "hideColorCodeColumnInput")
       }
-
       updatePlot()
     })
 
@@ -658,6 +675,10 @@ openEditor <- function(...) {
       changeTransformedColumn()
     })
 
+    clean_file <- function(file_selection) {
+      gsub("[*]$", "", file_selection)
+    }
+
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
 
@@ -666,8 +687,8 @@ openEditor <- function(...) {
         return(NULL)
       }
 
-      file_to_load <- file.path(input$inputDirInput, input$fileSelectBox)
-      outFile <- file.path(input$outputDirInput, input$fileSelectBox)
+      file_to_load <- file.path(input$inputDirInput, clean_file(input$fileSelectBox))
+      outFile <- file.path(input$outputDirInput, clean_file(input$fileSelectBox))
       if (file.exists(outFile)) {
         message("Resuming progress from existing output file")
         file_to_load <- outFile
@@ -727,7 +748,7 @@ openEditor <- function(...) {
       plotSettings$showLine <- FALSE
 
       output$workingFileOutput <- shiny::renderText({
-        paste0("Working File:\n", input$fileSelectBox)
+        paste0("Working File:\n", clean_file(input$fileSelectBox))
       })
 
       # If we've loaded another file in the same session then we need
@@ -770,7 +791,7 @@ openEditor <- function(...) {
         return(NULL)
       }
 
-      saveData(file.path(input$outputDirInput, input$fileSelectBox))
+      saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
     })
 
 
@@ -790,7 +811,7 @@ openEditor <- function(...) {
       fileHandler$isPlotted[current_min - 1] <- TRUE
 
       if (input$saveOptionButton) {
-        saveData(file.path(input$outputDirInput, input$fileSelectBox))
+        saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
       }
     })
 
@@ -811,7 +832,7 @@ openEditor <- function(...) {
 
       # If we have the save-on-next option enabled, save the data
       if (input$saveOptionButton) {
-        saveData(file.path(input$outputDirInput, input$fileSelectBox))
+        saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
       }
     })
 
@@ -1050,26 +1071,39 @@ openEditor <- function(...) {
       colors
     })
 
+    availableFiles <- reactive({
+      if(is.null(input$inputDirInput) | is.null(input$outputDirInput))
+        return(NULL)
+      all_files <- list.files(input$inputDirInput)
+      infiles <- list.files(input$inputDirInput)
+      hasOutput <- infiles %in% list.files(input$outputDirInput)
+
+      paste0(all_files, c("*", "")[hasOutput+1])
+
+    })
+
     # Renders the selectizeInput for all available files.
     output$availableFilesUI <- shiny::renderUI({
-      shiny::selectizeInput("fileSelectBox", "Files Available (red = not processed yet)",
+
+
+      shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
                             multiple = FALSE,
-                            choices = list.files(input$inputDirInput),
-                            options = list(
-                              render =
-                                I(sprintf("{
-        item: function(item, escape) {
-          var colors = %s;
-          var color = colors[item.label];
-          return '<div style=\"color' + color + '\">' + item.label + '</div>';
-        },
-        option: function(item, escape) {
-          var colors = %s;
-          var color = colors[item.label];
-          return '<div style=\"color:' + color + '\">' + item.label + '</div>';
-        }
-      }", available_files(), available_files()))
-                            )
+                            choices = availableFiles(),
+      #                       options = list(
+      #                         render =
+      #                           I(sprintf("{
+      #   item: function(item, escape) {
+      #     var colors = %s;
+      #     var color = colors[item.label];
+      #     return '<div style=\"color' + color + '\">' + item.label + '</div>';
+      #   },
+      #   option: function(item, escape) {
+      #     var colors = %s;
+      #     var color = colors[item.label];
+      #     return '<div style=\"color:' + color + '\">' + item.label + '</div>';
+      #   }
+      # }", available_files(), available_files()))
+      #                       )
       )
     })
 
@@ -1181,6 +1215,7 @@ openEditor <- function(...) {
         shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
         flagSamplesIcon$value <- "check"
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
+        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
       }
     })
 
