@@ -5,13 +5,15 @@
 #' @param id id for namespace
 #'
 #' @return UI elements for color management
+#' @importFrom shiny tagList
 colorUI <- function(id) {
   ns <- NS(id)
-  bslib::card(
-    height = '88vh',
-    fill = TRUE,
-    title = "Color Settings",
-    "Override default color settings below:",
+  # bslib::card(
+  #   height = '88vh',
+  #   fill = TRUE,
+  #   title = "Color Settings",
+  #   "Override default color settings below:",
+  tagList(
     colourpicker::colourInput(
       inputId = ns("lineColor"),
       label = "Line color",

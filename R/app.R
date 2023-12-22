@@ -19,6 +19,7 @@ openEditor <- function(...) {
     sidebar = bslib::sidebar(
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
+      # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
                                       "r",
                                       "e",
@@ -168,22 +169,15 @@ openEditor <- function(...) {
                                                       width = "100%"
                                       ),
                                       shinyWidgets::materialSwitch(
-                                        inputId = "useFlaggedColumnToggle",
-                                        label="Color points by column:",
-                                        value = TRUE,
-                                        inline = TRUE,
-                                        status = "info"),
-                                      shiny::selectizeInput(
-                                        inputId = "colorCodeColumnInput",
-                                        label = "Column to use for color coding:",
-                                        choices = "flagged_samples",
-                                        selected = "flagged_samples",
-                                        multiple = FALSE,
-                                        width = "100%"
-                                      ),
-                                      shinyWidgets::materialSwitch(
                                         inputId = "saveOptionButton",
                                         label = "Save on file navigation:",
+                                        value = TRUE,
+                                        inline = TRUE,
+                                        status = "info"
+                                      ),
+                                      shinyWidgets::materialSwitch(
+                                        inputId = "useKeysToggle",
+                                        label = "Use keyboard shortcuts:",
                                         value = TRUE,
                                         inline = TRUE,
                                         status = "info"
@@ -191,33 +185,26 @@ openEditor <- function(...) {
                                     )
                       ),
                       shiny::column(width = 3,
+                                    bslib::card(
+                                      height = '88vh',
+                                      fill = TRUE,
+                                      title = "Color Settings",
+                                      "Override default color settings below:",
                                     colorUI("colors"),
-                                    # bslib::card(
-                                    #   height = '88vh',fill = TRUE,
-                                    #   title = "Color Settings",
-                                    #   "Override default color settings below:",
-                                    #   colourpicker::colourInput(
-                                    #     inputId = "lineColor",
-                                    #     label = "Line color",
-                                    #     value = "blue",
-                                    #     showColour = "both",
-                                    #     palette = "square"
-                                    #   ),
-                                    #   colourpicker::colourInput(
-                                    #     inputId = "keepTrueColor",
-                                    #     showColour = "both",
-                                    #     palette = "square",
-                                    #     label = "Color for pulses to KEEP",
-                                    #     value = "black"
-                                    #   ),
-                                    #   colourpicker::colourInput(
-                                    #     inputId = "keepFalseColor",
-                                    #     showColour = "both",
-                                    #     palette = "square",
-                                    #     label = "Color for pulses to REMOVE",
-                                    #     value = "grey60"
-                                    #   )
-                                    # )
+                                    shinyWidgets::materialSwitch(
+                                      inputId = "useFlaggedColumnToggle",
+                                      label="Color points by column:",
+                                      value = TRUE,
+                                      inline = TRUE,
+                                      status = "info"),
+                                    shiny::selectizeInput(
+                                      inputId = "colorCodeColumnInput",
+                                      label = "Column to use for color coding:",
+                                      choices = "flagged_samples",
+                                      selected = "flagged_samples",
+                                      multiple = FALSE,
+                                      width = "100%"
+                                    )),
                       ),
                       shiny::column(width = 6,
                                     bslib::card(
@@ -408,7 +395,7 @@ openEditor <- function(...) {
 
     observeEvent(input$keys, {
       # Key bindings only apply on the editor page
-      if (input$navbar != "Editor")
+      if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
         return(NULL)
       boundKeys$keys[[input$keys]]()
     })
@@ -625,7 +612,12 @@ openEditor <- function(...) {
     # different columns and reactive values
     # Install and load the data.table package
 
-    set_selectize_choices <- function(session, inputId, data_ref, input_value, add = FALSE, add_with = TRUE) {
+    set_selectize_choices <- function(session,
+                                      inputId,
+                                      data_ref,
+                                      input_value,
+                                      add = FALSE,
+                                      add_with = TRUE) {
       reactive({
         if (is.null(data_ref$data))
           return(NULL)
@@ -926,7 +918,7 @@ openEditor <- function(...) {
     })
 
     doublePulses <- shiny::reactive({
-      selectedPoints$data <-getBrushedPoints()
+      selectedPoints$data <- getBrushedPoints()
 
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
 
@@ -938,12 +930,14 @@ openEditor <- function(...) {
       lastTransformation$pulse_ids <- vals_to_change
       updatePlot()
     })
+
     halvePulses <- shiny::reactive({
       selectedPoints$data <- getBrushedPoints()
 
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
 
-
+      # as.numeric needed to avoid implicit coercion to integer,
+      # which turns the transformation from 0.5 to 0
       loadedFile$data[, pulse_transform:= as.numeric(pulse_transform)][vals_to_change, pulse_transform := pulse_transform * 0.5]
       loadedFile$data[vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
 
@@ -1203,8 +1197,6 @@ openEditor <- function(...) {
     })
 
   }
-
-
 
   shiny::shinyApp(ui, server)
 }
