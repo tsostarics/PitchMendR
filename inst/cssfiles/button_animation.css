@@ -1,0 +1,48 @@
+/* adapted from  https://codepen.io/ash_s_west/pen/GRZbvym */
+
+.animbutton{
+  position: relative;
+/*  background-color: black;
+  border-radius: 4em;
+  font-size: 16px;
+  color: white;
+  padding: 0.8em 1.8em;
+  cursor:pointer;
+  user-select:none;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer; */
+  transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s; /* Safari */ 
+}
+
+/*
+.animbutton:hover {
+  transition-duration: 0.1s;
+  background-color: #3A3A3A;
+}
+*/
+
+.animbutton:after {
+  content: "";
+  display: block;
+  position: relative;
+  border-radius: 4em;
+  top:-10px;
+  opacity: 0;
+  transition: all 0.5s;
+  box-shadow: 0 0 10px 40px #28a745;
+}
+
+.animbutton:active:after {
+  box-shadow: 0 0 0 0 #28a745;
+  position: relative;
+  border-radius: 4em;
+  top:-10px;
+  opacity: 1;
+  transition: 0s;
+}
+
+.animbutton:active {
+  top: 0px;
+}

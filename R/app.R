@@ -20,6 +20,11 @@ openEditor <- function(...) {
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
       use_keyboardcss(),
+      singleton(
+        htmltools::includeCSS(
+          system.file("cssfiles/button_animation.css", package = "PitchMendR")
+        )
+      ),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
                                       "r",
@@ -54,6 +59,7 @@ openEditor <- function(...) {
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         icon = shiny::icon('check'),
+        class = "animbutton",
         label = "off plotted files"
       ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
@@ -119,7 +125,7 @@ openEditor <- function(...) {
                                                         shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
                                                       shiny::fluidRow(
                                                         shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                        shiny::actionButton(width = "38%", inputId = "saveButton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                        shiny::actionButton(width = "38%", inputId = "saveButton", class="btn-default animbutton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
                                                         shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
                                                       ),
                                                       annotationUI("annotations")
