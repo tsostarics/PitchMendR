@@ -39,11 +39,16 @@ flag_potential_errors(
 Dataframe with potential errors coded in the \code{flagged_samples} column
 }
 \description{
-Flags potential sample-to-sample errors in F0 data. Uses the algorithm
-described in Steffman & Cole (2022) but uses a faster implementation that
-doesn't rely on NAs as much. Note however that while this is faster, it is
-written to be as close to the original implementation as possible, so there
-are some quirks and inefficiencies that remain.
+Flags potential sample-to-sample errors in F0 data. Uses a modified version
+of the algorithm described in Steffman & Cole (2022). The original algorithm
+skips over pairs of samples that are further apart than the sampling rate to
+account for voiceless intervals, but this is a bit too stringent for the
+purposes of this app. The version here is a bit more lenient, only skipping
+pairs that are more than 8 times the sampling rate apart (typically, 80ms).
+The multiplier is a ballpark estimate based on some productions of /s/ in fast
+speech. What this buys us is identifying regions of interest that may
+contain errors. The implementaion here is also much faster than the original
+version and doesn't rely on NAs as much.
 }
 \references{
 \itemize{

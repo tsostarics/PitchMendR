@@ -2,10 +2,9 @@
 #'
 #' Renders the three color pickers on the settings pane
 #'
-#' @param id
+#' @param id id for namespace
 #'
-#' @return
-#' @export
+#' @return UI elements for color management
 colorUI <- function(id) {
   ns <- NS(id)
   bslib::card(
@@ -53,7 +52,8 @@ colorUI <- function(id) {
 #' @param loadfile_button_in A reactive function that returns the current,
 #' should be a reactive wrapper around the load file button input
 #'
-#' @return A module UI function
+#' @return A module server function
+#' @importFrom shiny NS
 colorServer <- function(id,
                         plotSettings_ref,
                         updatePlot_reactive,

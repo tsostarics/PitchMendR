@@ -18,6 +18,7 @@ Imports:
     glue,
     htmltools,
     jsonlite,
+    keys,
     rlang,
     shiny (>= 1.7.4),
     shinyjs
