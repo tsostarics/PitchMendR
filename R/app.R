@@ -59,7 +59,6 @@ openEditor <- function(...) {
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         icon = shiny::icon('check'),
-        class = "animbutton",
         label = "off plotted files"
       ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
@@ -112,36 +111,40 @@ openEditor <- function(...) {
                      shiny::verbatimTextOutput(outputId = "brushedFileNames"),
                      # width = '10vw'
         ),
-        bslib::card(shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot", click = "plot_click", brush = "plot_brush", height = "70%")),
-                    fill = TRUE,
-                    height="88vh",
-                    width = '80vw',
-                    # shiny::fluidRow(#style = "height:20vh;width:90vw",
-                    # Adjust the gap space between the buttons
-                    tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
-                    bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
-                                          bslib::card(fill = TRUE,
-                                                      shiny::fluidRow(
-                                                        shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
-                                                      shiny::fluidRow(
-                                                        shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                        shiny::actionButton(width = "38%", inputId = "saveButton", class="btn-default animbutton", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                        shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
-                                                      ),
-                                                      annotationUI("annotations")
-                                          ),
-                                          bslib::card(fill = TRUE,
-                                                      shiny::fluidRow(
-                                                        shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
-                                                      shiny::fluidRow(
-                                                        shiny::actionButton(width = "48%", inputId = "keepButton", label = "Keep", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                                        shiny::actionButton(width = "48%", inputId = "removeButton", label = "Remove", style = "margin: 1%;margin-top:0%;margin-bottom:0")),
-                                                      shiny::fluidRow(
-                                                        shiny::actionButton(width = "48%", inputId = "halfButton", label = "Halve Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"),
-                                                        shiny::actionButton(width = "48%",inputId = "doubleButton", label = "Double Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"))
-                                          )
-                    )
-                    # )
+        bslib::card(
+          shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot",
+                                                      click = "plot_click",
+                                                      brush = "plot_brush",
+                                                      height = "70%")),
+          fill = TRUE,
+          height="88vh",
+          width = '80vw',
+          # shiny::fluidRow(#style = "height:20vh;width:90vw",
+          # Adjust the gap space between the buttons
+          tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
+          bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
+                                bslib::card(fill = TRUE,
+                                            shiny::fluidRow(
+                                              shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
+                                            shiny::fluidRow(
+                                              shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                              shiny::actionButton(width = "38%", inputId = "saveButton", class="btn-default", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                              shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
+                                            ),
+                                            annotationUI("annotations")
+                                ),
+                                bslib::card(fill = TRUE,
+                                            shiny::fluidRow(
+                                              shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
+                                            shiny::fluidRow(
+                                              shiny::actionButton(width = "48%", inputId = "keepButton", label = "Keep", style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                              shiny::actionButton(width = "48%", inputId = "removeButton", label = "Remove", style = "margin: 1%;margin-top:0%;margin-bottom:0")),
+                                            shiny::fluidRow(
+                                              shiny::actionButton(width = "48%", inputId = "halfButton", label = "Halve Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"),
+                                              shiny::actionButton(width = "48%",inputId = "doubleButton", label = "Double Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"))
+                                )
+          )
+          # )
         )
       )
     )
@@ -267,9 +270,10 @@ openEditor <- function(...) {
         This is accomplished via a `--new-open` system call.
         This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
                                         )
-                                      )
-                                    )
-                      )
+                                      ),
+        )
+                      ),
+
       )),
     bslib::nav_panel(
       title = "Progress",
@@ -735,6 +739,10 @@ openEditor <- function(...) {
       # so it doesn't stand out as much anymore
       shinyjs::removeClass("loadFileButton", "btn-primary")
 
+      # Add animations to some of the important buttons
+      shinyjs::addClass("saveButton", class = "animbutton")
+      shinyjs::addClass("checkVisibileFilesButton", class = "animbutton")
+
       set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
       set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
       set_selectize_choices(session, "yValColumnInput", loadedFile, input$yValColumnInput)()
@@ -820,6 +828,8 @@ openEditor <- function(...) {
 
 
     toggleShowLine <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       plotSettings$showLine <- !plotSettings$showLine
     })
 
@@ -831,6 +841,9 @@ openEditor <- function(...) {
     # When the user clicks the save button, save the data to the output directory
     shiny::observeEvent(input$saveButton, {
       message("Save Pressed")
+      if (is.null(loadedFile$data))
+        return(NULL)
+
       if (sum(fileHandler$isPlotted) == 1) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
         annotations$saveNotes()
@@ -848,6 +861,8 @@ openEditor <- function(...) {
 
 
     goToPreviousFile <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       # Get the minimum index of the files that are currently plotted,
       # if we're already at the first file, wrap around to the last file
       current_min <- min(which(fileHandler$isPlotted))
@@ -872,6 +887,8 @@ openEditor <- function(...) {
     })
 
     goToNextFile <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       # Get the maximum index of the files that are currently plotted,
       # if we're already at the last file, wrap around to the first file
       current_max <- max(which(fileHandler$isPlotted))
@@ -956,7 +973,16 @@ openEditor <- function(...) {
       loadedFile$data[, file_checked := fileHandler$fileChecked[.SD[[input$filenameColumnInput]]]]
       if (!file.exists(path) || file.access(path, mode = 2) == 0) {
         saveIcon$value <- "spinner"
-        data.table::fwrite(x = loadedFile$data, file = path)
+        write_status <- tryCatch(data.table::fwrite(x = loadedFile$data, file = path),
+                                     error = \(e) {
+                                       e
+                                     })
+
+        if (!is.null(write_status)) {
+          message(write_status$message)
+          saveIcon$value <- "triangle-exclamation"
+          return(NULL)
+        }
         message(paste0("Wrote data to ", path))
         saveIcon$value <- "floppy-disk"
       }
@@ -1027,6 +1053,8 @@ openEditor <- function(...) {
     })
 
     doublePulses <- shiny::reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       selectedPoints$data <- getBrushedPoints()
 
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
@@ -1041,6 +1069,8 @@ openEditor <- function(...) {
     })
 
     halvePulses <- shiny::reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       selectedPoints$data <- getBrushedPoints()
 
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
@@ -1253,28 +1283,28 @@ openEditor <- function(...) {
           tags$div(style = css(`text-align` = "left",
                                `max-height` = "400px",
                                `overflow-y` = "scroll"),
-                        shiny::markdown(
-                          mds = c(
-                            "If keyboard shortcuts are turned on, you can use the following on the Editor page:",
-                            inline_kbd_button('f', " - {KEY}: Toggle pulses"),
-                            inline_kbd_button('r', " - {KEY}: Remove pulses"),
-                            inline_kbd_button('e', " - {KEY}: Keep pulses"),
-                            inline_kbd_button('s', " - {KEY}: Show/Hide Line"),
-                            inline_kbd_button('q', " - {KEY}: Go to Previous File"),
-                            inline_kbd_button('w', " - {KEY}: Go to Next File"),
-                            inline_kbd_button('b', " - {KEY}: Plot brushed files"),
-                            inline_kbd_button('d', " - {KEY}: Double selected pulses"),
-                            inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
-                            inline_kbd_button(c("ctrl", "z"), " - {KEY[1]}+{KEY[2]}: Undo last transform"),
-                            inline_kbd_button('space', " - {KEY}: Plot files matching regex")
-                          )),
+                   shiny::markdown(
+                     mds = c(
+                       "If keyboard shortcuts are turned on, you can use the following on the Editor page:",
+                       inline_kbd_button('f', " - {KEY}: Toggle pulses"),
+                       inline_kbd_button('r', " - {KEY}: Remove pulses"),
+                       inline_kbd_button('e', " - {KEY}: Keep pulses"),
+                       inline_kbd_button('s', " - {KEY}: Show/Hide Line"),
+                       inline_kbd_button('q', " - {KEY}: Go to Previous File"),
+                       inline_kbd_button('w', " - {KEY}: Go to Next File"),
+                       inline_kbd_button('b', " - {KEY}: Plot brushed files"),
+                       inline_kbd_button('d', " - {KEY}: Double selected pulses"),
+                       inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
+                       inline_kbd_button(c("ctrl", "z"), " - {KEY[1]}+{KEY[2]}: Undo last transform"),
+                       inline_kbd_button('space', " - {KEY}: Plot files matching regex")
+                     )),
                    tags$p(style = css(`font-size` = ".85em",
                                       `margin-bottom` = "none"),
                           icon("heart"), "made with ",
                           tags$a(href = "https://shhdharmen.github.io/keyboard-css/", "keyboard-css"),
                           " and ",
                           tags$a(href = "https://github.com/r4fun/keys", "{keys}"))),
-          ))
+        ))
 
     })
 
@@ -1307,6 +1337,7 @@ openEditor <- function(...) {
     shiny::observeEvent(input$flagSamplesButton, {
       message("Flag Samples Pressed")
       if (!is.null(loadedFile$data)) {
+
         flagSamplesIcon$value <- "hourglass"
         loadedFile$data <-
           flag_potential_errors(loadedFile$data,
@@ -1329,6 +1360,8 @@ openEditor <- function(...) {
     # in the editor will be sent to Praat
     shiny::observeEvent(input$sendToPraatButton, {
       message("Send to Praat Pressed")
+      if (is.null(loadedFile$data))
+        return(NULL)
       if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
 
         # Use the columns of the loaded data and the provided glue string to

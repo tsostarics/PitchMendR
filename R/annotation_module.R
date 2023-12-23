@@ -9,7 +9,7 @@ annotationUI <- function(id) {
                                              shinyWidgets::checkboxGroupButtons(
                                                inputId = ns("badgeInput"),
                                                label = NULL,
-                                               # disabled = TRUE,
+                                               disabled = TRUE,
                                                size = "sm",
                                                status = "default ", # Trailing space prevents btn-default from being changed to btn-primary
                                                individual = FALSE,
@@ -100,8 +100,10 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
 
     shiny::observeEvent(input_noteToggle(), {
       message("note toggle")
-      if (is.null(loadedFile$data))
+      if (is.null(loadedFile$data)) {
+        shinyjs::disable("notepadInput")
         return(NULL)
+      }
 
       if (input_noteToggle()) {
         if (!"notes" %in% colnames(loadedFile$data))
