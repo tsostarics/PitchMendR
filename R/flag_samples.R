@@ -40,19 +40,23 @@ flag_potential_errors <- function(data,
                                   fall_threshold = 1.7142857143) {
 
   datalist <- .convert_time_to_ms(data, .time, .samplerate)
+  trans_time_column <- paste0(.time, "___trans")
 
-  datalist[['df']] |>
+  data[[trans_time_column]] <- datalist[['time']]
+
+  data |>
     annotate_errors(.unique_file = .unique_file,
                     .hz = .hz,
-                    .time = .time,
+                    .time = trans_time_column,
                     .samplerate = datalist[['samplerate']],
                     .add_semitones = .add_semitones,
                     .speaker = .speaker) |>
     code_carryover_effects(.unique_file = .unique_file,
                            .hz = .hz,
-                           .time = .time,
+                           .time = trans_time_column,
                            rise_threshold = rise_threshold,
                            fall_threshold = fall_threshold) |>
+    dplyr::select(-dplyr::all_of(trans_time_column)) |>
     dplyr::ungroup()
 }
 
@@ -71,7 +75,7 @@ flag_potential_errors <- function(data,
 #' so for a 10ms sampling rate with times in ms, this should be 10; if it's
 #' recorded in seconds, this should be 0.01
 #'
-#' @return A list containing the data with the converted time and the sampling
+#' @return A list containing the transformed time and the sampling
 #' rate in milliseconds
 .convert_time_to_ms <- function(data, .time, .samplerate) {
   # If the sampling rate is not specified, we need to try and calculate
@@ -79,19 +83,20 @@ flag_potential_errors <- function(data,
   if (is.na(.samplerate))
     .samplerate <- round(median(diff(data[[.time]])), 4)
 
+  transformed_time <- data[[.time]]
 
   # If the differences are less than 1 then the time is probably recorded
   # in seconds, so we need to convert to milliseconds
   if (.samplerate < 1) {
     example_value <- data[[.time]][1]
-    data[[.time]] <- data[[.time]] * 1000
+    transformed_time <- transformed_time * 1000
     .samplerate <-  .samplerate * 1000
     message("Converting `", .time,  "` to milliseconds",
             " (", example_value, "s->", example_value*1000, "ms)")
   }
 
 
-  list('df' = data,
+  list('time' = transformed_time,
        'samplerate' = .samplerate)
 }
 

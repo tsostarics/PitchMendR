@@ -55,3 +55,8 @@ hz_to_semitones <- function(hz_vals,
                hz_to_semitones(x[i], x[i - 1],.quiet = TRUE)
              }, 1.0))
 }
+
+
+add_semitones <- function(f, semitones) {
+  vapply(f, \(fv) fv * 2^(semitones/12), 1.0)
+}

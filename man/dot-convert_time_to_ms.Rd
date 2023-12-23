@@ -16,7 +16,7 @@ so for a 10ms sampling rate with times in ms, this should be 10; if it's
 recorded in seconds, this should be 0.01}
 }
 \value{
-A list containing the data with the converted time and the sampling
+A list containing the transformed time and the sampling
 rate in milliseconds
 }
 \description{

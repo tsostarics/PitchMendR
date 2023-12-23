@@ -5,6 +5,7 @@
 #' You must place either this or `use_keyboardcss` somewhere in your UI.
 #'
 #' @return A singleton tagList for the UI
+#' @importFrom shiny singleton HTML
 use_keyboardcss_link <- function() {
   shiny::singleton(tagList(
     tags$head(

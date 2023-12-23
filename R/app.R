@@ -26,41 +26,41 @@ openEditor <- function(...) {
         )
       ),
       windowResizeUI("windowListener"),
-    # The keys here should match the default keybindings set up in the server
-    keys::keysInput("keys",keys = c("f",
-                                    "r",
-                                    "e",
-                                    "s",
-                                    "q",
-                                    "w",
-                                    "b",
-                                    "d",
-                                    "a",
-                                    "ctrl+z",
-                                    "command+z",
-                                    "space")
-    ),
-    title = "Tools",
-    shiny::actionButton(
-      inputId = "loadFileButton",
-      label = "Load File",
-      class = "btn-primary",
-      # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
-      shiny::icon("upload")
-    ),
-    praatUI_button("praatIO"),
-    shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
-    shiny::actionButton(
-      inputId = "undoTransformButton",
-      label = "Undo Transform"
-    ),
-    shiny::actionButton(
-      inputId = "checkVisibleFilesButton",
-      icon = shiny::icon('check'),
-      label = "off plotted files"
-    ),
-    shiny::uiOutput(outputId = "uneditedFileSelectUI"),
-    shiny::uiOutput(outputId = "editedFileSelectUI")
+      # The keys here should match the default keybindings set up in the server
+      keys::keysInput("keys",keys = c("f",
+                                      "r",
+                                      "e",
+                                      "s",
+                                      "q",
+                                      "w",
+                                      "b",
+                                      "d",
+                                      "a",
+                                      "ctrl+z",
+                                      "command+z",
+                                      "space")
+      ),
+      title = "Tools",
+      shiny::actionButton(
+        inputId = "loadFileButton",
+        label = "Load File",
+        class = "btn-primary",
+        # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
+        shiny::icon("upload")
+      ),
+      praatUI_button("praatIO"),
+      shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
+      shiny::actionButton(
+        inputId = "undoTransformButton",
+        label = "Undo Transform"
+      ),
+      shiny::actionButton(
+        inputId = "checkVisibleFilesButton",
+        icon = shiny::icon('check'),
+        label = "off plotted files"
+      ),
+      shiny::uiOutput(outputId = "uneditedFileSelectUI"),
+      shiny::uiOutput(outputId = "editedFileSelectUI")
     ),
     bslib::nav_item(
       bslib::input_dark_mode(id = "dark_mode", mode = "dark")
@@ -90,6 +90,7 @@ openEditor <- function(...) {
         bslib::card( height = "88vh",
                      title = "Plot Settings",
                      shiny::textOutput(outputId = "workingFileOutput"),
+                     shiny::uiOutput(outputId = "pitchRangeUI"),
                      shiny::uiOutput(outputId = "sizeSliderUI"),
                      shiny::uiOutput(outputId = "alphaSliderUI"),
                      shiny::textInput(
@@ -180,36 +181,36 @@ openEditor <- function(...) {
                                                       width = "100%"
                                       ),
                                       shiny::markdown(mds = "## UI Options"),
-                                      shinyWidgets::materialSwitch(
+                                      shinyWidgets::awesomeCheckbox(
                                         inputId = "saveOptionButton",
-                                        label = "Save on file navigation:",
+                                        label = "Save on file navigation",
                                         value = TRUE,
-                                        inline = TRUE,
                                         status = "info"
                                       ),
-                                      shinyWidgets::materialSwitch(
+                                      shinyWidgets::awesomeCheckbox(
                                         inputId = "useBadgesToggle",
-                                        label = "Add tag buttons:",
+                                        label = "Use tag buttons",
                                         value = TRUE,
-                                        inline = TRUE,
                                         status = "info"
                                       ),
-                                      shinyWidgets::materialSwitch(
+                                      shinyWidgets::awesomeCheckbox(
                                         inputId = "useNotesToggle",
-                                        label = "Add notepad for annotation:",
+                                        label = "Use notepad for annotation",
                                         value = TRUE,
-                                        inline = TRUE,
                                         status = "info"
                                       ),span(style = "display:inline-block;",
-                                             id = "keysQuestion",
-                                             span(style = "cursor:pointer;", shiny::icon("circle-question")),
-                                             shinyWidgets::materialSwitch(
+                                             HTML(shinyWidgets::awesomeCheckbox(
                                                inputId = "useKeysToggle",
                                                label = "Use keyboard shortcuts:",
                                                value = TRUE,
-                                               inline = TRUE,
                                                status = "info"
-                                             )),
+                                             ) |> gsub("</label>",
+                                                       paste0("</label>\n",
+                                                              span(id = "keysQuestion",
+                                                                   style = "cursor:pointer;",
+                                                                   shiny::icon("circle-question"))),
+                                                       x=_))
+                                      ),
                                     )
                       ),
                       shiny::column(width = 3,
@@ -438,6 +439,7 @@ openEditor <- function(...) {
     # The plot render will take on these as dependencies, too
     no_missing_plot_inputs <- reactive({
       !any(c(is.null(plotFlag$value),
+             is.null(plotSubsetFlag$value),
              is.null(loadedFile$data),
              is.null(input$alphaSlider),
              is.null(input$sizeSlider),
@@ -451,8 +453,10 @@ openEditor <- function(...) {
     })
 
     plotSubset <- reactive({
-      if (!is.null(input$filenameColumnInput) && !is.null(input$useFlaggedColumnToggle) && !is.null(input$colorCodeColumnInput)) {
+      req(plotSubsetFlag)
+      if (!is.null(plotSubsetFlag$value) && !is.null(input$filenameColumnInput) && !is.null(input$useFlaggedColumnToggle) && !is.null(input$colorCodeColumnInput)) {
         message("Filtering")
+        last_transform <- lastTransformation
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
 
 
@@ -469,6 +473,7 @@ openEditor <- function(...) {
       }
     })
 
+
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
       if (no_missing_plot_inputs()) {
@@ -482,6 +487,8 @@ openEditor <- function(...) {
         yval <- transformedColumn$name
         if (!is.null(input$hideToggleInput) && input$hideToggleInput)
           yval <- input$yValColumnInput
+
+        # plot_data <- plotSubset()
 
         # Set up the main aesthetics for the plot
         p <-
@@ -602,6 +609,7 @@ openEditor <- function(...) {
         loadedFile$data[vals_to_change, (input$selectionColumnInput) := TRUE]
         # updatePlotSettingsData()
         selectedPoints$data <- NULL
+        updatePlotSubset()
         updatePlot()
 
       }})
@@ -616,6 +624,7 @@ openEditor <- function(...) {
         # updatePlotSettingsData()
 
         selectedPoints$data <- NULL
+        updatePlotSubset()
         updatePlot()
 
       }
@@ -1015,9 +1024,15 @@ openEditor <- function(...) {
 
     })
 
+    plotSubsetFlag <- shiny::reactiveValues(value = FALSE)
+
     updatePlot <- shiny::reactive({
       observe("keepFalseColor")
       plotFlag$value <- !plotFlag$value
+    })
+
+    updatePlotSubset <- shiny::reactive({
+      plotSubsetFlag$value <- !plotSubsetFlag$value
     })
 
     doublePulses <- shiny::reactive({
@@ -1033,6 +1048,7 @@ openEditor <- function(...) {
 
       selectedPoints$data <- NULL
       lastTransformation$pulse_ids <- vals_to_change
+      updatePlotSubset()
       updatePlot()
     })
 
@@ -1051,8 +1067,10 @@ openEditor <- function(...) {
 
       selectedPoints$data <- NULL
       lastTransformation$pulse_ids <- vals_to_change
+      updatePlotSubset()
       updatePlot()
     })
+
 
     # Multiply selected points by 2 (fixes halving errors)
     shiny::observeEvent(input$doubleButton, {
@@ -1077,7 +1095,7 @@ openEditor <- function(...) {
     # Multiply selected points by 0.5 (fixes doubling errors)
     shiny::observeEvent(input$halfButton, {
       message("Halve Pressed")
-
+      halveP
     })
 
     undoTransformation <- reactive({
@@ -1087,6 +1105,7 @@ openEditor <- function(...) {
 
         lastTransformation$pulse_ids <- NULL
         selectedPoints$data <- NULL
+        updatePlotSubset()
         updatePlot()
       }
     })
@@ -1178,6 +1197,26 @@ openEditor <- function(...) {
       #   return(NULL)
       shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
                          step = round(1/length(fileHandler$filenames),3),ticks = FALSE)
+    })
+
+    output$pitchRangeUI <- shiny::renderUI({
+      pitch_range <- c(100,500)
+      one_st_step <- round(add_semitones(pitch_range[1], 1) - pitch_range[1], 0)
+
+      if (!is.null(loadedFile$data)){
+        pitch_range <- range(loadedFile$data[[transformedColumn$name]][loadedFile$data[[transformedColumn$name]]>2])
+        one_st_step <- round(add_semitones(pitch_range[1], 1) - pitch_range[1], 0)
+        pitch_range <- round(c(add_semitones(pitch_range[1], -1),
+                               add_semitones(pitch_range[2], 1)), 0)
+      }
+
+      shinyWidgets::numericRangeInput("pitchRangeInput",
+                                      "Pitch Range",
+                                      value = pitch_range,
+                                      min = 0,
+                                      max = 700,
+                                      step = one_st_step,
+                                      width = "100%")
     })
 
     # The unedited and edited selectInput boxes' default behavior will change
