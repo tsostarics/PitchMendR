@@ -100,14 +100,14 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
 
     shiny::observeEvent(input_noteToggle(), {
       message("note toggle")
-      if (is.null(loadedFile$data)) {
-        shinyjs::disable("notepadInput")
-        return(NULL)
-      }
 
-      if (input_noteToggle()) {
-        if (!"notes" %in% colnames(loadedFile$data))
-          loadedFile$data[, notes := ""]
+      if (!is.null(loadedFile$data)) {
+        if (input_noteToggle()) {
+          if (!"notes" %in% colnames(loadedFile$data))
+            loadedFile$data[, notes := ""]
+        }
+      } else {
+        shinyjs::disable("notepadInput")
       }
 
       if (input_noteToggle()){
@@ -115,15 +115,16 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       } else {
         updateTabsetPanel(inputId = "switchNotepad", selected = "hideNotepad")
       }
+
     })
 
     shiny::observeEvent(input_badgeToggle(), {
-      if (is.null(loadedFile$data))
-        return(NULL)
 
-      if (input_badgeToggle()) {
-        if (!"tags" %in% colnames(loadedFile$data))
-          loadedFile$data[, tags := ""]
+      if (!is.null(loadedFile$data)) {
+        if (input_badgeToggle()) {
+          if (!"tags" %in% colnames(loadedFile$data))
+            loadedFile$data[, tags := ""]
+        }
       }
 
       if (input_badgeToggle()){
