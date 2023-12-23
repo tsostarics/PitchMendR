@@ -25,44 +25,45 @@ openEditor <- function(...) {
           system.file("cssfiles/button_animation.css", package = "PitchMendR")
         )
       ),
-      # The keys here should match the default keybindings set up in the server
-      keys::keysInput("keys",keys = c("f",
-                                      "r",
-                                      "e",
-                                      "s",
-                                      "q",
-                                      "w",
-                                      "b",
-                                      "d",
-                                      "a",
-                                      "ctrl+z",
-                                      "command+z",
-                                      "space")
-      ),
-      title = "Tools",
-      shiny::actionButton(
-        inputId = "loadFileButton",
-        label = "Load File",
-        class = "btn-primary",
-        # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
-        shiny::icon("upload")
-      ),
-      shiny::actionButton(
-        inputId = "sendToPraatButton",
-        label = "Open Files in Praat",
-      ),
-      shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
-      shiny::actionButton(
-        inputId = "undoTransformButton",
-        label = "Undo Transform"
-      ),
-      shiny::actionButton(
-        inputId = "checkVisibleFilesButton",
-        icon = shiny::icon('check'),
-        label = "off plotted files"
-      ),
-      shiny::uiOutput(outputId = "uneditedFileSelectUI"),
-      shiny::uiOutput(outputId = "editedFileSelectUI")
+      windowResizeUI("windowListener"),
+    # The keys here should match the default keybindings set up in the server
+    keys::keysInput("keys",keys = c("f",
+                                    "r",
+                                    "e",
+                                    "s",
+                                    "q",
+                                    "w",
+                                    "b",
+                                    "d",
+                                    "a",
+                                    "ctrl+z",
+                                    "command+z",
+                                    "space")
+    ),
+    title = "Tools",
+    shiny::actionButton(
+      inputId = "loadFileButton",
+      label = "Load File",
+      class = "btn-primary",
+      # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
+      shiny::icon("upload")
+    ),
+    shiny::actionButton(
+      inputId = "sendToPraatButton",
+      label = "Open Files in Praat",
+    ),
+    shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
+    shiny::actionButton(
+      inputId = "undoTransformButton",
+      label = "Undo Transform"
+    ),
+    shiny::actionButton(
+      inputId = "checkVisibleFilesButton",
+      icon = shiny::icon('check'),
+      label = "off plotted files"
+    ),
+    shiny::uiOutput(outputId = "uneditedFileSelectUI"),
+    shiny::uiOutput(outputId = "editedFileSelectUI")
     ),
     bslib::nav_item(
       bslib::input_dark_mode(id = "dark_mode", mode = "dark")
@@ -115,7 +116,9 @@ openEditor <- function(...) {
           shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot",
                                                       click = "plot_click",
                                                       brush = "plot_brush",
-                                                      height = "70%")),
+                                                      height = "70%"),
+                                    options = list(containment = "parent",
+                                                   save = TRUE)),
           fill = TRUE,
           height="88vh",
           width = '80vw',
@@ -271,7 +274,7 @@ openEditor <- function(...) {
         This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
                                         )
                                       ),
-        )
+                                    )
                       ),
 
       )),
@@ -974,9 +977,9 @@ openEditor <- function(...) {
       if (!file.exists(path) || file.access(path, mode = 2) == 0) {
         saveIcon$value <- "spinner"
         write_status <- tryCatch(data.table::fwrite(x = loadedFile$data, file = path),
-                                     error = \(e) {
-                                       e
-                                     })
+                                 error = \(e) {
+                                   e
+                                 })
 
         if (!is.null(write_status)) {
           message(write_status$message)
@@ -1263,7 +1266,8 @@ openEditor <- function(...) {
         title = "Glue strings",
         type = 'info',
         html = TRUE,
-        text = tags$div(class = "manual-code",style = css(`text-align` = "left"),
+        text = tags$div(class = "manual-code",
+                        style = css(`text-align` = "left"),
                         shiny::markdown(
                           mds = c(
                             "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
@@ -1385,6 +1389,11 @@ openEditor <- function(...) {
         base::system(systemcall, wait = FALSE)
       }
     })
+
+    # Note: the input is created from within the window resizer module via
+    #       javascript, so it's actually visible from this scope and needs
+    #       to be passed into the module server function like so
+    windowResizeServer('windowListener', reactive(input$windowChange))
 
 
     output$cwd <- shiny::renderText({
