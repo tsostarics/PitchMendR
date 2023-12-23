@@ -1011,6 +1011,8 @@ openEditor <- function(...) {
 
     # Refresh the diagnostics pane when the user clicks the refresh button
     shiny::observeEvent(input$refreshProgressButton,{
+      if (is.null(loadedFile$data))
+        return(NULL)
       filtered_data <- loadedFile$data[get(input$yValColumnInput) > 2]
 
       output$percentRemovedText <- shiny::renderText({
@@ -1133,6 +1135,8 @@ openEditor <- function(...) {
     # that the user has not edited. Must be done after the user has refreshed
     # the diagnostics pane
     shiny::observeEvent(input$plotUneditedFilesButton, {
+      if(is.null(loadedFile$data))
+        return(NULL)
       if (!is.null(uneditedFiles$filenames)) {
         fileHandler$isPlotted <- grepl(paste0("(", uneditedFiles$filenames, ")", collapse = "|"),fileHandler$filenames)
       }
