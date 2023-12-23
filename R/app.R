@@ -330,6 +330,7 @@ openEditor <- function(...) {
                               value = "."
                             ),
                             shiny::uiOutput(outputId = "availableFilesUI"),
+                            "The following are only used when opening files in Praat.",
                             shiny::textInput(
                               inputId = "pathToPraat",
                               label = "Praat Path (relative to app.R directory)",
@@ -344,7 +345,6 @@ openEditor <- function(...) {
                               label = NULL,
                               value = "{Speaker}_{Filename}.wav"
                             ),
-                            "The following are only used when opening files in Praat.",
                             shiny::textInput(
                               inputId = "audioDirInput",
                               label  = "Audio Directory",
