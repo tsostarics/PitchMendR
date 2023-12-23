@@ -1263,7 +1263,7 @@ openEditor <- function(...) {
         title = "Glue strings",
         type = 'info',
         html = TRUE,
-        text = tags$div(class = "manual-code",
+        text = tags$div(class = "manual-code",style = css(`text-align` = "left"),
                         shiny::markdown(
                           mds = c(
                             "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
@@ -1272,7 +1272,7 @@ openEditor <- function(...) {
                             "",
                             "Let's say your speaker IDs and file names are in columns named
           `Speaker` and `Filename` respectively, with example values `spkr01` and `11_rise.wav`.
-          The string `audio/Speaker_{Speaker}_{Filename}` will then be evaluated as
+          The string `audio/Speaker_{Speaker}_{Filename}` will then become
           `audio/Speaker_spkr01_11_rise.wav`"
                           ))))
 
