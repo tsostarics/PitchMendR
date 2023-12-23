@@ -48,10 +48,11 @@ openEditor <- function(...) {
       # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
       shiny::icon("upload")
     ),
-    shiny::actionButton(
-      inputId = "sendToPraatButton",
-      label = "Open Files in Praat",
-    ),
+    praatUI_button("praatIO"),
+    # shiny::actionButton(
+    #   inputId = "sendToPraatButton",
+    #   label = "Open Files in Praat",
+    # ),
     shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
     shiny::actionButton(
       inputId = "undoTransformButton",
@@ -330,31 +331,32 @@ openEditor <- function(...) {
                               value = "."
                             ),
                             shiny::uiOutput(outputId = "availableFilesUI"),
-                            "The following are only used when opening files in Praat.",
-                            shiny::textInput(
-                              inputId = "pathToPraat",
-                              label = "Praat Path (relative to app.R directory)",
-                              value = "./Praat.exe"
-                            ),
-                            span(style = "display:inline-block;",
-                                 "Glue string to match file names to directory",
-                                 id = "glueQuestion",
-                                 span(style = "cursor:pointer;", shiny::icon("circle-question"))),
-                            shiny::textInput(
-                              inputId = "fileNameGlue",
-                              label = NULL,
-                              value = "{Speaker}_{Filename}.wav"
-                            ),
-                            shiny::textInput(
-                              inputId = "audioDirInput",
-                              label  = "Audio Directory",
-                              value = "./audio"
-                            ),
-                            shiny::textInput(
-                              inputId = "textgridDirInput",
-                              label = "TextGrid Directory",
-                              value = "./audio"
-                            )
+                            praatUI_input("praatIO")
+                            # "The following are only used when opening files in Praat.",
+                            # shiny::textInput(
+                            #   inputId = "pathToPraat",
+                            #   label = "Praat Path (relative to app.R directory)",
+                            #   value = "./Praat.exe"
+                            # ),
+                            # span(style = "display:inline-block;",
+                            #      "Glue string to match file names to directory",
+                            #      id = "glueQuestion",
+                            #      span(style = "cursor:pointer;", shiny::icon("circle-question"))),
+                            # shiny::textInput(
+                            #   inputId = "fileNameGlue",
+                            #   label = NULL,
+                            #   value = "{Speaker}_{Filename}.wav"
+                            # ),
+                            # shiny::textInput(
+                            #   inputId = "audioDirInput",
+                            #   label  = "Audio Directory",
+                            #   value = "./audio"
+                            # ),
+                            # shiny::textInput(
+                            #   inputId = "textgridDirInput",
+                            #   label = "TextGrid Directory",
+                            #   value = "./audio"
+                            # )
                           )
             ),
             shiny::column(width = 6,
@@ -1261,26 +1263,26 @@ openEditor <- function(...) {
                        }
                      })
 
-    shinyjs::onclick(id = "glueQuestion", {
-      shinyWidgets::show_alert(
-        title = "Glue strings",
-        type = 'info',
-        html = TRUE,
-        text = tags$div(class = "manual-code",
-                        style = css(`text-align` = "left"),
-                        shiny::markdown(
-                          mds = c(
-                            "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
-                            "Expressions in {curly braces} will be evaluated and the result will be inserted into the string.",
-                            "Here, you can only work with the column names in your data.",
-                            "",
-                            "Let's say your speaker IDs and file names are in columns named
-          `Speaker` and `Filename` respectively, with example values `spkr01` and `11_rise.wav`.
-          The string `audio/Speaker_{Speaker}_{Filename}` will then become
-          `audio/Speaker_spkr01_11_rise.wav`"
-                          ))))
-
-    })
+    # shinyjs::onclick(id = "glueQuestion", {
+    #   shinyWidgets::show_alert(
+    #     title = "Glue strings",
+    #     type = 'info',
+    #     html = TRUE,
+    #     text = tags$div(class = "manual-code",
+    #                     style = css(`text-align` = "left"),
+    #                     shiny::markdown(
+    #                       mds = c(
+    #                         "The [glue](https://glue.tidyverse.org/) package provides a convenient way to interpolate strings, similar to Python's f-strings.",
+    #                         "Expressions in {curly braces} will be evaluated and the result will be inserted into the string.",
+    #                         "Here, you can only work with the column names in your data.",
+    #                         "",
+    #                         "Let's say your speaker IDs and file names are in columns named
+    #       `Speaker` and `Filename` respectively, with example values `spkr01` and `11_rise.wav`.
+    #       The string `audio/Speaker_{Speaker}_{Filename}` will then become
+    #       `audio/Speaker_spkr01_11_rise.wav`"
+    #                       ))))
+    #
+    # })
 
     shinyjs::onclick(id = "keysQuestion", {
       shinyWidgets::show_alert(
@@ -1364,31 +1366,36 @@ openEditor <- function(...) {
       }
     })
 
-    # When the user clicks the Send to Praat button, all files currently displayed
-    # in the editor will be sent to Praat
-    shiny::observeEvent(input$sendToPraatButton, {
-      message("Send to Praat Pressed")
-      if (is.null(loadedFile$data))
-        return(NULL)
-      if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
+    praatServer("praatIO",
+                loadedFile,
+                fileHandler,
+                reactive(input$filenameColumnInput))
 
-        # Use the columns of the loaded data and the provided glue string to
-        # send the files currently displayed in the editor to Praat
-        files_to_open <- glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                              input$fileNameGlue)
-        files_to_open <- file.path(input$audioDirInput, unique(files_to_open))
-
-        if (!is.null(input$textgridDirInput))
-          files_to_open <- c(files_to_open, gsub(".wav$", ".TextGrid", files_to_open))
-
-        systemcall <- paste(input$pathToPraat,
-                            "--new-open",
-                            paste0(files_to_open[file.exists(files_to_open)], collapse = " "),
-                            sep = " ")
-        message(systemcall)
-        base::system(systemcall, wait = FALSE)
-      }
-    })
+    # # When the user clicks the Send to Praat button, all files currently displayed
+    # # in the editor will be sent to Praat
+    # shiny::observeEvent(input$sendToPraatButton, {
+    #   message("Send to Praat Pressed")
+    #   if (is.null(loadedFile$data))
+    #     return(NULL)
+    #   if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
+    #
+    #     # Use the columns of the loaded data and the provided glue string to
+    #     # send the files currently displayed in the editor to Praat
+    #     files_to_open <- glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+    #                                           input$fileNameGlue)
+    #     files_to_open <- file.path(input$audioDirInput, unique(files_to_open))
+    #
+    #     if (!is.null(input$textgridDirInput))
+    #       files_to_open <- c(files_to_open, gsub(".wav$", ".TextGrid", files_to_open))
+    #
+    #     systemcall <- paste(input$pathToPraat,
+    #                         "--new-open",
+    #                         paste0(files_to_open[file.exists(files_to_open)], collapse = " "),
+    #                         sep = " ")
+    #     message(systemcall)
+    #     base::system(systemcall, wait = FALSE)
+    #   }
+    # })
 
     # Note: the input is created from within the window resizer module via
     #       javascript, so it's actually visible from this scope and needs
