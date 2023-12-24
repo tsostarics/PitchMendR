@@ -8,6 +8,7 @@
 #' @export
 #'
 #' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req
+#' @importFrom rlang sym
 openEditor <- function(...) {
   ui <- bslib::page_navbar(
 
@@ -95,8 +96,9 @@ openEditor <- function(...) {
                      title = "Plot Settings",
                      shiny::textOutput(outputId = "workingFileOutput"),
                      shiny::uiOutput(outputId = "pitchRangeUI"),
-                     shiny::uiOutput(outputId = "sizeSliderUI"),
-                     shiny::uiOutput(outputId = "alphaSliderUI"),
+                     shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3),
+                     shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
+                                        step = 0.05,ticks = FALSE),
                      shiny::textInput(
                        inputId = "filterRegex",
                        label = "Plot files matching regex",
@@ -441,20 +443,43 @@ openEditor <- function(...) {
     })
 
     # The plot render will take on these as dependencies, too
-    no_missing_plot_inputs <- reactive({
-      !any(c(is.null(plotFlag$value),
-             is.null(plotSubsetFlag$value),
-             is.null(loadedFile$data),
-             is.null(input$alphaSlider),
-             is.null(input$sizeSlider),
-             is.null(input$yValColumnInput),
-             is.null(input$xValColumnInput),
-             is.null(input$filenameColumnInput),
-             is.null(input$selectionColumnInput),
-             is.null(input$useFlaggedColumnToggle),
-             is.null(input$colorCodeColumnInput),
-             is.null(input$pitchRangeInput),
-             is.null(plotSubset())))
+    # no_missing_plot_inputs <- reactive({
+    #   !any(c(is.null(plotFlag$value),
+    #          is.null(plotSubsetFlag$value),
+    #          is.null(loadedFile$data),
+    #          is.null(input$alphaSlider),
+    #          is.null(input$sizeSlider),
+    #          is.null(input$yValColumnInput),
+    #          is.null(input$xValColumnInput),
+    #          is.null(input$filenameColumnInput),
+    #          is.null(input$selectionColumnInput),
+    #          is.null(input$useFlaggedColumnToggle),
+    #          is.null(input$colorCodeColumnInput),
+    #          is.null(input$pitchRangeInput),
+    #          is.null(plotSubset())))
+    # })
+
+    plotSubset <- reactiveValues(data = NULL)
+
+    refilterSubset <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
+
+      message("Filtering")
+      # lastTransformation
+
+      plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+
+
+      message("Filtering done")
+
+
+      plot_subset
+    })
+
+    updatePlotSubsetValues <- reactive({
+      lastTransformation
+      plotSubset$data[,c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
     })
 
     plotSubset <- reactive({
@@ -465,23 +490,13 @@ openEditor <- function(...) {
           !is.null(input$colorCodeColumnInput) &&
           !is.null(input$yValColumnInput)) {
         message("Filtering")
-        print(Sys.time())
+
 
         last_transform <- lastTransformation
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
 
-
-        # If the user wants to use the flagged column, make sure it exists
-        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plot_subset)) {
-          fx <- \(x) x
-          if (length(unique(plot_subset[[input$colorCodeColumnInput]])) <= 2) {
-            fx <- base::factor
-          }
-
-          plot_subset[, (input$colorCodeColumnInput) := fx(get(input$colorCodeColumnInput))]
-        }
         message("Filtering done")
-        print(Sys.time())
+
 
         plot_subset
       }
@@ -490,27 +505,28 @@ openEditor <- function(...) {
 
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
-      print(Sys.time())
-      if (no_missing_plot_inputs()) {
+
+      if (!is.null(loadedFile$data)) {
 
         # plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
         # These will update when the user changes the color manually with the
         # color pickers or if the theme is changed.
-        color_values <- plotSettings$setColors[2:3]
+        color_values <- plotSettings$setColors[3:2]
         lineColor <- plotSettings$setColors[1]
 
         yval <- transformedColumn$name
-        if (!is.null(input$hideToggleInput) && input$hideToggleInput)
+        if (input$hideToggleInput)
           yval <- input$yValColumnInput
-
+        print(plotSubset())
+        print(loadedFile$data)
         # plot_data <- plotSubset()
 
         # Set up the main aesthetics for the plot
         p <-
           ggplot2::ggplot(plotSubset(),
-                          ggplot2::aes(x = !!rlang::sym(input$xValColumnInput),
-                                       y = !!rlang::sym(yval),
-                                       group = !!rlang::sym(input$filenameColumnInput)))
+                          ggplot2::aes(x = !!sym(input$xValColumnInput),
+                                       y = !!sym(yval),
+                                       group = !!sym(input$filenameColumnInput)))
 
         # Add the line if the user wants it, this should go under the points
         if (plotSettings$showLine) {
@@ -522,23 +538,21 @@ openEditor <- function(...) {
         # otherwise just use the keep_pulse column to redundantly code that information
         if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset())) {
           p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!rlang::sym(input$colorCodeColumnInput), shape = !!rlang::sym(input$selectionColumnInput)),
+            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput), shape = !!sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
                                 alpha = input$alphaSlider)
         } else {
           p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!rlang::sym(input$selectionColumnInput), shape = !!rlang::sym(input$selectionColumnInput)),
+            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput), shape = !!sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
                                 alpha = input$alphaSlider)
         }
 
-        # If the color column is binary, use the colors specified by the user,
-        # otherwise just use the default colors
-        if (!input$useFlaggedColumnToggle ||
-            length(unique(plotSubset()[[input$colorCodeColumnInput]])) <= 2) {
-          if (input$useFlaggedColumnToggle)
-            color_values <- rev(color_values)
-
+        # Color code logical values
+          if ((!input$useFlaggedColumnToggle || is.logical(plotSubset()[[input$colorCodeColumnInput]]))) {
+            # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
+            if (!input$useFlaggedColumnToggle)
+              color_values <- c(color_values[2], color_values[1])
           p <- p +
             ggplot2::scale_color_manual(values = color_values)
         }
@@ -557,8 +571,8 @@ openEditor <- function(...) {
           ggplot2::ggtitle(label = ifelse(sum(fileHandler$isPlotted) == 1,
                                           fileHandler$filenames[fileHandler$isPlotted],
                                           "Multiple Files"))
-        print(Sys.time())
-        message("Rending ready")
+
+
         p
       }})
 
@@ -1210,21 +1224,8 @@ openEditor <- function(...) {
       )
     })
 
-    # Adds a slider for the plot point size
-    output$sizeSliderUI <- shiny::renderUI({
-      # if (is.null(fileHandler$filename))
-      #   return(NULL)
-      shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)
-    })
 
-    # Adds a slider for the plot point transparency. The step is set to 1 divided
-    # by the number of files in the dataset.
-    output$alphaSliderUI <- shiny::renderUI({
-      # if (is.null(fileHandler$filename))
-      #   return(NULL)
-      shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
-                         step = round(1/length(fileHandler$filenames),3),ticks = FALSE)
-    })
+
 
     defaultPitchRange <- shiny::reactiveValues(min = 100, max = 500)
 
@@ -1415,7 +1416,7 @@ openEditor <- function(...) {
                                 .hz = input$yValColumnInput,
                                 .time = input$xValColumnInput,
                                 .samplerate = NA)
-        loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
+        # loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
         if (!data.table::is.data.table(loadedFile$data))
           loadedFile$data <- data.table(loadedFile$data)
 
