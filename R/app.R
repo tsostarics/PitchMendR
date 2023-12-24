@@ -1236,8 +1236,8 @@ openEditor <- function(...) {
                                            style = "cursor:pointer;",
                                            "Pitch Range"),
                                       value = pitch_range,
-                                      min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1]), 8))),
-                                      max = ceiling(add_semitones(pitch_range[2], 24)),
+                                      min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1])*8))),
+                                      max = ceiling(add_semitones(pitch_range[2], sign(pitch_range[1])*24)),
                                       step = one_st_step,
                                       width = "100%")
     })
