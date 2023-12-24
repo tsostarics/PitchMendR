@@ -111,9 +111,9 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       }
 
       if (input_noteToggle()){
-        updateTabsetPanel(inputId = "switchNotepad", selected = "showNotepad")
+        shiny::updateTabsetPanel(inputId = "switchNotepad", selected = "showNotepad")
       } else {
-        updateTabsetPanel(inputId = "switchNotepad", selected = "hideNotepad")
+        shiny::updateTabsetPanel(inputId = "switchNotepad", selected = "hideNotepad")
       }
 
     })
@@ -128,9 +128,9 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       }
 
       if (input_badgeToggle()){
-        updateTabsetPanel(inputId = "switchBadges", selected = "showBadges")
+        shiny::updateTabsetPanel(inputId = "switchBadges", selected = "showBadges")
       } else {
-        updateTabsetPanel(inputId = "switchBadges", selected = "hideBadges")
+        shiny::updateTabsetPanel(inputId = "switchBadges", selected = "hideBadges")
       }
     })
 

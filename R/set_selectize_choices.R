@@ -44,24 +44,24 @@
 #'
 set_selectize_choices <- function(session, inputId, data_ref, input_value, add = FALSE, add_with = TRUE) {
   reactive({
-    if (is.null(data_ref$data))
+    if (is.null(data_ref[['data']]))
       return(NULL)
 
     if (add) {
-      if (!input_value %in% colnames(data_ref$data)) {
+      if (!input_value %in% colnames(data_ref[['data']])) {
         if (length(add_with) > 1)
           warning("add_with is a vector of length > 1, only using first element")
 
-        data_ref$data[, (input_value) := add_with]
-                      }
+        data_ref[['data']][, (input_value) := add_with]
       }
-
-    updateSelectizeInput(session,
-                         inputId = inputId,
-                         choices = colnames(data_ref$data),
-                         selected = ifelse(input_value %in% colnames(data_ref$data),
-                                           input_value,
-                                           colnames(data_ref$data)[1]))
     }
-    )
+
+    shiny::updateSelectizeInput(session,
+                                inputId = inputId,
+                                choices = colnames(data_ref[['data']]),
+                                selected = ifelse(input_value %in% colnames(data_ref[['data']]),
+                                                  input_value,
+                                                  colnames(data_ref[['data']])[1]))
   }
+  )
+}

@@ -81,7 +81,7 @@ flag_potential_errors <- function(data,
   # If the sampling rate is not specified, we need to try and calculate
   # it ourselves
   if (is.na(.samplerate))
-    .samplerate <- round(median(diff(data[[.time]])), 4)
+    .samplerate <- round(stats::median(diff(data[[.time]])), 4)
 
   transformed_time <- data[[.time]]
 

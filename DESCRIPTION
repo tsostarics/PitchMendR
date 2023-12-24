@@ -10,6 +10,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
+    audio,
     bslib,
     colourpicker,
     data.table,
@@ -21,4 +22,6 @@ Imports:
     keys,
     rlang,
     shiny (>= 1.7.4),
-    shinyjs
+    shinyjqui,
+    shinyjs,
+    shinyWidgets
