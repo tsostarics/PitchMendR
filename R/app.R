@@ -455,7 +455,11 @@ openEditor <- function(...) {
 
     plotSubset <- reactive({
       req(plotSubsetFlag)
-      if (!is.null(plotSubsetFlag$value) && !is.null(input$filenameColumnInput) && !is.null(input$useFlaggedColumnToggle) && !is.null(input$colorCodeColumnInput)) {
+      if (!is.null(plotSubsetFlag$value) &&
+          !is.null(input$filenameColumnInput) &&
+          !is.null(input$useFlaggedColumnToggle) &&
+          !is.null(input$colorCodeColumnInput) &&
+          !is.null(input$yValColumnInput)) {
         message("Filtering")
         last_transform <- lastTransformation
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
@@ -549,7 +553,7 @@ openEditor <- function(...) {
 
     togglePulses <- reactive({
       selectedPoints$data <- getBrushedPoints()
-
+      print(input$pitchRangeInput)
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
         loadedFile$data[[input$selectionColumnInput]][vals_to_change] <- !loadedFile$data[[input$selectionColumnInput]][vals_to_change]
@@ -737,7 +741,7 @@ openEditor <- function(...) {
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
 
       if (!file.exists(outFile))
-        loadedFile$data[, (input$selectionColumnInput) := get(input$yValColumnInput) > 2]  # Use := operator from data.table package
+        loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]  # Use := operator from data.table package
 
       if (!"pulse_id" %in% colnames(loadedFile$data))
         loadedFile$data[, pulse_id := .I]  # Use .I from data.table package
@@ -990,7 +994,7 @@ openEditor <- function(...) {
     shiny::observeEvent(input$refreshProgressButton,{
       if (is.null(loadedFile$data))
         return(NULL)
-      filtered_data <- loadedFile$data[get(input$yValColumnInput) > 2]
+      filtered_data <- loadedFile$data[where_not_zero(get(input$yValColumnInput))]
 
       output$percentRemovedText <- shiny::renderText({
         paste0(round(sum(!filtered_data[[input$selectionColumnInput]]) / nrow(filtered_data)*100, 2), "%")
@@ -1005,7 +1009,7 @@ openEditor <- function(...) {
         variance_values <-
           loadedFile$data |>
           dplyr::group_by(dplyr::across(dplyr::all_of(input$filenameColumnInput))) |>
-          dplyr::reframe(original_variance = .var_of_diffs(.data[[input$yValColumnInput]][.data[[input$yValColumnInput]]>2]),
+          dplyr::reframe(original_variance = .var_of_diffs(.data[[input$yValColumnInput]][where_not_zero(.data[[input$yValColumnInput]])]),
                          new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[[input$selectionColumnInput]]])) |>
           dplyr::ungroup()
 
@@ -1090,9 +1094,19 @@ openEditor <- function(...) {
         return(NULL)
       message(input$yValColumnInput)
       changeTransformedColumn()
+      updatePlotSubset()
       updatePlot()
 
     })
+
+    # shiny::observeEvent(input$xValColumnInputButton, {
+    #   if (is.null(loadedFile$data))
+    #     return(NULL)
+    #   message(input$xValColumnInput)
+    #   updatePlotSubset()
+    #   updatePlot()
+    #
+    # })
 
     # Multiply selected points by 0.5 (fixes doubling errors)
     shiny::observeEvent(input$halfButton, {
@@ -1201,24 +1215,36 @@ openEditor <- function(...) {
                          step = round(1/length(fileHandler$filenames),3),ticks = FALSE)
     })
 
+    defaultPitchRange <- shiny::reactiveValues(min = 100, max = 500)
+
     output$pitchRangeUI <- shiny::renderUI({
       pitch_range <- c(100,500)
-      one_st_step <- round(add_semitones(pitch_range[1], 1) - pitch_range[1], 0)
+      one_st_step <- ceiling(add_semitones(pitch_range[2], 1) - pitch_range[1])
 
       if (!is.null(loadedFile$data)){
-        pitch_range <- range(loadedFile$data[[transformedColumn$name]][loadedFile$data[[transformedColumn$name]]>2])
-        one_st_step <- round(add_semitones(pitch_range[1], 1) - pitch_range[1], 0)
-        pitch_range <- round(c(add_semitones(pitch_range[1], -1),
-                               add_semitones(pitch_range[2], 1)), 0)
+        pitch_range <- range(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])])
+        one_st_step <- ceiling(add_semitones(pitch_range[2], 1) - pitch_range[2])
+        pitch_range <- floor(c(add_semitones(pitch_range[1], -1),
+                               add_semitones(pitch_range[2], 1)))
+        defaultPitchRange$min <- pitch_range[1]
+        defaultPitchRange$max <- pitch_range[2]
       }
 
       shinyWidgets::numericRangeInput("pitchRangeInput",
-                                      "Pitch Range",
+                                      span(id = "resetPitchRange",
+                                           title = "Click to reset to default",
+                                           style = "cursor:pointer;",
+                                           "Pitch Range"),
                                       value = pitch_range,
-                                      min = 0,
-                                      max = 700,
+                                      min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], 8))),
+                                      max = ceiling(add_semitones(pitch_range[2], 24)),
                                       step = one_st_step,
                                       width = "100%")
+    })
+
+    shinyjs::onclick("resetPitchRange", {
+      shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
+                                            value = c(defaultPitchRange$min, defaultPitchRange$max))
     })
 
     # The unedited and edited selectInput boxes' default behavior will change
