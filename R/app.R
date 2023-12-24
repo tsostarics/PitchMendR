@@ -459,28 +459,30 @@ openEditor <- function(...) {
     #          is.null(plotSubset())))
     # })
 
-    plotSubset <- reactiveValues(data = NULL)
-
-    refilterSubset <- reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-
-      message("Filtering")
-      # lastTransformation
-
-      plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
-
-
-      message("Filtering done")
-
-
-      plot_subset
-    })
-
-    updatePlotSubsetValues <- reactive({
-      lastTransformation
-      plotSubset$data[,c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-    })
+    # plotSubset <- reactiveValues(data = NULL)
+    #
+    # refilterSubset <- reactive({
+    #   message('trying to filter')
+    #   observe(fileHandler)
+    #
+    #   if (is.null(loadedFile$data))
+    #     return(NULL)
+    #
+    #   message("Filtering")
+    #   # lastTransformation
+    #
+    #   plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+    #
+    #
+    #   message("Filtering done")
+    # })
+    #
+    # updatePlotSubsetValues <- reactive({
+    #   if (is.null(loadedFile$data))
+    #     return(NULL)
+    #   observe(lastTransformation)
+    #   plotSubset$data[,c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+    # })
 
     plotSubset <- reactive({
       req(plotSubsetFlag)
@@ -517,8 +519,8 @@ openEditor <- function(...) {
         yval <- transformedColumn$name
         if (input$hideToggleInput)
           yval <- input$yValColumnInput
-        print(plotSubset())
-        print(loadedFile$data)
+        # print(plotSubset())
+        # print(loadedFile$data)
         # plot_data <- plotSubset()
 
         # Set up the main aesthetics for the plot
