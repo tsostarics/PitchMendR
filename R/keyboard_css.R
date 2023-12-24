@@ -106,7 +106,11 @@ kbd_button <- function(key, class=NULL, size = "sm", id = NULL) {
 #' # > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">A</button> to continue
 #'
 #' inline_kbd_button(c("ctrl", "z"), "Press {KEY[1]}+{KEY[2]} to undo")
-#' # > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>+<button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button> to undo
+#' # > Press
+#' <button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>
+#' +
+#' <button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button>
+#' to undo
 #' }
 inline_kbd_button <- function(key, string, ...) {
   KEY <- lapply(key, \(k) kbd_button(k, ...))

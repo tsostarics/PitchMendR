@@ -29,6 +29,10 @@ inline_kbd_button("a", "Press {KEY} to continue")
 # > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">A</button> to continue
 
 inline_kbd_button(c("ctrl", "z"), "Press {KEY[1]}+{KEY[2]} to undo")
-# > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>+<button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button> to undo
+# > Press
+<button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>
++
+<button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button>
+to undo
 }
 }
