@@ -27,12 +27,12 @@ keyBindAction <- function(bindexpr, msg = NULL) {
 #' @param msg Optional message to use
 #'
 #' @return Nothing, changes boundKeys
-changeKeyBinding <- function(key, bindexpr, msg = NULL) {
-  if (is.null(boundKeys) | !is.character(key))
-    return(NULL)
-  keys::addKeys("keys", key, session)
-  boundKeys$keys[key] <<- keyBindAction(msg, bindexpr)
-}
+# changeKeyBinding <- function(key, bindexpr, msg = NULL) {
+#   if (is.null(boundKeys) | !is.character(key))
+#     return(NULL)
+#   keys::addKeys("keys", key, session)
+#   boundKeys$keys[key] <<- keyBindAction(msg, bindexpr)
+# }
 
 #' Remove key binding
 #'
@@ -42,9 +42,9 @@ changeKeyBinding <- function(key, bindexpr, msg = NULL) {
 #' @param key Key to remove
 #'
 #' @return Nothing, changes boundKeys
-removeKeyBinding <- function(key) {
-  if (is.null(boundKeys) | !is.character(key))
-    return(NULL)
-  keys::removeKeys("keys", key, session)
-  boundKeys$keys[key] <<- NULL
-}
+# removeKeyBinding <- function(key) {
+#   if (is.null(boundKeys) | !is.character(key))
+#     return(NULL)
+#   keys::removeKeys("keys", key, session)
+#   boundKeys$keys[key] <<- NULL
+# }
