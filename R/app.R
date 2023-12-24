@@ -449,6 +449,7 @@ openEditor <- function(...) {
              is.null(input$selectionColumnInput),
              is.null(input$useFlaggedColumnToggle),
              is.null(input$colorCodeColumnInput),
+             is.null(input$pitchRangeInput),
              is.null(plotSubset())))
     })
 
@@ -531,6 +532,7 @@ openEditor <- function(...) {
         # Finish setting some of the theme options
         p <- p +
           ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
+          ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
           ggplot2::xlab(input$xValColumnInput) +
           ggplot2::ylab(input$yValColumnInput) +
           ggplot2::theme_bw(base_size = 16) +
