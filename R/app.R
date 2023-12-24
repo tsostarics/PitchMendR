@@ -7,7 +7,7 @@
 #' @return Nothing
 #' @export
 #'
-#' @importFrom shiny tags isolate
+#' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req
 openEditor <- function(...) {
   ui <- bslib::page_navbar(
 
@@ -58,6 +58,10 @@ openEditor <- function(...) {
         inputId = "checkVisibleFilesButton",
         icon = shiny::icon('check'),
         label = "off plotted files"
+      ),
+      shiny::actionButton(
+        inputId = "playVisibleFile",
+        label = shiny::uiOutput(outputId = "playVisibleFileLabel")
       ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
       shiny::uiOutput(outputId = "editedFileSelectUI")
@@ -580,9 +584,9 @@ openEditor <- function(...) {
 
     shiny::observeEvent(input$useFlaggedColumnToggle, {
       if (input$useFlaggedColumnToggle){
-        updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
+        shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
       } else {
-        updateTabsetPanel(inputId = "switchColorCode", selected = "hideColorCodeColumnInput")
+        shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "hideColorCodeColumnInput")
       }
       updatePlot()
     })
@@ -673,7 +677,7 @@ openEditor <- function(...) {
             data_ref$data[, (input_value) := add_with]
         }
 
-        updateSelectizeInput(session,
+        shiny::updateSelectizeInput(session,
                              inputId = inputId,
                              choices = colnames(data_ref$data),
                              selected = ifelse(input_value %in% colnames(data_ref$data),
@@ -865,6 +869,8 @@ openEditor <- function(...) {
       if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
       }
+      destroyLoadedAudio()
+      print(currentWave$value)
     })
 
     goToNextFile <- reactive({
@@ -892,6 +898,8 @@ openEditor <- function(...) {
       if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
       }
+
+      destroyLoadedAudio()
     })
 
     # When the user clicks the next button, plot the next file alphabetically
@@ -931,6 +939,7 @@ openEditor <- function(...) {
       fileHandler$isPlotted <- grepl(input$filterRegex,fileHandler$filenames)
       annotations$updateBadges()
       annotations$updateNotes()
+      destroyLoadedAudio()
     })
 
     # Display the filenames of the selected points when the user makes a selection
@@ -980,7 +989,7 @@ openEditor <- function(...) {
       message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
       annotations$updateBadges()
       annotations$updateNotes()
-
+      destroyLoadedAudio()
     })
 
     # When the user clicks the go to brushed button, plot only the files that the
@@ -1033,7 +1042,7 @@ openEditor <- function(...) {
     plotSubsetFlag <- shiny::reactiveValues(value = FALSE)
 
     updatePlot <- shiny::reactive({
-      observe("keepFalseColor")
+      shiny::observe("keepFalseColor")
       plotFlag$value <- !plotFlag$value
     })
 
@@ -1099,19 +1108,11 @@ openEditor <- function(...) {
 
     })
 
-    # shiny::observeEvent(input$xValColumnInputButton, {
-    #   if (is.null(loadedFile$data))
-    #     return(NULL)
-    #   message(input$xValColumnInput)
-    #   updatePlotSubset()
-    #   updatePlot()
-    #
-    # })
 
     # Multiply selected points by 0.5 (fixes doubling errors)
     shiny::observeEvent(input$halfButton, {
       message("Halve Pressed")
-      halveP
+      halvePulses()
     })
 
     undoTransformation <- reactive({
@@ -1276,6 +1277,54 @@ openEditor <- function(...) {
                        }
                      })
 
+    currentWave <- shiny::reactiveValues(value = NULL, path = NULL)
+    playAudioIcon <- reactive({
+      one_plotted <- sum(fileHandler$isPlotted) == 1
+
+      if (is.null(loadedFile$data) || !one_plotted || is.null(audioInfo$audioDirectory) || is.null(audioInfo$glueString) || is.null(plotFlag$value))
+        return('xmark')
+
+      if (one_plotted && (is.null(currentWave$value) || !file.exists(currentWave$path)))
+        return("file-arrow-up")
+
+      if (one_plotted)
+        return("play")
+
+      return("triangle-exclamation")
+    })
+
+    output$playVisibleFileLabel <- shiny::renderUI({
+      tags$span(shiny::icon(playAudioIcon()), "Play file")
+})
+
+    destroyLoadedAudio <- function(){
+      currentWave$value <<- NULL
+      currentWave$path <<- NULL
+    }
+
+    shiny::observeEvent(input$playVisibleFile, {
+      if (is.null(loadedFile$data) | sum(fileHandler$isPlotted) != 1 | is.null(audioInfo$audioDirectory) | is.null(audioInfo$glueString))
+        return(NULL)
+
+      file_to_open <-
+        file.path(audioInfo$audioDirectory(),
+                                 glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+                                                      audioInfo$glueString())[1])
+
+      if (!file.exists(file_to_open)) {
+        message(paste0("File ", file_to_open, " not found."))
+        return(NULL)
+      }
+
+      if (is.null(currentWave$value)){
+        currentWave$path <- file_to_open
+        currentWave$value <- audio::load.wave(file_to_open)
+        audio::play(currentWave$value)
+      } else {
+        audio::play(currentWave$value)
+      }
+    })
+
     shinyjs::onclick(id = "keysQuestion", {
       shinyWidgets::show_alert(
         title = "Keyboard Shortcuts",
@@ -1332,6 +1381,7 @@ openEditor <- function(...) {
       tags$span(shiny::icon(saveIcon$value), "Save File")
     })
 
+
     # When the user clicks the Flag Samples button, all files in the loaded
     # dataset will be checked for potential errors. These are added to the
     # flagged_samples column. So the user can can tell that the process worked,
@@ -1358,7 +1408,8 @@ openEditor <- function(...) {
       }
     })
 
-    praatServer("praatIO",
+    audioInfo <-
+      praatServer("praatIO",
                 loadedFile,
                 fileHandler,
                 reactive(input$filenameColumnInput))
