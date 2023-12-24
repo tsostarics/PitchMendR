@@ -465,6 +465,8 @@ openEditor <- function(...) {
           !is.null(input$colorCodeColumnInput) &&
           !is.null(input$yValColumnInput)) {
         message("Filtering")
+        print(Sys.time())
+
         last_transform <- lastTransformation
         plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
 
@@ -478,6 +480,9 @@ openEditor <- function(...) {
 
           plot_subset[, (input$colorCodeColumnInput) := fx(get(input$colorCodeColumnInput))]
         }
+        message("Filtering done")
+        print(Sys.time())
+
         plot_subset
       }
     })
@@ -485,6 +490,7 @@ openEditor <- function(...) {
 
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
+      print(Sys.time())
       if (no_missing_plot_inputs()) {
 
         # plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
@@ -551,7 +557,8 @@ openEditor <- function(...) {
           ggplot2::ggtitle(label = ifelse(sum(fileHandler$isPlotted) == 1,
                                           fileHandler$filenames[fileHandler$isPlotted],
                                           "Multiple Files"))
-
+        print(Sys.time())
+        message("Rending ready")
         p
       }})
 
@@ -678,11 +685,11 @@ openEditor <- function(...) {
         }
 
         shiny::updateSelectizeInput(session,
-                             inputId = inputId,
-                             choices = colnames(data_ref$data),
-                             selected = ifelse(input_value %in% colnames(data_ref$data),
-                                               input_value,
-                                               colnames(data_ref$data)[1]))
+                                    inputId = inputId,
+                                    choices = colnames(data_ref$data),
+                                    selected = ifelse(input_value %in% colnames(data_ref$data),
+                                                      input_value,
+                                                      colnames(data_ref$data)[1]))
       }
       )
     }
@@ -703,6 +710,9 @@ openEditor <- function(...) {
 
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
+
+      if (is.null(input$fileSelectBox) | is.null(input$inputDirInput))
+        return(NULL)
 
       if (!dir.exists(input$inputDirInput)){
         message("Input directory doesnt exist")
@@ -956,7 +966,7 @@ openEditor <- function(...) {
 
     # When the user clicks the save button, save the data to the output directory
     saveData <- function(path) {
-      if (is.null(data))
+      if (is.null(loadedFile$data))
         return(NULL)
 
       # Update the file checked column before saving
@@ -1295,7 +1305,7 @@ openEditor <- function(...) {
 
     output$playVisibleFileLabel <- shiny::renderUI({
       tags$span(shiny::icon(playAudioIcon()), "Play file")
-})
+    })
 
     destroyLoadedAudio <- function(){
       if (!is.null(currentWave$instance))
@@ -1312,8 +1322,8 @@ openEditor <- function(...) {
 
       file_to_open <-
         file.path(audioInfo$audioDirectory(),
-                                 glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                                      audioInfo$glueString())[1])
+                  glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+                                       audioInfo$glueString())[1])
 
       if (!file.exists(file_to_open)) {
         message(paste0("File ", file_to_open, " not found."))
@@ -1418,9 +1428,9 @@ openEditor <- function(...) {
 
     audioInfo <-
       praatServer("praatIO",
-                loadedFile,
-                fileHandler,
-                reactive(input$filenameColumnInput))
+                  loadedFile,
+                  fileHandler,
+                  reactive(input$filenameColumnInput))
 
     # Note: the input is created from within the window resizer module via
     #       javascript, so it's actually visible from this scope and needs
