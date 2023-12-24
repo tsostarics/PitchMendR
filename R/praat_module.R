@@ -88,6 +88,10 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
         message(systemcall)
         base::system(systemcall, wait = FALSE)
       }
-    })
+    }
+    )
+
+    return(list(audioDirectory= reactive(input$audioDirInput),
+                glueString= reactive(input$fileNameGlue)))
   })
 }
