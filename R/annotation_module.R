@@ -98,7 +98,7 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       }
     })
 
-    shiny::observeEvent(input_noteToggle(), {
+    shiny::observeEvent(input_noteToggle(),ignoreInit = TRUE, {
       message("note toggle")
 
       if (!is.null(loadedFile$data)) {

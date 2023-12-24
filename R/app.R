@@ -418,28 +418,20 @@ openEditor <- function(...) {
     })
 
 
-    colorServer("colors",
-                plotSettings,
-                updatePlot,
-                reactive(input$dark_mode))
-
-    annotations <- annotationServer("annotations",
-                                    loadedFile,
-                                    fileHandler,
-                                    updatePlot,
-                                    reactive(input$filenameColumnInput),
-                                    reactive(input$useNotesToggle),
-                                    reactive(input$useBadgesToggle))
-
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
       if (!is.null(input$hideToggleInput) && input$hideToggleInput)
         yval <- input$yValColumnInput
 
-      shiny::brushedPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+      shiny::brushedPoints(plotSubset$data,
                            input$plot_brush,
                            xvar = input$xValColumnInput,
                            yvar = yval)
+
+      # shiny::brushedPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+      #                      input$plot_brush,
+      #                      xvar = input$xValColumnInput,
+      #                      yvar = yval)
     })
 
     # The plot render will take on these as dependencies, too
@@ -459,61 +451,66 @@ openEditor <- function(...) {
     #          is.null(plotSubset())))
     # })
 
-    # plotSubset <- reactiveValues(data = NULL)
-    #
-    # refilterSubset <- reactive({
-    #   message('trying to filter')
-    #   observe(fileHandler)
-    #
+    plotSubset <- reactiveValues(data = NULL)
+
+    refilterSubset <- function(){
+      message('trying to filter')
+
+      if (is.null(loadedFile$data))
+        return(NULL)
+
+      message("Filtering")
+      # lastTransformation
+
+      plotSubset$data <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+
+
+      message("Filtering done")
+    }
+
+    # updatePlotSubsetTransform <- function(){
     #   if (is.null(loadedFile$data))
     #     return(NULL)
-    #
-    #   message("Filtering")
-    #   # lastTransformation
-    #
-    #   plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
-    #
-    #
-    #   message("Filtering done")
-    # })
-    #
-    # updatePlotSubsetValues <- reactive({
-    #   if (is.null(loadedFile$data))
-    #     return(NULL)
-    #   observe(lastTransformation)
     #   plotSubset$data[,c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+    # }
+    # #
+    # updatePlotSubsetKeep <- function(){
+    #   if (is.null(loadedFile$data))
+    #     return(NULL)
+    #
+    #   plotSubset$data[, "keep_pulse" := get(input$yValColumnInput) * pulse_transform]
+    # }
+
+    # plotSubset <- reactive({
+    #   req(plotSubsetFlag)
+    #   if (!is.null(plotSubsetFlag$value) &&
+    #       !is.null(input$filenameColumnInput) &&
+    #       !is.null(input$useFlaggedColumnToggle) &&
+    #       !is.null(input$colorCodeColumnInput) &&
+    #       !is.null(input$yValColumnInput)) {
+    #     message("Filtering")
+    #
+    #
+    #     last_transform <- lastTransformation
+    #     plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+    #
+    #     message("Filtering done")
+    #
+    #
+    #     plot_subset
+    #   }
     # })
-
-    plotSubset <- reactive({
-      req(plotSubsetFlag)
-      if (!is.null(plotSubsetFlag$value) &&
-          !is.null(input$filenameColumnInput) &&
-          !is.null(input$useFlaggedColumnToggle) &&
-          !is.null(input$colorCodeColumnInput) &&
-          !is.null(input$yValColumnInput)) {
-        message("Filtering")
-
-
-        last_transform <- lastTransformation
-        plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
-
-        message("Filtering done")
-
-
-        plot_subset
-      }
-    })
 
 
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
-
+      plotFlag$value
       if (!is.null(loadedFile$data)) {
 
         # plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
         # These will update when the user changes the color manually with the
         # color pickers or if the theme is changed.
-        color_values <- plotSettings$setColors[3:2]
+        color_values <- plotSettings$setColors[2:3]
         lineColor <- plotSettings$setColors[1]
 
         yval <- transformedColumn$name
@@ -525,7 +522,7 @@ openEditor <- function(...) {
 
         # Set up the main aesthetics for the plot
         p <-
-          ggplot2::ggplot(plotSubset(),
+          ggplot2::ggplot(plotSubset$data,
                           ggplot2::aes(x = !!sym(input$xValColumnInput),
                                        y = !!sym(yval),
                                        group = !!sym(input$filenameColumnInput)))
@@ -533,12 +530,12 @@ openEditor <- function(...) {
         # Add the line if the user wants it, this should go under the points
         if (plotSettings$showLine) {
           p <- p +
-            ggplot2::geom_line(data =plotSubset()[plotSubset()[[input$selectionColumnInput]],], color = lineColor)
+            ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
         }
 
         # Add the points, if the user wants to use the flagged column, use it to color the points
         # otherwise just use the keep_pulse column to redundantly code that information
-        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset())) {
+        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data)) {
           p <- p +
             ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput), shape = !!sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
@@ -551,9 +548,9 @@ openEditor <- function(...) {
         }
 
         # Color code logical values
-          if ((!input$useFlaggedColumnToggle || is.logical(plotSubset()[[input$colorCodeColumnInput]]))) {
+          if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
             # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-            if (!input$useFlaggedColumnToggle)
+            if (input$useFlaggedColumnToggle)
               color_values <- c(color_values[2], color_values[1])
           p <- p +
             ggplot2::scale_color_manual(values = color_values)
@@ -583,10 +580,11 @@ openEditor <- function(...) {
       print(input$pitchRangeInput)
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[[input$selectionColumnInput]][vals_to_change] <- !loadedFile$data[[input$selectionColumnInput]][vals_to_change]
+        plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
+        loadedFile$data[vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
+        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
         selectedPoints$data <- NULL
         updatePlot()
-
       }
     })
 
@@ -596,7 +594,7 @@ openEditor <- function(...) {
       togglePulses()
     })
 
-    shiny::observeEvent(input$colorCodeColumnInput, {
+    shiny::observeEvent(input$colorCodeColumnInput,ignoreInit = TRUE, {
       if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput) | is.null(input$useFlaggedColumnToggle))
         return(NULL)
 
@@ -605,7 +603,8 @@ openEditor <- function(...) {
       }
     })
 
-    shiny::observeEvent(input$useFlaggedColumnToggle, {
+    shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = TRUE, {
+      message("flag toggle")
       if (input$useFlaggedColumnToggle){
         shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
       } else {
@@ -616,7 +615,7 @@ openEditor <- function(...) {
 
 
     # Toggle point on click
-    shiny::observeEvent(input$plot_click, {
+    shiny::observeEvent(input$plot_click,ignoreInit = TRUE, {
       if (is.null(loadedFile$data))
         return(NULL)
       clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
@@ -639,10 +638,11 @@ openEditor <- function(...) {
 
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, (input$selectionColumnInput) := TRUE]
-        # updatePlotSettingsData()
+        plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
+        loadedFile$data[vals_to_change, c(input$selectionColumnInput) := TRUE]
+        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := TRUE]
         selectedPoints$data <- NULL
-        updatePlotSubset()
+
         updatePlot()
 
       }})
@@ -653,11 +653,12 @@ openEditor <- function(...) {
       # Toggle the color of the selected points
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, (input$selectionColumnInput) := FALSE]
-        # updatePlotSettingsData()
+        plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
+        loadedFile$data[vals_to_change, c(input$selectionColumnInput) := FALSE]
+        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := FALSE]
 
         selectedPoints$data <- NULL
-        updatePlotSubset()
+
         updatePlot()
 
       }
@@ -710,7 +711,7 @@ openEditor <- function(...) {
       )
     }
 
-    shiny::observeEvent(input$yValColumnInput, {
+    shiny::observeEvent(input$yValColumnInput,ignoreInit = TRUE, {
       if (is.null(loadedFile$data))
         return(NULL)
       changeTransformedColumn()
@@ -720,6 +721,10 @@ openEditor <- function(...) {
       gsub("[*]$", "", file_selection)
     }
 
+    output$cwd <- shiny::renderText({
+      getwd()
+    })
+
 
 
 
@@ -727,8 +732,9 @@ openEditor <- function(...) {
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
 
-      if (is.null(input$fileSelectBox) | is.null(input$inputDirInput))
+      if (is.null(input$fileSelectBox) | is.null(input$inputDirInput)){
         return(NULL)
+      }
 
       if (!dir.exists(input$inputDirInput)){
         message("Input directory doesnt exist")
@@ -833,6 +839,7 @@ openEditor <- function(...) {
 
       annotations$updateBadges()
       annotations$updateNotes()
+      refilterSubset()
       updatePlot()
 
     })
@@ -895,8 +902,9 @@ openEditor <- function(...) {
       if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
       }
+      refilterSubset()
       destroyLoadedAudio()
-      print(currentWave$value)
+
     })
 
     goToNextFile <- reactive({
@@ -924,7 +932,7 @@ openEditor <- function(...) {
       if (input$saveOptionButton) {
         saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
       }
-
+      refilterSubset()
       destroyLoadedAudio()
     })
 
@@ -965,6 +973,7 @@ openEditor <- function(...) {
       fileHandler$isPlotted <- grepl(input$filterRegex,fileHandler$filenames)
       annotations$updateBadges()
       annotations$updateNotes()
+      refilterSubset()
       destroyLoadedAudio()
     })
 
@@ -1015,6 +1024,7 @@ openEditor <- function(...) {
       message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
       annotations$updateBadges()
       annotations$updateNotes()
+      refilterSubset()
       destroyLoadedAudio()
     })
 
@@ -1072,9 +1082,9 @@ openEditor <- function(...) {
       plotFlag$value <- !plotFlag$value
     })
 
-    updatePlotSubset <- shiny::reactive({
-      plotSubsetFlag$value <- !plotSubsetFlag$value
-    })
+    # updatePlotSubset <- shiny::reactive({
+    #   plotSubsetFlag$value <- !plotSubsetFlag$value
+    # })
 
     doublePulses <- shiny::reactive({
       if (is.null(loadedFile$data))
@@ -1082,15 +1092,28 @@ openEditor <- function(...) {
       selectedPoints$data <- getBrushedPoints()
 
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-
+      plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
 
       loadedFile$data[vals_to_change, pulse_transform := pulse_transform * 2.0]
       loadedFile$data[vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+      plotSubset$data[plot_vals_to_change, pulse_transform := pulse_transform * 2.0]
+      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
 
       selectedPoints$data <- NULL
       lastTransformation$pulse_ids <- vals_to_change
-      updatePlotSubset()
-      updatePlot()
+
+      current_pitch_range <- isolate(input$pitchRangeInput)
+      max_transform_value <- max(loadedFile$data[[transformedColumn$name]])
+      if (current_pitch_range[2L] < max_transform_value){
+        new_pitch_max <-
+          ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
+        shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
+                                              value = c(current_pitch_range[1L],
+                                                        new_pitch_max))
+      } else { # Otherwise the plot will render twice if the pitch range changes
+        updatePlot()
+      }
+
     })
 
     halvePulses <- shiny::reactive({
@@ -1099,17 +1122,29 @@ openEditor <- function(...) {
       selectedPoints$data <- getBrushedPoints()
 
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
+      plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
 
       # as.numeric needed to avoid implicit coercion to integer,
       # which turns the transformation from 0.5 to 0
       loadedFile$data[, pulse_transform:= as.numeric(pulse_transform)][vals_to_change, pulse_transform := pulse_transform * 0.5]
       loadedFile$data[vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-
+      plotSubset$data[, pulse_transform:= as.numeric(pulse_transform)][plot_vals_to_change, pulse_transform := pulse_transform * 0.5]
+      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
 
       selectedPoints$data <- NULL
       lastTransformation$pulse_ids <- vals_to_change
-      updatePlotSubset()
-      updatePlot()
+
+      current_pitch_range <- isolate(input$pitchRangeInput)
+      min_transform_value <- min(loadedFile$data[[transformedColumn$name]])
+      if (current_pitch_range[1L] > min_transform_value){
+        new_pitch_min <-
+          ceiling(add_semitones(max_transform_value, sign(-min_transform_value)*1L))
+        shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
+                                              value = c(new_pitch_min,
+                                                        current_pitch_range[2L]))
+      } else{
+        updatePlot()
+      }
     })
 
 
@@ -1122,6 +1157,7 @@ openEditor <- function(...) {
     changeTransformedColumn <- shiny::reactive({
       transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
       loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
+      # plotSubset$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
     })
 
     shiny::observeEvent(input$yValColumnInputButton, {
@@ -1129,7 +1165,7 @@ openEditor <- function(...) {
         return(NULL)
       message(input$yValColumnInput)
       changeTransformedColumn()
-      updatePlotSubset()
+
       updatePlot()
 
     })
@@ -1143,12 +1179,16 @@ openEditor <- function(...) {
 
     undoTransformation <- reactive({
       if (!is.null(lastTransformation$pulse_ids)) {
+        plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
+
         loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
         loadedFile$data[lastTransformation$pulse_ids, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+        plotSubset$data[plot_vals_to_change, pulse_transform := 1.0]
+        plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
 
         lastTransformation$pulse_ids <- NULL
         selectedPoints$data <- NULL
-        updatePlotSubset()
+
         updatePlot()
       }
     })
@@ -1218,8 +1258,6 @@ openEditor <- function(...) {
 
     # Renders the selectizeInput for all available files.
     output$availableFilesUI <- shiny::renderUI({
-
-
       shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
                             multiple = FALSE,
                             choices = availableFiles()
@@ -1426,6 +1464,7 @@ openEditor <- function(...) {
         flagSamplesIcon$value <- "check"
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
+        refilterSubset()
       }
     })
 
@@ -1441,9 +1480,18 @@ openEditor <- function(...) {
     windowResizeServer('windowListener', reactive(input$windowChange))
 
 
-    output$cwd <- shiny::renderText({
-      getwd()
-    })
+    colorServer("colors",
+                plotSettings,
+                updatePlot,
+                reactive(input$dark_mode))
+
+    annotations <- annotationServer("annotations",
+                                    loadedFile,
+                                    fileHandler,
+                                    updatePlot,
+                                    reactive(input$filenameColumnInput),
+                                    reactive(input$useNotesToggle),
+                                    reactive(input$useBadgesToggle))
 
   }
 
