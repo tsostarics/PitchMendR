@@ -1277,7 +1277,7 @@ openEditor <- function(...) {
                        }
                      })
 
-    currentWave <- shiny::reactiveValues(value = NULL, path = NULL)
+    currentWave <- shiny::reactiveValues(value = NULL, path = NULL, instance = NULL)
     playAudioIcon <- reactive({
       one_plotted <- sum(fileHandler$isPlotted) == 1
 
@@ -1298,8 +1298,12 @@ openEditor <- function(...) {
 })
 
     destroyLoadedAudio <- function(){
+      if (!is.null(currentWave$instance))
+        audio::close.audioInstance(currentWave$instance)
+      currentWave$instance <<- NULL
       currentWave$value <<- NULL
       currentWave$path <<- NULL
+
     }
 
     shiny::observeEvent(input$playVisibleFile, {
@@ -1319,9 +1323,13 @@ openEditor <- function(...) {
       if (is.null(currentWave$value)){
         currentWave$path <- file_to_open
         currentWave$value <- audio::load.wave(file_to_open)
-        audio::play(currentWave$value)
+        if (!is.null(currentWave$instance))
+          close(currentWave$instance)
+        currentWave$instance <- audio::play(currentWave$value)
       } else {
-        audio::play(currentWave$value)
+        if (!is.null(currentWave$instance))
+          close(currentWave$instance)
+        currentWave$instance <- audio::play(currentWave$value)
       }
     })
 
