@@ -44,10 +44,12 @@ openEditor <- function(...) {
       title = "Tools",
       shiny::actionButton(
         inputId = "loadFileButton",
+        # label = shiny::uiOutput(outputId = "loadFileButtonLabel"),
         label = "Load File",
-        class = "btn-primary",
+        class = "btn-warning",
+        icon = icon("spinner"),
         # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
-        shiny::icon("upload")
+        # shiny::icon("upload")
       ),
       praatUI_button("praatIO"),
       shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
@@ -1157,6 +1159,7 @@ openEditor <- function(...) {
     changeTransformedColumn <- shiny::reactive({
       transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
       loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
+      refilterSubset()
       # plotSubset$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
     })
 
@@ -1347,6 +1350,20 @@ openEditor <- function(...) {
     output$playVisibleFileLabel <- shiny::renderUI({
       tags$span(shiny::icon(playAudioIcon()), "Play file")
     })
+
+
+    observe({
+      if (!is.null(input$fileSelectBox) && !is.null(input$inputDirInput)) {
+        shinyjs::removeClass("loadFileButton", class = "btn-warning")
+        shinyjs::addClass("loadFileButton", class = "btn-primary")
+        shiny::updateActionButton(session, "loadFileButton",icon = icon("upload"))
+      } else {
+        shinyjs::removeClass("loadFileButton", class = "btn-primary")
+        shinyjs::addClass("loadFileButton", class = "btn-warning")
+        shiny::updateActionButton(session, "loadFileButton",icon = icon("spinner"))
+      }
+    })
+
 
     destroyLoadedAudio <- function(){
       if (!is.null(currentWave$instance))
