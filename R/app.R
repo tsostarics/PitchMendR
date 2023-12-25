@@ -570,7 +570,7 @@ openEditor <- function(...) {
           ggplot2::theme(panel.grid = ggplot2::element_line(linewidth = .3)) +
           plotSettings$themeColors +
           # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
-          ggplot2::ggtitle(label = ifelse(sum(fileHandler$isPlotted) == 1,
+          ggplot2::ggtitle(label = ifelse(nPlotted$is_one,
                                           fileHandler$filenames[fileHandler$isPlotted],
                                           "Multiple Files"))
 
@@ -865,7 +865,7 @@ openEditor <- function(...) {
       if (is.null(loadedFile$data))
         return(NULL)
 
-      if (sum(fileHandler$isPlotted) == 1) {
+      if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
         annotations$saveNotes()
         annotations$saveBadges()
@@ -891,7 +891,7 @@ openEditor <- function(...) {
         current_min <- length(fileHandler$filenames) + 1
 
       #$ Check off the file that's currently plotted before we move to the next file
-      if (sum(fileHandler$isPlotted) == 1) {
+      if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
         annotations$saveNotes()
         annotations$saveBadges()
@@ -920,7 +920,7 @@ openEditor <- function(...) {
         current_max <- 0
 
       # Check off the file that's currently plotted before we move to the next file
-      if (sum(fileHandler$isPlotted) == 1) {
+      if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
         annotations$saveNotes()
         annotations$saveBadges()
@@ -948,18 +948,19 @@ openEditor <- function(...) {
     # When the user clicks the previous button, plot the previous file alphabetically
     shiny::observeEvent(input$prevButton, {
       goToPreviousFile()
-
     })
 
+    nPlotted = shiny::reactiveValues(n = NULL,
+                                     is_one = NULL)
 
-
-
-
-
+    observe({
+      nPlotted$n= sum(fileHandler$isPlotted)
+      nPlotted$is_one = nPlotted$n == 1
+    })
 
     # Display the number of files/contours that are currently plotted
     output$nFilesPlotted <- shiny::renderText({
-      paste0("# of files shown: ", sum(fileHandler$isPlotted))
+      paste0("# of files shown: ", nPlotted$n)
     })
 
     # When the user clicks the plot matches button, plot the files that match the
@@ -1081,13 +1082,10 @@ openEditor <- function(...) {
     plotSubsetFlag <- shiny::reactiveValues(value = FALSE)
 
     updatePlot <- shiny::reactive({
-      shiny::observe("keepFalseColor")
+      # shiny::observe("keepFalseColor")
       plotFlag$value <- !plotFlag$value
     })
 
-    # updatePlotSubset <- shiny::reactive({
-    #   plotSubsetFlag$value <- !plotSubsetFlag$value
-    # })
 
     doublePulses <- shiny::reactive({
       if (is.null(loadedFile$data))
@@ -1312,7 +1310,7 @@ openEditor <- function(...) {
                      expr= {
                        message("Click")
                        if (!is.null(input$uneditedFileSelectBox) && !identical(input$uneditedFileSelectBox, character(0))) {
-                         if (sum(fileHandler$isPlotted) == 1)
+                         if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$uneditedFileSelectBox] <- TRUE
@@ -1324,7 +1322,7 @@ openEditor <- function(...) {
                      expr= {
                        message("Click")
                        if (!is.null(input$editedFileSelectBox) && !identical(input$editedFileSelectBox, character(0))) {
-                         if (sum(fileHandler$isPlotted) == 1)
+                         if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$editedFileSelectBox] <- TRUE
@@ -1333,38 +1331,17 @@ openEditor <- function(...) {
                      })
 
     currentWave <- shiny::reactiveValues(value = NULL, path = NULL, instance = NULL)
-    # playAudioIcon <- reactive({
-    #   one_plotted <- sum(fileHandler$isPlotted) == 1
-    #
-    #   if (is.null(loadedFile$data) || !one_plotted || is.null(audioInfo$audioDirectory) || is.null(audioInfo$glueString) || is.null(plotFlag$value))
-    #     return('xmark')
-    #
-    #   if (one_plotted && (is.null(currentWave$value) || !file.exists(currentWave$path)))
-    #     return("file-arrow-up")
-    #
-    #   if (one_plotted)
-    #     return("play")
-    #
-    #   return("triangle-exclamation")
-    # })
-
-    # output$playVisibleFileLabel <- shiny::renderUI({
-    #   tags$span(shiny::icon(playAudioIcon()), "Play file")
-    # })
-
 
     observe({
-      one_plotted <- sum(fileHandler$isPlotted) == 1
-
       if (is.null(loadedFile$data) ||
-          !one_plotted ||
+          !nPlotted$is_one ||
           is.null(audioInfo$audioDirectory) ||
           is.null(audioInfo$glueString) ||
           is.null(plotFlag$value)) {
         updateActionButton(session, "playVisibleFileButton",icon = icon("xmark"))
-      } else if (one_plotted && (is.null(currentWave$value) || !file.exists(currentWave$path))) {
+      } else if (nPlotted$is_one && (is.null(currentWave$value) || !file.exists(currentWave$path))) {
         updateActionButton(session, "playVisibleFileButton",icon = icon("file-arrow-up"))
-      } else if (one_plotted) {
+      } else if (nPlotted$is_one) {
         updateActionButton(session, "playVisibleFileButton",icon = icon("play"))
       } else {
         updateActionButton(session, "playVisibleFileButton",icon = icon("triangle-exclamation"))
