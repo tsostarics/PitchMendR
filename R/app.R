@@ -136,11 +136,7 @@ openEditor <- function(...) {
                                 bslib::card(fill = TRUE,
                                             shiny::fluidRow(
                                               shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
-                                            shiny::fluidRow(
-                                              shiny::actionButton(width = "28%", inputId = "prevButton", label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                              shiny::actionButton(width = "38%", inputId = "saveButton", class="btn-default", label = shiny::uiOutput(outputId = "saveButtonLabel"), style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                              shiny::actionButton(width = "28%", inputId = "nextButton", label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
-                                            ),
+                                            fileNavUI("fileNav"),
                                             annotationUI("annotations")
                                 ),
                                 bslib::card(fill = TRUE,
@@ -401,8 +397,8 @@ openEditor <- function(...) {
                   "r" = keyBindAction(removePulses, "[R] Pressed (Remove)"),
                   "e" = keyBindAction(keepPulses, "[E] Pressed (Keep)"),
                   "s" = keyBindAction(toggleShowLine, "[S] Pressed (Show Line)"),
-                  "q" = keyBindAction(goToPreviousFile, "[Q] Pressed (Previous File)"),
-                  "w" = keyBindAction(goToNextFile, "[W] Pressed (Next File)"),
+                  "q" = keyBindAction(filenav$goToPreviousFile, "[Q] Pressed (Previous File)"),
+                  "w" = keyBindAction(filenav$goToNextFile, "[W] Pressed (Next File)"),
                   "b" = keyBindAction(plotBrushed, "[B] Pressed (Plot Brushed)"),
                   "d" = keyBindAction(doublePulses, "[D] Pressed (Double Pulses)"),
                   "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
@@ -410,7 +406,6 @@ openEditor <- function(...) {
                   "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
                   "space" = keyBindAction(plotMatches, "[Space] pressed (Plot Matches)"))
     )
-
 
 
     observeEvent(input$keys, {
@@ -471,40 +466,6 @@ openEditor <- function(...) {
       message("Filtering done")
     }
 
-    # updatePlotSubsetTransform <- function(){
-    #   if (is.null(loadedFile$data))
-    #     return(NULL)
-    #   plotSubset$data[,c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-    # }
-    # #
-    # updatePlotSubsetKeep <- function(){
-    #   if (is.null(loadedFile$data))
-    #     return(NULL)
-    #
-    #   plotSubset$data[, "keep_pulse" := get(input$yValColumnInput) * pulse_transform]
-    # }
-
-    # plotSubset <- reactive({
-    #   req(plotSubsetFlag)
-    #   if (!is.null(plotSubsetFlag$value) &&
-    #       !is.null(input$filenameColumnInput) &&
-    #       !is.null(input$useFlaggedColumnToggle) &&
-    #       !is.null(input$colorCodeColumnInput) &&
-    #       !is.null(input$yValColumnInput)) {
-    #     message("Filtering")
-    #
-    #
-    #     last_transform <- lastTransformation
-    #     plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
-    #
-    #     message("Filtering done")
-    #
-    #
-    #     plot_subset
-    #   }
-    # })
-
-
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
       plotFlag$value
@@ -551,10 +512,10 @@ openEditor <- function(...) {
         }
 
         # Color code logical values
-          if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
-            # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-            if (input$useFlaggedColumnToggle)
-              color_values <- c(color_values[2], color_values[1])
+        if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
+          # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
+          if (input$useFlaggedColumnToggle)
+            color_values <- c(color_values[2], color_values[1])
           p <- p +
             ggplot2::scale_color_manual(values = color_values)
         }
@@ -720,17 +681,9 @@ openEditor <- function(...) {
       changeTransformedColumn()
     })
 
-    clean_file <- function(file_selection) {
-      gsub("[*]$", "", file_selection)
-    }
-
     output$cwd <- shiny::renderText({
       getwd()
     })
-
-
-
-
 
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
@@ -859,96 +812,8 @@ openEditor <- function(...) {
       toggleShowLine()
     })
 
-    # When the user clicks the save button, save the data to the output directory
-    shiny::observeEvent(input$saveButton, {
-      message("Save Pressed")
-      if (is.null(loadedFile$data))
-        return(NULL)
-
-      if (nPlotted$is_one) {
-        fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        annotations$saveNotes()
-        annotations$saveBadges()
-      }
-
-      if (!dir.exists(input$outputDirInput)){
-        message("Output directory doesnt exist")
-        saveIcon$value <- "triangle-exclamation"
-        return(NULL)
-      }
-
-      saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
-    })
 
 
-    goToPreviousFile <- reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      # Get the minimum index of the files that are currently plotted,
-      # if we're already at the first file, wrap around to the last file
-      current_min <- min(which(fileHandler$isPlotted))
-      if (current_min == 1)
-        current_min <- length(fileHandler$filenames) + 1
-
-      #$ Check off the file that's currently plotted before we move to the next file
-      if (nPlotted$is_one) {
-        fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        annotations$saveNotes()
-        annotations$saveBadges()
-      }
-
-      fileHandler$isPlotted[] <- FALSE
-      fileHandler$isPlotted[current_min - 1] <- TRUE
-      annotations$updateBadges()
-      annotations$updateNotes()
-
-      if (input$saveOptionButton) {
-        saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
-      }
-      refilterSubset()
-      destroyLoadedAudio()
-
-    })
-
-    goToNextFile <- reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      # Get the maximum index of the files that are currently plotted,
-      # if we're already at the last file, wrap around to the first file
-      current_max <- max(which(fileHandler$isPlotted))
-      if (current_max >= length(fileHandler$filenames))
-        current_max <- 0
-
-      # Check off the file that's currently plotted before we move to the next file
-      if (nPlotted$is_one) {
-        fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        annotations$saveNotes()
-        annotations$saveBadges()
-      }
-
-      fileHandler$isPlotted[] <- FALSE
-      fileHandler$isPlotted[current_max + 1] <- TRUE
-      annotations$updateBadges()
-      annotations$updateNotes()
-
-      # If we have the save-on-next option enabled, save the data
-      if (input$saveOptionButton) {
-        saveData(file.path(input$outputDirInput, clean_file(input$fileSelectBox)))
-      }
-      refilterSubset()
-      destroyLoadedAudio()
-    })
-
-    # When the user clicks the next button, plot the next file alphabetically
-    shiny::observeEvent(input$nextButton, {
-      goToNextFile()
-
-    })
-
-    # When the user clicks the previous button, plot the previous file alphabetically
-    shiny::observeEvent(input$prevButton, {
-      goToPreviousFile()
-    })
 
     nPlotted = shiny::reactiveValues(n = NULL,
                                      is_one = NULL)
@@ -993,32 +858,9 @@ openEditor <- function(...) {
       }
     })
 
-    # When the user clicks the save button, save the data to the output directory
-    saveData <- function(path) {
-      if (is.null(loadedFile$data))
-        return(NULL)
 
-      # Update the file checked column before saving
-      loadedFile$data[, file_checked := fileHandler$fileChecked[.SD[[input$filenameColumnInput]]]]
-      if (!file.exists(path) || file.access(path, mode = 2) == 0) {
-        saveIcon$value <- "spinner"
-        write_status <- tryCatch(data.table::fwrite(x = loadedFile$data, file = path),
-                                 error = \(e) {
-                                   e
-                                 })
 
-        if (!is.null(write_status)) {
-          message(write_status$message)
-          saveIcon$value <- "triangle-exclamation"
-          return(NULL)
-        }
-        message(paste0("Wrote data to ", path))
-        saveIcon$value <- "floppy-disk"
-      }
 
-    }
-
-    saveIcon <- shiny::reactiveValues(value = "floppy-disk")
 
     plotBrushed <- reactive({
       annotations$saveNotes()
@@ -1450,9 +1292,7 @@ openEditor <- function(...) {
       tags$span(shiny::icon(flagSamplesIcon$value), "Flag Samples")
     })
 
-    output$saveButtonLabel <- shiny::renderUI({
-      tags$span(shiny::icon(saveIcon$value), "Save File")
-    })
+
 
 
     # When the user clicks the Flag Samples button, all files in the loaded
@@ -1506,6 +1346,19 @@ openEditor <- function(...) {
                                     reactive(input$filenameColumnInput),
                                     reactive(input$useNotesToggle),
                                     reactive(input$useBadgesToggle))
+
+
+    filenav <- fileNavServer("fileNav",
+                             loadedFile,
+                             fileHandler,
+                             reactive(input$saveOptionButton),
+                             reactive(input$outputDirInput),
+                             reactive(input$fileSelectBox),
+                             reactive(input$filenameColumnInput),
+                             nPlotted,
+                             annotations,
+                             refilterSubset,
+                             destroyLoadedAudio)
 
   }
 
