@@ -64,7 +64,8 @@ openEditor <- function(...) {
       ),
       shiny::actionButton(
         inputId = "playVisibleFile",
-        label = shiny::uiOutput(outputId = "playVisibleFileLabel")
+        label = "Play File",
+        icon = shiny::icon("xmark")
       ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
       shiny::uiOutput(outputId = "editedFileSelectUI")
@@ -1332,23 +1333,42 @@ openEditor <- function(...) {
                      })
 
     currentWave <- shiny::reactiveValues(value = NULL, path = NULL, instance = NULL)
-    playAudioIcon <- reactive({
+    # playAudioIcon <- reactive({
+    #   one_plotted <- sum(fileHandler$isPlotted) == 1
+    #
+    #   if (is.null(loadedFile$data) || !one_plotted || is.null(audioInfo$audioDirectory) || is.null(audioInfo$glueString) || is.null(plotFlag$value))
+    #     return('xmark')
+    #
+    #   if (one_plotted && (is.null(currentWave$value) || !file.exists(currentWave$path)))
+    #     return("file-arrow-up")
+    #
+    #   if (one_plotted)
+    #     return("play")
+    #
+    #   return("triangle-exclamation")
+    # })
+
+    # output$playVisibleFileLabel <- shiny::renderUI({
+    #   tags$span(shiny::icon(playAudioIcon()), "Play file")
+    # })
+
+
+    observe({
       one_plotted <- sum(fileHandler$isPlotted) == 1
 
-      if (is.null(loadedFile$data) || !one_plotted || is.null(audioInfo$audioDirectory) || is.null(audioInfo$glueString) || is.null(plotFlag$value))
-        return('xmark')
-
-      if (one_plotted && (is.null(currentWave$value) || !file.exists(currentWave$path)))
-        return("file-arrow-up")
-
-      if (one_plotted)
-        return("play")
-
-      return("triangle-exclamation")
-    })
-
-    output$playVisibleFileLabel <- shiny::renderUI({
-      tags$span(shiny::icon(playAudioIcon()), "Play file")
+      if (is.null(loadedFile$data) ||
+          !one_plotted ||
+          is.null(audioInfo$audioDirectory) ||
+          is.null(audioInfo$glueString) ||
+          is.null(plotFlag$value)) {
+        updateActionButton(session, "playVisibleFileButton",icon = icon("xmark"))
+      } else if (one_plotted && (is.null(currentWave$value) || !file.exists(currentWave$path))) {
+        updateActionButton(session, "playVisibleFileButton",icon = icon("file-arrow-up"))
+      } else if (one_plotted) {
+        updateActionButton(session, "playVisibleFileButton",icon = icon("play"))
+      } else {
+        updateActionButton(session, "playVisibleFileButton",icon = icon("triangle-exclamation"))
+      }
     })
 
 
