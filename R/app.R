@@ -321,15 +321,17 @@ openEditor <- function(...) {
                             "Current working directory:",
                             shiny::verbatimTextOutput(outputId = "cwd"),
                             shiny::textInput(
-                              width = "100%",
                               inputId = "inputDirInput",
                               label = "Input directory",
-                              value = get_example_f0_data(".")
+                              value = get_example_f0_data("."),
+                              width = "100%"
                             ),
                             shiny::textInput(
+
                               inputId = "outputDirInput",
                               label = "Output directory",
-                              value = "."
+                              value = ".",
+                              width = "100%"
                             ),
                             shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
                                                   multiple = FALSE,
@@ -458,73 +460,75 @@ openEditor <- function(...) {
       if (is.null(loadedFile$data))
         return(NULL)
 
-        # These will update when the user changes the color manually with the
-        # color pickers or if the theme is changed.
-        color_values <-  plotSettings$setColors[2:3]
-        lineColor <- plotSettings$setColors[1]
+      # These will update when the user changes the color manually with the
+      # color pickers or if the theme is changed.
+      color_values <-  plotSettings$setColors[2:3]
+      lineColor <- plotSettings$setColors[1]
 
-        yval <- transformedColumn$name
-        if (input$hideToggleInput)
-          yval <- input$yValColumnInput
+      yval <- transformedColumn$name
+      if (input$hideToggleInput)
+        yval <- input$yValColumnInput
 
-        # Set up the main aesthetics for the plot
-        p <-
-          ggplot2::ggplot(plotSubset$data,
-                          ggplot2::aes(x = !!sym(input$xValColumnInput),
-                                       y = !!sym(yval),
-                                       group = !!sym(input$filenameColumnInput)))
+      # Set up the main aesthetics for the plot
+      p <-
+        ggplot2::ggplot(plotSubset$data,
+                        ggplot2::aes(x = !!sym(input$xValColumnInput),
+                                     y = !!sym(yval),
+                                     group = !!sym(input$filenameColumnInput)))
 
-        # Add the line if the user wants it, this should go under the points
-        if (plotSettings$showLine) {
-          p <- p +
-            ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
-        }
-
-        # Add the points, if the user wants to use the flagged column, use it to color the points
-        # otherwise just use the keep_pulse column to redundantly code that information
-        if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data)) {
-          p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput),
-                                             shape = !!sym(input$selectionColumnInput)),
-                                size = input$sizeSlider,
-                                alpha = input$alphaSlider)
-        } else {
-          p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput),
-                                             shape = !!sym(input$selectionColumnInput)),
-                                size = input$sizeSlider,
-                                alpha = input$alphaSlider)
-        }
-
-        # Color code logical values
-        if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
-          # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-          if (input$useFlaggedColumnToggle)
-            color_values <- c(color_values[2], color_values[1])
-          p <- p +
-            ggplot2::scale_color_manual(values = color_values)
-        }
-
-        # Finish setting some of the theme options
+      # Add the line if the user wants it, this should go under the points
+      if (plotSettings$showLine) {
         p <- p +
-          ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
-          ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
-          ggplot2::xlab(input$xValColumnInput) +
-          ggplot2::ylab(input$yValColumnInput) +
-          ggplot2::theme_bw(base_size = 16) +
-          ggplot2::theme(legend.position = 'top') +
-          ggplot2::theme(panel.grid = ggplot2::element_line(linewidth = .3)) +
-          plotSettings$themeColors +
-          # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
-          ggplot2::ggtitle(label = ifelse(nPlotted$is_one,
-                                          fileHandler$filenames[fileHandler$isPlotted],
-                                          "Multiple Files"))
+          ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
+      }
+
+      # Add the points, if the user wants to use the flagged column, use it to color the points
+      # otherwise just use the keep_pulse column to redundantly code that information
+      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data)) {
+        p <- p +
+          ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput),
+                                           shape = !!sym(input$selectionColumnInput)),
+                              size = input$sizeSlider,
+                              alpha = input$alphaSlider)
+      } else {
+        p <- p +
+          ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput),
+                                           shape = !!sym(input$selectionColumnInput)),
+                              size = input$sizeSlider,
+                              alpha = input$alphaSlider)
+      }
+
+      # Color code logical values
+      if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
+        # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
+        if (input$useFlaggedColumnToggle)
+          color_values <- c(color_values[2], color_values[1])
+        p <- p +
+          ggplot2::scale_color_manual(values = color_values)
+      }
+
+      # Finish setting some of the theme options
+      p <- p +
+        ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
+        ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
+        ggplot2::xlab(input$xValColumnInput) +
+        ggplot2::ylab(input$yValColumnInput) +
+        ggplot2::theme_bw(base_size = 16) +
+        ggplot2::theme(legend.position = 'top') +
+        ggplot2::theme(panel.grid = ggplot2::element_line(linewidth = .3)) +
+        plotSettings$themeColors +
+        # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
+        ggplot2::ggtitle(label = ifelse(nPlotted$is_one,
+                                        fileHandler$filenames[fileHandler$isPlotted],
+                                        "Multiple Files"))
 
 
-        p
-      })
+      p
+    })
 
     togglePulses <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       selectedPoints$data <- getBrushedPoints()
       print(input$pitchRangeInput)
       if (!is.null(selectedPoints$data)) {
@@ -585,6 +589,8 @@ openEditor <- function(...) {
     })
 
     keepPulses <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       selectedPoints$data <- getBrushedPoints()
 
       if (!is.null(selectedPoints$data)) {
@@ -599,6 +605,8 @@ openEditor <- function(...) {
       }})
 
     removePulses <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       selectedPoints$data <- getBrushedPoints()
 
       # Toggle the color of the selected points
@@ -844,11 +852,9 @@ openEditor <- function(...) {
       }
     })
 
-
-
-
-
     plotBrushed <- reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       annotations$saveNotes()
       brushed_regex <- paste0("(", filesBrushed$filenames, ")", collapse = "|")
       fileHandler$isPlotted <- grepl(brushed_regex,fileHandler$filenames)
@@ -984,6 +990,8 @@ openEditor <- function(...) {
     })
 
     changeTransformedColumn <- shiny::reactive({
+      if (is.null(loadedFile$data))
+        return(NULL)
       transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
       loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
       refilterSubset()
@@ -1008,19 +1016,20 @@ openEditor <- function(...) {
     })
 
     undoTransformation <- reactive({
-      if (!is.null(lastTransformation$pulse_ids)) {
-        plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
+      if (is.null(loadedFile$data) || is.null(lastTransformation$pulse_ids))
+        return(NULL)
 
-        loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
-        loadedFile$data[lastTransformation$pulse_ids, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-        plotSubset$data[plot_vals_to_change, pulse_transform := 1.0]
-        plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+      plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
 
-        lastTransformation$pulse_ids <- NULL
-        selectedPoints$data <- NULL
+      loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
+      loadedFile$data[lastTransformation$pulse_ids, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+      plotSubset$data[plot_vals_to_change, pulse_transform := 1.0]
+      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
 
-        updatePlot()
-      }
+      lastTransformation$pulse_ids <- NULL
+      selectedPoints$data <- NULL
+
+      updatePlot()
     })
 
     # Undo the last transformation, resetting the transformation to 1
@@ -1101,6 +1110,7 @@ openEditor <- function(...) {
                                            "Pitch Range"),
                                       value = pitch_range,
                                       min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1])*8))),
+
                                       max = ceiling(add_semitones(pitch_range[2], sign(pitch_range[1])*24)),
                                       step = one_st_step,
                                       width = "100%")

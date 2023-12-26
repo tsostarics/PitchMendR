@@ -2,31 +2,44 @@ praatUI_input <- function(id) {
   ns <- NS(id)
 
   tagList(
-    "The following are only used when opening files in Praat.",
-    shiny::textInput(
-      inputId = ns("pathToPraat"),
-      label = "Praat Path (relative to working directory)",
-      value = "./Praat.exe"
-    ),
-    span(style = "display:inline-block;",
-         "Glue string to match file names to directory",
-         id = ns("glueQuestion"),
-         span(style = "cursor:pointer;", shiny::icon("circle-question"))),
-    shiny::textInput(
-      inputId = ns("fileNameGlue"),
-      label = NULL,
-      value = "{Speaker}_{Filename}.wav"
-    ),
-    shiny::textInput(
-      inputId = ns("audioDirInput"),
-      label  = "Audio Directory",
-      value = "./audio"
-    ),
-    shiny::textInput(
-      inputId = ns("textgridDirInput"),
-      label = "TextGrid Directory",
-      value = "./audio"
+    "The following are only used to send files to Praat or play audio files from the editor.",
+  bslib::accordion(
+    id = ns("praatAccordion"),
+    open = FALSE,
+    width = "100%",
+    bslib::accordion_panel(title = "Audio file options",
+                           icon = icon('file-audio'),
+
+                           shiny::textInput(
+                             inputId = ns("pathToPraat"),
+                             label = "Praat Path (relative to working directory)",
+                             value = "./Praat.exe",
+                             width = "100%",
+                           ),
+                           span(style = "display:inline-block;",
+                                "Glue string to match file names to directory",
+                                id = ns("glueQuestion"),
+                                span(style = "cursor:pointer;", shiny::icon("circle-question"))),
+                           shiny::textInput(
+                             inputId = ns("fileNameGlue"),
+                             label = NULL,
+                             value = "{Speaker}_{Filename}.wav",
+                             width = "100%",
+                           ),
+                           shiny::textInput(
+                             inputId = ns("audioDirInput"),
+                             label  = "Audio Directory",
+                             value = "./audio",
+                             width = "100%"
+                           ),
+                           shiny::textInput(
+                             inputId = ns("textgridDirInput"),
+                             label = "TextGrid Directory",
+                             value = "./audio",
+                             width = "100%"
+                           )
     )
+  )
   )
 
 }
