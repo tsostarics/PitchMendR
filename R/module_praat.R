@@ -93,7 +93,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
         open_paths <- file.path(input$audioDirInput, files_to_open)
 
         if (!is.null(input$textgridDirInput))
-          open_paths <- c(open_paths, file.path(input$audioDirInput, gsub(".wav$", ".TextGrid$", files_to_open)))
+          open_paths <- c(open_paths, file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid$", files_to_open)))
 
         systemcall <- paste(input$pathToPraat,
                             "--new-open --hide-picture",
