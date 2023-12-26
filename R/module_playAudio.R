@@ -18,13 +18,13 @@ playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
           is.null(audioInfo$audioDirectory) ||
           is.null(audioInfo$glueString) ||
           (!is.null(currentWave$exists) && !currentWave$exists)) {
-        updateActionButton(session, "playVisibleFile",icon = icon("xmark"))
+        shiny::updateActionButton(session, "playVisibleFile",icon = icon("xmark"))
       } else if (nPlotted$is_one && (is.null(currentWave$value))) {
-        updateActionButton(session, "playVisibleFile",icon = icon("file-arrow-up"))
+        shiny::updateActionButton(session, "playVisibleFile",icon = icon("file-arrow-up"))
       } else if (nPlotted$is_one) {
-        updateActionButton(session, "playVisibleFile",icon = icon("play"))
+        shiny::updateActionButton(session, "playVisibleFile",icon = icon("play"))
       } else {
-        updateActionButton(session, "playVisibleFile",icon = icon("triangle-exclamation"))
+        shiny::updateActionButton(session, "playVisibleFile",icon = icon("triangle-exclamation"))
       }
     })
 
@@ -45,7 +45,7 @@ playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
 
       if (!file.exists(file_to_open)) {
         message(paste0("File ", file_to_open, " not found."))
-        updateActionButton(session, "playVisibleFile",icon = icon("xmark"))
+        shiny::updateActionButton(session, "playVisibleFile",icon = icon("xmark"))
         currentWave$exists <- FALSE
         return(NULL)
       }
