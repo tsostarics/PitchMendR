@@ -4,6 +4,7 @@ playAudioUI <- function(id) {
   shiny::actionButton(
     inputId = ns("playVisibleFile"),
     label = "Play File",
+    title = "Click to play file (if one is plotted & available)",
     icon = shiny::icon("xmark")
   )
 }

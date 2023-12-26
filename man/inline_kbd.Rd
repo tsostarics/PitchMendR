@@ -4,15 +4,26 @@
 \alias{inline_kbd}
 \title{Interpolate string with inline kbd button}
 \usage{
-inline_kbd(key, string, ...)
+inline_kbd(key, string, as_chord = TRUE, safe = TRUE, ...)
 }
 \arguments{
 \item{key}{Character vector of keys to display}
 
 \item{string}{A glue string to interpolate. Use \code{{KEY}} to insert the inline
-key if you're only using one key, or \code{{KEY[1]}}, \code{{KEY[2]}}, etc. if you're
-inserting multiple keys. Note that you are only allowed to interpolate
-\code{KEY}, other R code will not be evaluated.}
+key or a chord of keys if \code{use_chord} is TRUE. Use \code{{KEY[1]}}, \code{{KEY[2]}},
+etc. if you're inserting multiple keys and \code{use_chord} is FALSE. Note that
+you are only allowed to interpolate \code{KEY}, other R code will not be
+evaluated.}
+
+\item{as_chord}{Whether to treat \code{key} as a chord with multiple keys
+involved. If TRUE, will automatically expand \code{{KEY}} to
+\code{{KEY[1]}+{KEY[2]}+...}. If FALSE, make sure to use \code{{KEY[1]}}, \code{{KEY[2]}},
+etc. or you'll get a list of buttons instead of a string. When \code{keys} is a
+character vector of length 1, this argument doesn't affect anything.}
+
+\item{safe}{If TRUE, will throw an error if the resulting interpolated string
+is not of length 1. Usually this happens when as_chord is FALSE and you
+only provide \code{{KEY}} instead of \code{{KEY[1]}}.}
 
 \item{...}{Additional arguments passed to \code{kbd()}}
 }
@@ -25,10 +36,7 @@ Inserts inline kbd tags
 \examples{
 \dontrun{
 
-inline_kbd_button("a", "Press {KEY} to continue")
-# > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">A</button> to continue
-
-inline_kbd_button(c("ctrl", "z"), "Press {KEY[1]}+{KEY[2]} to undo")
-# > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>+<button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button> to undo
+inline_kbd("a", "Press {KEY} to continue")#'
+inline_kbd(c("ctrl", "z"), "Press {KEY[1]}+{KEY[2]} to undo")
 }
 }

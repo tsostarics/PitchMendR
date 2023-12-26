@@ -7,7 +7,7 @@
 use_keyboardcss_link()
 }
 \value{
-A singleton tagList for the UI
+A singleton for the UI
 }
 \description{
 If you don't want to use the local version for some reason, you can use

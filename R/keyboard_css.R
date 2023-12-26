@@ -155,8 +155,6 @@ inline_kbd <- function(key, string, as_chord=TRUE, safe=TRUE, ...) {
 
 .make_inline_kbd <- function(key, string, as_chord=TRUE, safe=TRUE, .kbd_method, ...) {
   KEY <- lapply(key, \(k) .kbd_method(k, ...))
-  if (length(KEY) == 1)
-    KEY <- KEY[[1]]
 
   if (as_chord)
     KEY <- paste0(vapply(KEY, as.character, "char"), collapse = "+")

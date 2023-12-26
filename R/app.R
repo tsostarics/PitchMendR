@@ -44,6 +44,7 @@ openEditor <- function(...) {
       title = "Tools",
       shiny::actionButton(
         inputId = "loadFileButton",
+        title = "Click to load selected file",
         # label = shiny::uiOutput(outputId = "loadFileButtonLabel"),
         label = "Load File",
         class = "btn-warning",
@@ -52,13 +53,19 @@ openEditor <- function(...) {
         # shiny::icon("upload")
       ),
       praatUI_button("praatIO"),
-      shinyWidgets::materialSwitch(inputId = "hideToggleInput",label="Hide transform", value = FALSE,status = "info"),
+      shinyWidgets::materialSwitch(inputId = "hideToggleInput",
+                                   # title = "Toggle to hide doubling/halving transforms",
+                                   label="Hide transform",
+                                   value = FALSE,
+                                   status = "info"),
       shiny::actionButton(
         inputId = "undoTransformButton",
+        title = "Click to undo last doubling/halving transform",
         label = "Undo Transform"
       ),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
+        title = "Click to check off currently plotted files",
         icon = shiny::icon('check'),
         label = "off visible"
       ),
@@ -108,11 +115,13 @@ openEditor <- function(...) {
                      ),
                      shiny::actionButton(
                        inputId = "plotMatchesButton",
+                       title = "Click to plot files that match regex",
                        label = "Plot Matches"
                      ),
                      shiny::textOutput(outputId = "nFilesPlotted"),
                      shiny::actionButton(
                        inputId = "goToBrushButton",
+                       title = "Click to plot selected files",
                        label = "Plot Brushed Files"
                      ),
                      shiny::verbatimTextOutput(outputId = "brushedFileNames"),
@@ -134,19 +143,43 @@ openEditor <- function(...) {
           bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
                                 bslib::card(fill = TRUE,
                                             shiny::fluidRow(
-                                              shiny::actionButton(width = "98%", inputId = "showLineButton", label = "Show Line", style = "margin-left:1%;margin-right:1%")),
+                                              shiny::actionButton(width = "98%",
+                                                                  inputId = "showLineButton",
+                                                                  label = "Show Line",
+                                                                  title = "Click to show/hide contour lines",
+                                                                  style = "margin-left:1%;margin-right:1%")),
                                             fileNavUI("fileNav"),
                                             annotationUI("annotations")
                                 ),
                                 bslib::card(fill = TRUE,
                                             shiny::fluidRow(
-                                              shiny::actionButton(width = "98%", inputId = "toggleButton", label = "Toggle Pulses", style = "margin-left:1%;margin-right:1%")),
+                                              shiny::actionButton(inputId = "toggleButton",
+                                                                  label = "Toggle Pulses",
+                                                                  title = "Click to toggle currently selected points",
+                                                                  style = "margin-left:1%;margin-right:1%",
+                                                                  width = "98%")),
                                             shiny::fluidRow(
-                                              shiny::actionButton(width = "48%", inputId = "keepButton", label = "Keep", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                              shiny::actionButton(width = "48%", inputId = "removeButton", label = "Remove", style = "margin: 1%;margin-top:0%;margin-bottom:0")),
+                                              shiny::actionButton(width = "48%",
+                                                                  inputId = "keepButton",
+                                                                  label = "Keep",
+                                                                  title = "Click to keep selected points",
+                                                                  style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                              shiny::actionButton(width = "48%",
+                                                                  inputId = "removeButton",
+                                                                  label = "Remove",
+                                                                  title = "Click to remove selected points",
+                                                                  style = "margin: 1%;margin-top:0%;margin-bottom:0")),
                                             shiny::fluidRow(
-                                              shiny::actionButton(width = "48%", inputId = "halfButton", label = "Halve Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"),
-                                              shiny::actionButton(width = "48%",inputId = "doubleButton", label = "Double Pulses", style = "margin: 1%;margin-top:0%;margin-bottom:0"))
+                                              shiny::actionButton(width = "48%",
+                                                                  inputId = "halfButton",
+                                                                  label = "Halve Pulses",
+                                                                  title = "Click to halve point y-values",
+                                                                  style = "margin: 1%;margin-top:0%;margin-bottom:0"),
+                                              shiny::actionButton(width = "48%",
+                                                                  inputId = "doubleButton",
+                                                                  label = "Double Pulses",
+                                                                  title = "Click to double point y-values",
+                                                                  style = "margin: 1%;margin-top:0%;margin-bottom:0"))
                                 )
           )
           # )
@@ -160,7 +193,7 @@ openEditor <- function(...) {
                       shiny::column(width = 3,
                                     bslib::card(
                                       height = '88vh',fill = TRUE,
-                                      title = "Press button to set column",
+                                      # title = "Press button to set column",
                                       shiny::selectizeInput("filenameColumnInput",
                                                             label ="Column name containing individual files",
                                                             choices = "Filename",
@@ -180,6 +213,7 @@ openEditor <- function(...) {
                                                             multiple = FALSE,
                                                             width = "100%",),
                                       submitTextInput("selectionColumnInput",
+                                                      title = "Click button set column name",
                                                       label = "Column name for keep/remove annotations (will be added if it doesn't exist)",
                                                       value = "keep_pulse",
                                                       width = "100%"
@@ -230,12 +264,13 @@ openEditor <- function(...) {
                                         value = FALSE,
                                         inline = TRUE,
                                         status = "info"),
-                                      # Tabset panel to hide/show color code column input
-                                      # based on whether the useFlaggedColumnToggle is
-                                      # set to TRUE. Needs to be done this way instead of
+                                      # Tabset panel to hide/show color code
+                                      # column input based on whether the
+                                      # useFlaggedColumnToggle is set to TRUE.
+                                      # Needs to be done this way instead of
                                       # using uiOutput, otherwise the plot won't
-                                      # render until the user manually goes to the
-                                      # settings tab so the selectize input
+                                      # render until the user manually goes to
+                                      # the settings tab so the selectize input
                                       # initializes
                                       shiny::tabsetPanel(type = "hidden",
                                                          id = "switchColorCode",
