@@ -88,12 +88,12 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
 
         # Use the columns of the loaded data and the provided glue string to
         # send the files currently displayed in the editor to Praat
-        files_to_open <- glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                              input$fileNameGlue)
-        files_to_open <- file.path(input$audioDirInput, unique(files_to_open))
+        files_to_open <- unique(glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+                                              input$fileNameGlue))
+        open_paths <- file.path(input$audioDirInput, files_to_open)
 
         if (!is.null(input$textgridDirInput))
-          files_to_open <- c(files_to_open, gsub(".wav$", ".TextGrid", files_to_open))
+          open_paths <- c(open_paths, file.path(input$audioDirInput, gsub(".wav$", ".TextGrid$", files_to_open)))
 
         systemcall <- paste(input$pathToPraat,
                             "--new-open --hide-picture",
