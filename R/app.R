@@ -39,7 +39,7 @@ openEditor <- function(...) {
                                       "a",
                                       "ctrl+z",
                                       "command+z",
-                                      "space")
+                                      "ctrl+shift+a")
       ),
       title = "Tools",
       shiny::actionButton(
@@ -62,11 +62,12 @@ openEditor <- function(...) {
         icon = shiny::icon('check'),
         label = "off plotted files"
       ),
-      shiny::actionButton(
-        inputId = "playVisibleFile",
-        label = "Play File",
-        icon = shiny::icon("xmark")
-      ),
+      playAudioUI("playAudio"),
+      # shiny::actionButton(
+      #   inputId = "playVisibleFile",
+      #   label = "Play File",
+      #   icon = shiny::icon("xmark")
+      # ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
       shiny::uiOutput(outputId = "editedFileSelectUI")
     ),
@@ -364,7 +365,8 @@ openEditor <- function(...) {
                             ),
                     shiny::actionButton(
                       inputId = "flagSamplesButton",
-                      shiny::uiOutput(outputId = "flagSamplesButtonLabel")
+                      icon = icon('flag'),
+                      label = "Flag Samples"
                     )
                           )
             )
@@ -404,7 +406,7 @@ openEditor <- function(...) {
                   "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
                   "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
                   "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
-                  "space" = keyBindAction(plotMatches, "[Space] pressed (Plot Matches)"))
+                  "ctrl+shift+a" = keyBindAction(plotMatches, "[Ctrl+Shift+A] pressed (Plot Matches)"))
     )
 
 
@@ -426,28 +428,7 @@ openEditor <- function(...) {
                            xvar = input$xValColumnInput,
                            yvar = yval)
 
-      # shiny::brushedPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-      #                      input$plot_brush,
-      #                      xvar = input$xValColumnInput,
-      #                      yvar = yval)
     })
-
-    # The plot render will take on these as dependencies, too
-    # no_missing_plot_inputs <- reactive({
-    #   !any(c(is.null(plotFlag$value),
-    #          is.null(plotSubsetFlag$value),
-    #          is.null(loadedFile$data),
-    #          is.null(input$alphaSlider),
-    #          is.null(input$sizeSlider),
-    #          is.null(input$yValColumnInput),
-    #          is.null(input$xValColumnInput),
-    #          is.null(input$filenameColumnInput),
-    #          is.null(input$selectionColumnInput),
-    #          is.null(input$useFlaggedColumnToggle),
-    #          is.null(input$colorCodeColumnInput),
-    #          is.null(input$pitchRangeInput),
-    #          is.null(plotSubset())))
-    # })
 
     plotSubset <- reactiveValues(data = NULL)
 
@@ -471,7 +452,6 @@ openEditor <- function(...) {
       plotFlag$value
       if (!is.null(loadedFile$data)) {
 
-        # plot_subset <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
         # These will update when the user changes the color manually with the
         # color pickers or if the theme is changed.
         color_values <- plotSettings$setColors[2:3]
@@ -480,9 +460,6 @@ openEditor <- function(...) {
         yval <- transformedColumn$name
         if (input$hideToggleInput)
           yval <- input$yValColumnInput
-        # print(plotSubset())
-        # print(loadedFile$data)
-        # plot_data <- plotSubset()
 
         # Set up the main aesthetics for the plot
         p <-
@@ -591,7 +568,10 @@ openEditor <- function(...) {
 
       if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
         first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        loadedFile$data[[input$selectionColumnInput]][first_id] <- !loadedFile$data[[input$selectionColumnInput]][first_id]
+        # loadedFile$data[[input$selectionColumnInput]][first_id] <- !loadedFile$data[[input$selectionColumnInput]][first_id]
+        loadedFile$data[first_id, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
+        plot_vals_to_change <- plotSubset$data$pulse_id == first_id
+        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
         clickedPoint <- NULL
         updatePlot()
       }
@@ -770,12 +750,12 @@ openEditor <- function(...) {
 
       if ("flagged_samples" %in% colnames(loadedFile$data)) {
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
-        flagSamplesIcon$value <- "check"
+        updateActionButton(session, "flagSamplesButton", icon = icon("check"))
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       } else {
         shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
-        flagSamplesIcon$value <- "flag"
+        updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
       }
 
@@ -1172,24 +1152,6 @@ openEditor <- function(...) {
                        }
                      })
 
-    currentWave <- shiny::reactiveValues(value = NULL, path = NULL, instance = NULL)
-
-    observe({
-      if (is.null(loadedFile$data) ||
-          !nPlotted$is_one ||
-          is.null(audioInfo$audioDirectory) ||
-          is.null(audioInfo$glueString) ||
-          is.null(plotFlag$value)) {
-        updateActionButton(session, "playVisibleFileButton",icon = icon("xmark"))
-      } else if (nPlotted$is_one && (is.null(currentWave$value) || !file.exists(currentWave$path))) {
-        updateActionButton(session, "playVisibleFileButton",icon = icon("file-arrow-up"))
-      } else if (nPlotted$is_one) {
-        updateActionButton(session, "playVisibleFileButton",icon = icon("play"))
-      } else {
-        updateActionButton(session, "playVisibleFileButton",icon = icon("triangle-exclamation"))
-      }
-    })
-
 
     observe({
       if (!is.null(input$fileSelectBox) && !is.null(input$inputDirInput)) {
@@ -1204,46 +1166,25 @@ openEditor <- function(...) {
     })
 
 
+    currentWave <- shiny::reactiveValues(value = NULL,
+                                         path = NULL,
+                                         exists = NULL,
+                                         instance = NULL)
+
     destroyLoadedAudio <- function(){
       if (!is.null(currentWave$instance))
         audio::close.audioInstance(currentWave$instance)
       currentWave$instance <<- NULL
       currentWave$value <<- NULL
       currentWave$path <<- NULL
-
+      currentWave$exists <<- NULL
     }
-
-    shiny::observeEvent(input$playVisibleFile, {
-      if (is.null(loadedFile$data) | sum(fileHandler$isPlotted) != 1 | is.null(audioInfo$audioDirectory) | is.null(audioInfo$glueString))
-        return(NULL)
-
-      file_to_open <-
-        file.path(audioInfo$audioDirectory(),
-                  glue::glue_data_safe(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                       audioInfo$glueString())[1])
-
-      if (!file.exists(file_to_open)) {
-        message(paste0("File ", file_to_open, " not found."))
-        return(NULL)
-      }
-
-      if (is.null(currentWave$value)){
-        currentWave$path <- file_to_open
-        currentWave$value <- audio::load.wave(file_to_open)
-        if (!is.null(currentWave$instance))
-          close(currentWave$instance)
-        currentWave$instance <- audio::play(currentWave$value)
-      } else {
-        if (!is.null(currentWave$instance))
-          close(currentWave$instance)
-        currentWave$instance <- audio::play(currentWave$value)
-      }
-    })
 
     shinyjs::onclick(id = "keysQuestion", {
       shinyWidgets::show_alert(
         title = "Keyboard Shortcuts",
         type = 'info',
+        width = "35em",
         html = TRUE,
         text = tagList(
           tags$div(style = css(`text-align` = "left",
@@ -1261,8 +1202,8 @@ openEditor <- function(...) {
                        inline_kbd_button('b', " - {KEY}: Plot brushed files"),
                        inline_kbd_button('d', " - {KEY}: Double selected pulses"),
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
-                       inline_kbd_button(c("ctrl", "z"), " - {KEY[1]}+{KEY[2]}: Undo last transform"),
-                       inline_kbd_button('space', " - {KEY}: Plot files matching regex")
+                       inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform"),
+                       inline_kbd_button(c("ctrl", "shift", "a"), " - {KEY}: Plot files matching regex")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
                                       `margin-bottom` = "none"),
@@ -1283,16 +1224,6 @@ openEditor <- function(...) {
       }
     })
 
-    # Reactive value to change the icon for the Flag Samples button,
-    # this is used to change the icon when the button is pressed.
-    flagSamplesIcon <- shiny::reactiveValues(value = "flag")
-
-    # Renders the Flag Samples button with the correct icon
-    output$flagSamplesButtonLabel <- shiny::renderUI({
-      tags$span(shiny::icon(flagSamplesIcon$value), "Flag Samples")
-    })
-
-
 
 
     # When the user clicks the Flag Samples button, all files in the loaded
@@ -1301,25 +1232,33 @@ openEditor <- function(...) {
     # the button will change color and the icon will change to a checkmark.
     shiny::observeEvent(input$flagSamplesButton, {
       message("Flag Samples Pressed")
-      if (!is.null(loadedFile$data)) {
+      if (is.null(loadedFile$data))
+        return(NULL)
 
-        flagSamplesIcon$value <- "hourglass"
-        loadedFile$data <-
-          flag_potential_errors(loadedFile$data,
-                                .unique_file = input$filenameColumnInput,
-                                .hz = input$yValColumnInput,
-                                .time = input$xValColumnInput,
-                                .samplerate = NA)
-        # loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
-        if (!data.table::is.data.table(loadedFile$data))
-          loadedFile$data <- data.table(loadedFile$data)
+      updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
+      # shinyjs::addClass("flagSamplesButton", class = "btn-warning")
 
-        shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
-        flagSamplesIcon$value <- "check"
-        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-        refilterSubset()
-      }
+
+
+      loadedFile$data[['flagged_sampled']] <-
+        flag_potential_errors(loadedFile$data,
+                              .unique_file = input$filenameColumnInput,
+                              .hz = input$yValColumnInput,
+                              .time = input$xValColumnInput,
+                              .samplerate = NA,
+                              .as_vec = TRUE)
+
+      # loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
+      if (!data.table::is.data.table(loadedFile$data))
+        loadedFile$data <- data.table(loadedFile$data)
+
+      # shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
+      shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
+      updateActionButton(session, "flagSamplesButton", icon = icon("check"))
+      shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
+      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
+      refilterSubset()
+
     })
 
     audioInfo <-
@@ -1327,6 +1266,14 @@ openEditor <- function(...) {
                   loadedFile,
                   fileHandler,
                   reactive(input$filenameColumnInput))
+
+    playAudioServer("playAudio",
+                    loadedFile,
+                    currentWave,
+                    destroyLoadedAudio,
+                    audioInfo,
+                    nPlotted,
+                    plotSubset)
 
     # Note: the input is created from within the window resizer module via
     #       javascript, so it's actually visible from this scope and needs
@@ -1359,6 +1306,8 @@ openEditor <- function(...) {
                              annotations,
                              refilterSubset,
                              destroyLoadedAudio)
+
+
 
   }
 

@@ -37,13 +37,15 @@ flag_potential_errors <- function(data,
                                   .add_semitones = NA,
                                   .speaker = NA,
                                   rise_threshold = 1.2631578947,
-                                  fall_threshold = 1.7142857143) {
+                                  fall_threshold = 1.7142857143,
+                                  .as_vec = FALSE) {
 
   datalist <- .convert_time_to_ms(data, .time, .samplerate)
   trans_time_column <- paste0(.time, "___trans")
 
   data[[trans_time_column]] <- datalist[['time']]
 
+  updated_df <-
   data |>
     annotate_errors(.unique_file = .unique_file,
                     .hz = .hz,
@@ -58,6 +60,11 @@ flag_potential_errors <- function(data,
                            fall_threshold = fall_threshold) |>
     dplyr::select(-dplyr::all_of(trans_time_column)) |>
     dplyr::ungroup()
+
+  if (.as_vec)
+    return(updated_df[['flagged_samples']])
+
+  updated_df
 }
 
 #' Convert seconds (probably) to milliseconds

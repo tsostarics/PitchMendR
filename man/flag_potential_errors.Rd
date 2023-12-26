@@ -13,7 +13,8 @@ flag_potential_errors(
   .add_semitones = NA,
   .speaker = NA,
   rise_threshold = 1.2631578947,
-  fall_threshold = 1.7142857143
+  fall_threshold = 1.7142857143,
+  .as_vec = FALSE
 )
 }
 \arguments{
