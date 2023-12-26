@@ -97,7 +97,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
 
         systemcall <- paste(input$pathToPraat,
                             "--new-open --hide-picture",
-                            paste0(files_to_open[file.exists(files_to_open)], collapse = " "),
+                            paste0(open_paths[file.exists(open_paths)], collapse = " "),
                             sep = " ")
         message(systemcall)
         base::system(systemcall, wait = FALSE)

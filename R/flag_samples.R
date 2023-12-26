@@ -99,7 +99,7 @@ flag_potential_errors <- function(data,
     }
 
     updated_df[["where_not_zero__"]] <- NULL
-    updated_df <- dplyr::arrange(updated_df, "pulse_id")
+    updated_df <- dplyr::arrange(updated_df, dplyr::across(dplyr::all_of('pulse_id')))
   } else {
 
     updated_df <-
