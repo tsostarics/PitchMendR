@@ -5,7 +5,7 @@ praatUI_input <- function(id) {
     "The following are only used when opening files in Praat.",
     shiny::textInput(
       inputId = ns("pathToPraat"),
-      label = "Praat Path (relative to app.R directory)",
+      label = "Praat Path (relative to working directory)",
       value = "./Praat.exe"
     ),
     span(style = "display:inline-block;",
@@ -36,7 +36,8 @@ praatUI_button <- function(id) {
 
   shiny::actionButton(
     inputId = ns("sendToPraatButton"),
-    label = "Open Files in Praat",
+    title = "Open the currently visible files in a new Praat window",
+    label = "Open in Praat",
   )
 }
 

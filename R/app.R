@@ -60,14 +60,9 @@ openEditor <- function(...) {
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         icon = shiny::icon('check'),
-        label = "off plotted files"
+        label = "off visible"
       ),
       playAudioUI("playAudio"),
-      # shiny::actionButton(
-      #   inputId = "playVisibleFile",
-      #   label = "Play File",
-      #   icon = shiny::icon("xmark")
-      # ),
       shiny::uiOutput(outputId = "uneditedFileSelectUI"),
       shiny::uiOutput(outputId = "editedFileSelectUI")
     ),
@@ -87,13 +82,16 @@ openEditor <- function(...) {
       color: #c10000;
       background-color:#f8f8f8;
       }
+      .form-group {
+        margin-bottom: 8px;
+      }
     "))
       ),
     title = "Editor",
     shiny::fluidRow(
       bslib::layout_column_wrap(
         width= NULL,
-        height = NULL, #fill = TRUE,
+        height = NULL,
         heights_equal = "row",
         style = htmltools::css(grid_template_columns = "275px 9fr"),
         bslib::card( height = "88vh",
@@ -462,7 +460,7 @@ openEditor <- function(...) {
 
         # These will update when the user changes the color manually with the
         # color pickers or if the theme is changed.
-        color_values <-  plotSettings$setColors[3:2]
+        color_values <-  plotSettings$setColors[2:3]
         lineColor <- plotSettings$setColors[1]
 
         yval <- transformedColumn$name
