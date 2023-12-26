@@ -7,7 +7,7 @@
 #' @return Nothing
 #' @export
 #'
-#' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req
+#' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req reactiveValues observe
 #' @importFrom rlang sym
 openEditor <- function(...) {
   ui <- bslib::page_navbar(
@@ -462,7 +462,7 @@ openEditor <- function(...) {
 
         # These will update when the user changes the color manually with the
         # color pickers or if the theme is changed.
-        color_values <-color_values <- c("FALSE" = plotSettings$setColors[3], "TRUE" = plotSettings$setColors[2])
+        color_values <-  plotSettings$setColors[3:2]
         lineColor <- plotSettings$setColors[1]
 
         yval <- transformedColumn$name
@@ -486,12 +486,14 @@ openEditor <- function(...) {
         # otherwise just use the keep_pulse column to redundantly code that information
         if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data)) {
           p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput), shape = !!sym(input$selectionColumnInput)),
+            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput),
+                                             shape = !!sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
                                 alpha = input$alphaSlider)
         } else {
           p <- p +
-            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput), shape = !!sym(input$selectionColumnInput)),
+            ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput),
+                                             shape = !!sym(input$selectionColumnInput)),
                                 size = input$sizeSlider,
                                 alpha = input$alphaSlider)
         }
@@ -756,7 +758,7 @@ openEditor <- function(...) {
 
       if ("flagged_samples" %in% colnames(loadedFile$data)) {
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
-        updateActionButton(session, "flagSamplesButton", icon = icon("check"))
+        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       } else {
