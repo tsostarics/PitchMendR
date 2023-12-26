@@ -96,6 +96,14 @@ kbd_button <- function(key, class=NULL, size = "sm", id = NULL) {
 #' inserting multiple keys. Note that you are only allowed to interpolate
 #' `KEY`, other R code will not be evaluated.
 #' @param ... Additional arguments passed to `kbd_button()`
+#' @param as_chord Whether to treat `key` as a chord with multiple keys involved.
+#' If TRUE, will automatically expand `{KEY}` to `{KEY[1]}+{KEY[2]}+...`. If
+#' FALSE, make sure to use `{KEY[1]}`, `{KEY[2]}`, etc. or you'll get a list
+#' of buttons instead of a string. When `keys` is a character vector of length
+#' 1, this argument doesn't affect anything.
+#' @param safe If TRUE, will throw an error if the resulting interpolated string
+#' is not of length 1. Usually this happens when as_chord is FALSE and you
+#' only provide `{KEY}` instead of `{KEY[1]}`.
 #'
 #' @return An interpolated string with inline kbd buttons
 #'
@@ -105,23 +113,36 @@ kbd_button <- function(key, class=NULL, size = "sm", id = NULL) {
 #' inline_kbd_button("a", "Press {KEY} to continue")
 #' # > Press <button class="kbc-button kbc-button-sm" style="width:fit-content">A</button> to continue
 #'
-#' inline_kbd_button(c("ctrl", "z"), "Press {KEY[1]}+{KEY[2]} to undo")
+#' inline_kbd_button(c("ctrl", "z"), "Press {KEY[1]} and {KEY[2]} to undo", as_chord=FALSE)
+#' # > Press
+#' <button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>
+#' and
+#' <button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button>
+#' to undo
+#' inline_kbd_button(c("ctrl", "z"), "Press {KEY} to undo", as_chord=TRUE)
 #' # > Press
 #' <button class="kbc-button kbc-button-sm" style="width:fit-content">CTRL</button>
 #' +
 #' <button class="kbc-button kbc-button-sm" style="width:fit-content">Z</button>
 #' to undo
 #' }
-inline_kbd_button <- function(key, string, ...) {
+inline_kbd_button <- function(key, string, as_chord=TRUE, safe=TRUE, ...) {
   KEY <- lapply(key, \(k) kbd_button(k, ...))
   if (length(KEY) == 1)
     KEY <- KEY[[1]]
 
+  if (as_chord)
+    KEY <- paste0(vapply(KEY, as.character, "char"), collapse = "+")
+
   # Create new environment to allow user to set multiple keys using
   # KEY[1], KEY[2], etc. without allowing them to execute other R code
   eval_environment <- rlang::new_environment(data = list("KEY" = KEY, '[' = `[[`))
-  glue::glue(string,.envir = eval_environment)
-}
+  interpolated_string <- glue::glue(string,.envir = eval_environment)
+
+  if (length(interpolated_string) > 1 && safe)
+    stop("More than 1 interpolated string was returned. Use as_chord=TRUE with {KEY} or use as_chord=FALSE and subset KEY with {KEY[1]}.")
+  interpolated_string
+  }
 
 
 #' Interpolate string with inline kbd button
