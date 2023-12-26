@@ -743,8 +743,8 @@ openEditor <- function(...) {
       shinyjs::removeClass("loadFileButton", "btn-primary")
 
       # Add animations to some of the important buttons
-      shinyjs::addClass("saveButton", class = "animbutton")
-      shinyjs::addClass("checkVisibileFilesButton", class = "animbutton")
+      shinyjs::addClass("fileNav-saveButton", class = "animbutton")
+      shinyjs::addClass("checkVisibleFilesButton", class = "animbutton")
 
       set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
       set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
