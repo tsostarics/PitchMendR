@@ -333,7 +333,9 @@ openEditor <- function(...) {
                               label = "Output directory",
                               value = "."
                             ),
-                            shiny::uiOutput(outputId = "availableFilesUI"),
+                            shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
+                                                  multiple = FALSE,
+                                                  choices = NULL),
                             praatUI_input("praatIO")
                           )
             ),
@@ -446,7 +448,7 @@ openEditor <- function(...) {
       message("Filtering")
       # lastTransformation
 
-      plotSubset$data <- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+      plotSubset$data <<- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
 
 
       message("Filtering done")
@@ -455,11 +457,12 @@ openEditor <- function(...) {
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
       plotFlag$value
-      if (!is.null(loadedFile$data)) {
+      if (is.null(loadedFile$data))
+        return(NULL)
 
         # These will update when the user changes the color manually with the
         # color pickers or if the theme is changed.
-        color_values <- plotSettings$setColors[2:3]
+        color_values <-color_values <- c("FALSE" = plotSettings$setColors[3], "TRUE" = plotSettings$setColors[2])
         lineColor <- plotSettings$setColors[1]
 
         yval <- transformedColumn$name
@@ -519,7 +522,7 @@ openEditor <- function(...) {
 
 
         p
-      }})
+      })
 
     togglePulses <- reactive({
       selectedPoints$data <- getBrushedPoints()
@@ -573,7 +576,6 @@ openEditor <- function(...) {
 
       if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
         first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        # loadedFile$data[[input$selectionColumnInput]][first_id] <- !loadedFile$data[[input$selectionColumnInput]][first_id]
         loadedFile$data[first_id, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
         plot_vals_to_change <- plotSubset$data$pulse_id == first_id
         plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
@@ -731,7 +733,6 @@ openEditor <- function(...) {
 
       fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
-      # fileHandler$isPlotted[1] <- TRUE
 
       if (!"file_checked" %in% colnames(loadedFile$data)) {
         loadedFile$data[, file_checked := FALSE]
@@ -1032,11 +1033,11 @@ openEditor <- function(...) {
     # that the user has not edited. Must be done after the user has refreshed
     # the diagnostics pane
     shiny::observeEvent(input$plotUneditedFilesButton, {
-      if(is.null(loadedFile$data))
+      if(is.null(loadedFile$data) || is.null(uneditedFiles$filenames))
         return(NULL)
-      if (!is.null(uneditedFiles$filenames)) {
-        fileHandler$isPlotted <- grepl(paste0("(", uneditedFiles$filenames, ")", collapse = "|"),fileHandler$filenames)
-      }
+
+      fileHandler$isPlotted <- fileHandler$filenames %in% uneditedFiles$filenames
+
     })
 
     # Renders the selectInput for all unedited files.
@@ -1063,37 +1064,19 @@ openEditor <- function(...) {
                          choices = fileHandler$filenames[fileHandler$fileChecked])
     })
 
-    # Gets the available files in a directory and colors them based on whether
-    # they have been processed or not
-    available_files <- shiny::reactive({
-      infiles = list.files(input$inputDirInput)
-      hasOutput = infiles %in% list.files(input$outputDirInput)
-      colors = ifelse(hasOutput, ifelse(input$dark_mode == "dark", 'white', "black"), "red")
-      names(colors) <- infiles
-      colors <- jsonlite::toJSON(as.list(colors))
-      colors
+    observe({
+      if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
+        all_files <- list.files(input$inputDirInput)
+        infiles <- list.files(input$inputDirInput)
+        hasOutput <- infiles %in% list.files(input$outputDirInput)
+
+        paste0(all_files, c("*", "")[hasOutput+1])
+
+        shiny::updateSelectizeInput(session,
+                                    inputId = "fileSelectBox",
+                                    choices = paste0(all_files, c("*", "")[hasOutput+1]))
+      }
     })
-
-    availableFiles <- reactive({
-      if(is.null(input$inputDirInput) | is.null(input$outputDirInput))
-        return(NULL)
-      all_files <- list.files(input$inputDirInput)
-      infiles <- list.files(input$inputDirInput)
-      hasOutput <- infiles %in% list.files(input$outputDirInput)
-
-      paste0(all_files, c("*", "")[hasOutput+1])
-
-    })
-
-    # Renders the selectizeInput for all available files.
-    output$availableFilesUI <- shiny::renderUI({
-      shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
-                            multiple = FALSE,
-                            choices = availableFiles()
-      )
-    })
-
-
 
 
     defaultPitchRange <- shiny::reactiveValues(min = 100, max = 500)
@@ -1157,7 +1140,7 @@ openEditor <- function(...) {
                        }
                      })
 
-
+    # Reactively update the appearance of the loadfile button
     observe({
       if (!is.null(input$fileSelectBox) && !is.null(input$inputDirInput)) {
         shinyjs::removeClass("loadFileButton", class = "btn-warning")
@@ -1241,9 +1224,6 @@ openEditor <- function(...) {
         return(NULL)
 
       updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
-      # shinyjs::addClass("flagSamplesButton", class = "btn-warning")
-
-
 
       loadedFile$data[['flagged_sampled']] <-
         flag_potential_errors(loadedFile$data,
@@ -1253,11 +1233,9 @@ openEditor <- function(...) {
                               .samplerate = NA,
                               .as_vec = TRUE)
 
-      # loadedFile$data[['flagged_samples']] <-factor(loadedFile$data[['flagged_samples']], levels = c(0,1))
       if (!data.table::is.data.table(loadedFile$data))
         loadedFile$data <- data.table(loadedFile$data)
 
-      # shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
       shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
       updateActionButton(session, "flagSamplesButton", icon = icon("check"))
       shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
