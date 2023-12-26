@@ -20,6 +20,15 @@
 #' @param .speaker Column name containing Speaker ID
 #' @param rise_threshold Rise threshold to use for errors
 #' @param fall_threshold Fall threshold to use for errors
+#' @param .as_vec Whether just the results should be returned as a logical vector
+#' (TRUE) or if the whole dataframe should be returned (FALSE)
+#' @param .ignore_0s If TRUE, will separate the dataset into two parts: where
+#' .hz is equal to 0 or NA, and where it is not (i.e., actual F0 values). The
+#' algorithm will run with the latter set, then the former will be merged back
+#' into the final dataset. This way the missing values are ignored, but the
+#' results are of the same size as the input. If this is set to FALSE, then
+#' you will get more false positives due to having many more F0 jumps from a
+#' starting value of 0.
 #'
 #' @return Dataframe with potential errors coded in the `flagged_samples` column
 #' @export
@@ -38,28 +47,78 @@ flag_potential_errors <- function(data,
                                   .speaker = NA,
                                   rise_threshold = 1.2631578947,
                                   fall_threshold = 1.7142857143,
-                                  .as_vec = FALSE) {
-
+                                  .as_vec = FALSE,
+                                  .ignore_0s = TRUE) {
+  # Ensure that the f0 column is numeric in case missing values are
+  # encoded as --undefined-- from Praat output
+  data[[.hz]] <- as.numeric(data[[.hz]]) # Coerces non-numeric strings to NA!
   datalist <- .convert_time_to_ms(data, .time, .samplerate)
   trans_time_column <- paste0(.time, "___trans")
 
   data[[trans_time_column]] <- datalist[['time']]
 
-  updated_df <-
-  data |>
-    annotate_errors(.unique_file = .unique_file,
-                    .hz = .hz,
-                    .time = trans_time_column,
-                    .samplerate = datalist[['samplerate']],
-                    .add_semitones = .add_semitones,
-                    .speaker = .speaker) |>
-    code_carryover_effects(.unique_file = .unique_file,
-                           .hz = .hz,
-                           .time = trans_time_column,
-                           rise_threshold = rise_threshold,
-                           fall_threshold = fall_threshold) |>
-    dplyr::select(-dplyr::all_of(trans_time_column)) |>
-    dplyr::ungroup()
+  if (.ignore_0s) {
+
+    # We need a unique id to use; the load file button will add this for us
+    # but just in case it's not there we need to have it available
+    if (!"pulse_id" %in% colnames(data))
+      data[['pulse_id']] <- seq_len(nrow(data))
+
+    # Split the data into two separate tables: the actual data, and where
+    # there was no F0 detected (encoded as either 0 or NA).
+    data[["where_not_zero__"]] <- where_not_zero(data[[.hz]])
+    data_split <- split(data, by= 'where_not_zero__')
+
+    if (!"TRUE" %in% names(data_split))
+      stop("No non-zero values found")
+
+    updated_df <-
+      data_split[["TRUE"]] |>
+      annotate_errors(.unique_file = .unique_file,
+                      .hz = .hz,
+                      .time = trans_time_column,
+                      .samplerate = datalist[['samplerate']],
+                      .add_semitones = .add_semitones,
+                      .speaker = .speaker) |>
+      code_carryover_effects(.unique_file = .unique_file,
+                             .hz = .hz,
+                             .time = trans_time_column,
+                             rise_threshold = rise_threshold,
+                             fall_threshold = fall_threshold) |>
+      dplyr::select(-dplyr::all_of(trans_time_column)) |>
+      dplyr::ungroup()
+
+    # If we had any bad values in our dataset, we need to
+    # make the columns match those of the actual dataset
+    if ("FALSE" %in% names(data_split)) {
+      data_split[["FALSE"]][['flagged_samples']] <- TRUE
+      data_split[["FALSE"]][[trans_time_column]] <- NULL
+      data_split[["FALSE"]][["F0_semitones"]] <- NA
+
+      updated_df <- rbind(updated_df, data_split[['FALSE']])
+    }
+
+    updated_df[["where_not_zero__"]] <- NULL
+    updated_df <- dplyr::arrange(updated_df, "pulse_id")
+  } else {
+
+    updated_df <-
+      data |>
+      annotate_errors(.unique_file = .unique_file,
+                      .hz = .hz,
+                      .time = trans_time_column,
+                      .samplerate = datalist[['samplerate']],
+                      .add_semitones = .add_semitones,
+                      .speaker = .speaker) |>
+      code_carryover_effects(.unique_file = .unique_file,
+                             .hz = .hz,
+                             .time = trans_time_column,
+                             rise_threshold = rise_threshold,
+                             fall_threshold = fall_threshold) |>
+      dplyr::select(-dplyr::all_of(trans_time_column)) |>
+      dplyr::ungroup()
+  }
+
 
   if (.as_vec)
     return(updated_df[['flagged_samples']])
@@ -182,8 +241,8 @@ annotate_errors <- function(data,
       time_diff = dplyr::lead(.data[[.time]]) - .data[[.time]],
       ratio_Hz = lead_F0_Hz/.data[[.hz]],
       err = (!is.na(time_diff)) & (time_diff <= .samplerate*8) & ## this ignore time differences larger than 8*the time step, e.g., over voiceless intervals.
-                   (diff>0 & (abs(diff)*time_mutation)>rise_threshold |
-                                diff<0 & (abs(diff)*time_mutation)>fall_threshold),
+        (diff>0 & (abs(diff)*time_mutation)>rise_threshold |
+           diff<0 & (abs(diff)*time_mutation)>fall_threshold),
       # err_prop_by_ID = mean(err, na.rm = TRUE),
       # err_count_by_ID = sum(err, na.rm = TRUE),
       # err_in_ID = as.numeric(err_prop_by_ID > 0),
@@ -262,9 +321,9 @@ code_carryover_effects <- function(data_annotated,
 
   data_annotated |>
     dplyr::mutate(#carryover_err = ifelse(.data[[.time]]==max(.data[[.time]]) & dplyr::lag(carryover_err) == 1,1, carryover_err),
-                  flagged_samples = carryover_err,
-                  # flagged_samples includes the seeding samples for carryover error detection- i.e. some actual errors
-                  carryover_only = carryover_err & !err) |>
+      flagged_samples = carryover_err,
+      # flagged_samples includes the seeding samples for carryover error detection- i.e. some actual errors
+      carryover_only = carryover_err & !err) |>
     dplyr::select(-next_F0_st,
                   -carryover_err,
                   -f0_st_diff,
@@ -272,7 +331,8 @@ code_carryover_effects <- function(data_annotated,
                   -is_fall_error,
                   -is_threshold_error,
                   -carryover_only,
-                  -F0_of_err)
+                  -F0_of_err,
+                  -err)
 }
 
 #' Propagate F0 errors rightward

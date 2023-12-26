@@ -13,7 +13,7 @@ openEditor <- function(...) {
   ui <- bslib::page_navbar(
 
     id = "navbar",
-    title = "Pitch Editor",
+    title = "PitchMendR",
     selected = "Setup",
     collapsible = TRUE,
     theme = bslib::bs_theme(version = 5),
@@ -1270,12 +1270,13 @@ openEditor <- function(...) {
 
       updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
 
-      loadedFile$data[['flagged_sampled']] <-
+      loadedFile$data[['flagged_samples']] <-
         flag_potential_errors(loadedFile$data,
                               .unique_file = input$filenameColumnInput,
                               .hz = input$yValColumnInput,
                               .time = input$xValColumnInput,
                               .samplerate = NA,
+                              .speaker = "Speaker", # change this later
                               .as_vec = TRUE)
 
       if (!data.table::is.data.table(loadedFile$data))
