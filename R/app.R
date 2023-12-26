@@ -394,6 +394,9 @@ openEditor <- function(...) {
     plotFlag <- shiny::reactiveValues(value = TRUE)
 
     # Default keybindings, see https://craig.is/killing/mice for valid keys
+    # Here what we're doing is setting each key to a reactive that's also mapped
+    # to a button on the visible UI. This way all we need to change is the
+    # reactive value and both the button and keybinding will be changed.
     boundKeys <- shiny::reactiveValues(
       keys = list("f" = keyBindAction(togglePulses, "[F] Pressed (Toggle)"),
                   "r" = keyBindAction(removePulses, "[R] Pressed (Remove)"),
@@ -414,6 +417,8 @@ openEditor <- function(...) {
       # Key bindings only apply on the editor page
       if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
         return(NULL)
+
+      # Call the appropriate reactive from the keybindings we set
       boundKeys$keys[[input$keys]]()
     })
 
