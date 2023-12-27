@@ -107,6 +107,8 @@ fileNavServer <- function(id,
       }
       }else {
         current_min <- current_min - 1
+        if (current_min < 1) # == 0
+          current_min <- length(fileHandler$filenames)
       }
 
       fileHandler$isPlotted[current_min] <- TRUE
@@ -129,7 +131,7 @@ fileNavServer <- function(id,
       current_max <- max(which(fileHandler$isPlotted))
       # if (current_max >= length(fileHandler$filenames))
       #   current_max <- 0
-
+      # browser()
       # Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
@@ -150,6 +152,8 @@ fileNavServer <- function(id,
         }
       } else {
         current_max <- current_max + 1
+        if (current_max > nfiles) # == 0
+          current_max <- 1
       }
 
 
