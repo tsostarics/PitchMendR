@@ -1005,7 +1005,7 @@ openEditor <- function(...) {
       lastTransformation$pulse_ids <- vals_to_change
 
       current_pitch_range <- isolate(input$pitchRangeInput)
-      min_transform_value <- min(loadedFile$data[[transformedColumn$name]])
+      min_transform_value <- min(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])])
       if (current_pitch_range[1L] > min_transform_value){
         new_pitch_min <-
           ceiling(add_semitones(min_transform_value, sign(-min_transform_value)*1L))
