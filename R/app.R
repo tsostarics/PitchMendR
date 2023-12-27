@@ -1323,7 +1323,8 @@ openEditor <- function(...) {
                   loadedFile,
                   fileHandler,
                   reactive(input$filenameColumnInput),
-                  reactive(input$pitchRangeInput))
+                  reactive(input$pitchRangeInput),
+                  filenav$saveData)
 
     playAudioServer("playAudio",
                     loadedFile,

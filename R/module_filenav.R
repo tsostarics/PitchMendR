@@ -31,9 +31,11 @@ fileNavServer <- function(id,
     })
 
     # When the user clicks the save button, save the data to the output directory
-    saveData <- function(path) {
+    saveData <- reactive({
       if (is.null(loadedFile$data))
         return(NULL)
+
+      path <- file.path(outputDirInput(), clean_file(fileSelectBox()))
 
       # Update the file checked column before saving
       loadedFile$data[, file_checked := fileHandler$fileChecked[.SD[[filenameColumnInput()]]]]
@@ -53,7 +55,7 @@ fileNavServer <- function(id,
         saveIcon$value <- "floppy-disk"
       }
 
-    }
+    })
 
     # When the user clicks the save button, save the data to the output directory
     shiny::observeEvent(input$saveButton, {
@@ -73,7 +75,7 @@ fileNavServer <- function(id,
         return(NULL)
       }
 
-      saveData(file.path(outputDirInput(), clean_file(fileSelectBox())))
+      saveData()
     })
 
     goToPreviousFile <- reactive({
@@ -116,7 +118,7 @@ fileNavServer <- function(id,
       annotations$updateNotes()
 
       if (saveOptionButton()) {
-        saveData(file.path(outputDirInput(), clean_file(fileSelectBox())))
+        saveData()
       }
       refilterSubset()
       destroyLoadedAudio()
@@ -163,7 +165,7 @@ fileNavServer <- function(id,
 
       # If we have the save-on-next option enabled, save the data
       if (saveOptionButton()) {
-        saveData(file.path(outputDirInput(), clean_file(fileSelectBox())))
+        saveData()
       }
       refilterSubset()
       destroyLoadedAudio()
@@ -182,7 +184,8 @@ fileNavServer <- function(id,
     })
 
     return(list("goToNextFile" = goToNextFile,
-                "goToPreviousFile" = goToPreviousFile))
+                "goToPreviousFile" = goToPreviousFile,
+                "saveData" = saveData))
   }
 
   )

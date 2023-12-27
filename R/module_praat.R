@@ -54,7 +54,7 @@ praatUI_button <- function(id) {
   )
 }
 
-praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchRangeInput) {
+praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchRangeInput, saveData) {
   moduleServer(id, function(input, output, session) {
 
     shinyjs::onclick(id = "glueQuestion", {
@@ -86,6 +86,8 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
       if (is.null(loadedFile$data))
         return(NULL)
 
+      saveData()
+
       if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
         # Use the columns of the loaded data and the provided glue string to
         # send the files currently displayed in the editor to Praat
@@ -95,6 +97,14 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
 
         if (!is.null(input$textgridDirInput))
           open_paths <- c(open_paths, file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open)))
+
+        open_paths <- open_paths[file.exists(open_paths)]
+
+        if (length(open_paths) == 0){
+          message("No files found")
+          return(NULL)
+        }
+
 
         # Set up a temporary script that will read in all the files
         temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
@@ -140,6 +150,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
                             '"',
                             sep = " ")
         message("Praat script start: ", Sys.time())
+        message("If praat throws an error, close the praat GUI to return to app")
         message(systemcall)
         base::system(systemcall, wait = FALSE) # Runs the script, deletes self at end
         while (file.exists(temp_script)) {}    # Waits until the script has deleted itself
