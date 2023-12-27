@@ -129,8 +129,9 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         writeLines(c(script_lines, read_file_lines, paste0('deleteFile: "', temp_script, '"')), temp_script)
 
         systemcall <- paste(input$pathToPraat,
-                            "--send --hide-picture",
+                            '--send --hide-picture "',
                             temp_script,
+                            '"',
                             sep = " ")
         message("Praat script start: ", Sys.time())
         message(systemcall)
