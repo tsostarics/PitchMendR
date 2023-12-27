@@ -1142,7 +1142,7 @@ openEditor <- function(...) {
                                       span(id = "resetPitchRange",
                                            title = "Click to reset to default",
                                            style = "cursor:pointer;",
-                                           "Pitch Range"),
+                                           HTML(paste0(icon("clock-rotate-left"), " Pitch Range"))),
                                       value = pitch_range,
                                       min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1])*8))),
 
