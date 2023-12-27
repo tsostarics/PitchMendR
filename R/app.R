@@ -226,6 +226,12 @@ openEditor <- function(...) {
                                         status = "info"
                                       ),
                                       shinyWidgets::awesomeCheckbox(
+                                        inputId = "skipCheckedFilesToggle",
+                                        label = "Skip checked files on file navigation",
+                                        value = TRUE,
+                                        status = "info"
+                                      ),
+                                      shinyWidgets::awesomeCheckbox(
                                         inputId = "useBadgesToggle",
                                         label = "Use tag buttons",
                                         value = TRUE,
@@ -1169,6 +1175,8 @@ openEditor <- function(...) {
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$uneditedFileSelectBox] <- TRUE
+                         refilterSubset()
+                         updatePlot()
                          # updatePlotSettingsData()
                        }
                      })
@@ -1181,6 +1189,8 @@ openEditor <- function(...) {
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$editedFileSelectBox] <- TRUE
+                         refilterSubset()
+                         updatePlot()
                          # updatePlotSettingsData()
                        }
                      })
@@ -1329,6 +1339,7 @@ openEditor <- function(...) {
                              loadedFile,
                              fileHandler,
                              reactive(input$saveOptionButton),
+                             reactive(input$skipCheckedFilesToggle),
                              reactive(input$outputDirInput),
                              reactive(input$fileSelectBox),
                              reactive(input$filenameColumnInput),

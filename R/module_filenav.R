@@ -14,6 +14,7 @@ fileNavServer <- function(id,
                           loadedFile,
                           fileHandler,
                           saveOptionButton,
+                          skipCheckedFilesToggle,
                           outputDirInput,
                           fileSelectBox,
                           filenameColumnInput,
@@ -81,8 +82,8 @@ fileNavServer <- function(id,
       # Get the minimum index of the files that are currently plotted,
       # if we're already at the first file, wrap around to the last file
       current_min <- min(which(fileHandler$isPlotted))
-      if (current_min == 1)
-        current_min <- length(fileHandler$filenames) + 1
+      # if (current_min == 1)
+      #   current_min <- length(fileHandler$filenames) + 1
 
       #$ Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
@@ -92,7 +93,23 @@ fileNavServer <- function(id,
       }
 
       fileHandler$isPlotted[] <- FALSE
-      fileHandler$isPlotted[current_min - 1] <- TRUE
+
+      # If we want to skip files we've already checked and there remain files
+      # that haven't been checked, keep cycling through files until we find
+      # the first unchecked file we can get to.
+      if (skipCheckedFilesToggle() && !all(fileHandler$fileChecked)) {
+      while (fileHandler$fileChecked[current_min]) {
+        current_min <- current_min - 1
+
+        # Wrap around to the other end if we've reached the beginning
+        if (current_min < 1) # == 0
+          current_min <- length(fileHandler$filenames)
+      }
+      }else {
+        current_min <- current_min - 1
+      }
+
+      fileHandler$isPlotted[current_min] <- TRUE
       annotations$updateBadges()
       annotations$updateNotes()
 
@@ -110,8 +127,8 @@ fileNavServer <- function(id,
       # Get the maximum index of the files that are currently plotted,
       # if we're already at the last file, wrap around to the first file
       current_max <- max(which(fileHandler$isPlotted))
-      if (current_max >= length(fileHandler$filenames))
-        current_max <- 0
+      # if (current_max >= length(fileHandler$filenames))
+      #   current_max <- 0
 
       # Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
@@ -121,7 +138,22 @@ fileNavServer <- function(id,
       }
 
       fileHandler$isPlotted[] <- FALSE
-      fileHandler$isPlotted[current_max + 1] <- TRUE
+      nfiles <- length(fileHandler$filenames)
+
+      if (skipCheckedFilesToggle() && !all(fileHandler$fileChecked)) {
+        while (fileHandler$fileChecked[current_max]) {
+          current_max <- current_max + 1
+
+          # Wrap around to the other end if we've reached the beginning
+          if (current_max > nfiles) # == 0
+            current_max <- 1
+        }
+      } else {
+        current_max <- current_max + 1
+      }
+
+
+      fileHandler$isPlotted[current_max] <- TRUE
       annotations$updateBadges()
       annotations$updateNotes()
 
