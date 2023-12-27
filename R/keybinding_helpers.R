@@ -11,6 +11,7 @@ keyBindAction <- function(bindexpr, msg = NULL) {
   reactive({
     if (!is.null(msg))
       message(msg)
+
     bindexpr()
   })
 }

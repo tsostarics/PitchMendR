@@ -10,6 +10,13 @@
 #' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req reactiveValues observe
 #' @importFrom rlang sym
 openEditor <- function(...) {
+  # Keyboard shortcuts run in the RStudio viewer will also execute in RStudio,
+  # so we'll try to open a new file to avoid cases where keybindings modify
+  # an active file.
+  # try({
+  #   rstudioapi::documentNew("")
+  #   messsage("Opening new file to avoid keyboard shortcut conflicts")
+  #   })
   ui <- bslib::page_navbar(
 
     id = "navbar",
@@ -39,7 +46,7 @@ openEditor <- function(...) {
                                       "a",
                                       "ctrl+z",
                                       "command+z",
-                                      "ctrl+shift+a")
+                                      "v")
       ),
       title = "Tools",
       shiny::actionButton(
@@ -450,9 +457,9 @@ openEditor <- function(...) {
                   "b" = keyBindAction(plotBrushed, "[B] Pressed (Plot Brushed)"),
                   "d" = keyBindAction(doublePulses, "[D] Pressed (Double Pulses)"),
                   "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
+                  "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)")),
                   "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
-                  "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
-                  "ctrl+shift+a" = keyBindAction(plotMatches, "[Ctrl+Shift+A] pressed (Plot Matches)"))
+                  "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)")
     )
 
 
@@ -1214,17 +1221,28 @@ openEditor <- function(...) {
                                          exists = NULL,
                                          instance = NULL)
 
-    destroyLoadedAudio <- function(){
+    destroyLoadedAudio <- function(id = "playAudio"){
       if (!is.null(currentWave$instance))
         audio::close.audioInstance(currentWave$instance)
+      ns <- NS(id)
+
+      shinyjs::addClass(ns("stopButton"), "hideStopButton",asis = TRUE)
+      shinyjs::addClass(ns("playVisibleFile"), "bigPlayButton",asis = TRUE)
+      shinyjs::removeClass(ns("playVisibleFile"), "smallPlayButton",asis = TRUE)
+      shinyjs::removeClass(ns("stopButton"),
+                           "showStopButton",asis = TRUE)
+
       currentWave$instance <<- NULL
       currentWave$value <<- NULL
       currentWave$path <<- NULL
       currentWave$exists <<- NULL
+
+      print(currentWave$path)
     }
 
     shinyjs::onclick(id = "keysQuestion", {
       shinyWidgets::show_alert(
+
         title = "Keyboard Shortcuts",
         type = 'info',
         width = "35em",
@@ -1245,8 +1263,8 @@ openEditor <- function(...) {
                        inline_kbd_button('b', " - {KEY}: Plot brushed files"),
                        inline_kbd_button('d', " - {KEY}: Double selected pulses"),
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
-                       inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform"),
-                       inline_kbd_button(c("ctrl", "shift", "a"), " - {KEY}: Plot files matching regex")
+                       inline_kbd_button(c("v"), " - {KEY}: Plot files matching regex"),
+                       inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
                                       `margin-bottom` = "none"),
@@ -1354,4 +1372,5 @@ openEditor <- function(...) {
 
   shiny::shinyApp(ui, server)
 }
+
 
