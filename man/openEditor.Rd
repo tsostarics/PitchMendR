@@ -5,11 +5,11 @@
 \title{Run pulse editor GUI}
 \usage{
 openEditor(
-  input_dir = get_example_f0_data("."),
-  output_dir = "./",
-  praat_path = "./Praat.exe",
+  input_directory = get_example_f0_data("."),
+  output_directory = "./",
   audio_directory = "./audio",
   textgrid_directory = "./audio",
+  praat_path = "./Praat.exe",
   ...
 )
 }
