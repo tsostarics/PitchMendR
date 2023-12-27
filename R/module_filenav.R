@@ -2,11 +2,20 @@ fileNavUI <- function(id) {
   ns <- NS(id)
 
   shiny::fluidRow(
-    shiny::actionButton(width = "28%", inputId = ns("prevButton"), label = "<", style = "margin:1%;margin-top:0%;margin-bottom:0"),
-    shiny::actionButton(width = "38%", inputId = ns("saveButton"), class="btn-default",
-                        label = shiny::uiOutput(outputId = ns("saveButtonLabel")),
-                        style = "margin:1%;margin-top:0%;margin-bottom:0"),
-    shiny::actionButton(width = "28%", inputId = ns("nextButton"), label = ">", style = "margin:1%;margin-top:0%;margin-bottom:0")
+    shiny::actionButton(inputId = ns("prevButton"),
+                        label = "<",
+                        style = "margin:1%;margin-top:0%;margin-bottom:0",
+                        width = "28%"),
+    shiny::actionButton(inputId = ns("saveButton"),
+                        class="btn-default",
+                        label = "Save File",
+                        icon = icon("floppy-disk"),
+                        style = "margin:1%;margin-top:0%;margin-bottom:0",
+                        width = "38%"),
+    shiny::actionButton(inputId = ns("nextButton"),
+                        label = ">",
+                        style = "margin:1%;margin-top:0%;margin-bottom:0",
+                        width = "28%", )
   )
 }
 
@@ -23,24 +32,26 @@ fileNavServer <- function(id,
                           refilterSubset,
                           destroyLoadedAudio) {
   moduleServer(id, function(input, output, session) {
-
-    saveIcon <- shiny::reactiveValues(value = "floppy-disk")
-
-    output$saveButtonLabel <- shiny::renderUI({
-      tags$span(shiny::icon(saveIcon$value), "Save File")
+    ns <- session$ns
+    # When the user clicks the save button, save the data to the output directory
+    saveIcon <- reactiveValues(value = "floppy-disk")
+    observe({
+      shiny::updateActionButton(session, "saveButton", icon = icon(saveIcon$value))
     })
 
-    # When the user clicks the save button, save the data to the output directory
     saveData <- reactive({
+      saveIcon$value <- "spinner"
       if (is.null(loadedFile$data))
         return(NULL)
-
+      # browser()
       path <- file.path(outputDirInput(), clean_file(fileSelectBox()))
 
+      names(fileHandler$fileChecked) <- fileHandler$filenames
       # Update the file checked column before saving
-      loadedFile$data[, file_checked := fileHandler$fileChecked[.SD[[filenameColumnInput()]]]]
+      loadedFile$data[, file_checked := fileHandler$fileChecked[loadedFile$data[[filenameColumnInput()]]]]
       if (!file.exists(path) || file.access(path, mode = 2) == 0) {
         saveIcon$value <- "spinner"
+
         write_status <- tryCatch(data.table::fwrite(x = loadedFile$data, file = path),
                                  error = \(e) {
                                    e
