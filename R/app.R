@@ -463,10 +463,10 @@ openEditor <- function(
                   "b" = keyBindAction(plotBrushed, "[B] Pressed (Plot Brushed)"),
                   "d" = keyBindAction(doublePulses, "[D] Pressed (Double Pulses)"),
                   "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
-                  "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)")),
+                  "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)"),
                   "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
                   "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)")
-    )
+    ))
 
 
     observeEvent(input$keys, {
