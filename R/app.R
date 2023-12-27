@@ -9,7 +9,13 @@
 #'
 #' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req reactiveValues observe
 #' @importFrom rlang sym
-openEditor <- function(...) {
+openEditor <- function(
+    input_dir = get_example_f0_data("."),
+    output_dir = "./",
+    praat_path = "./Praat.exe",
+    audio_directory = "./audio",
+    textgrid_directory = "./audio",
+                       ...) {
   # Keyboard shortcuts run in the RStudio viewer will also execute in RStudio,
   # so we'll try to open a new file to avoid cases where keybindings modify
   # an active file.
@@ -384,7 +390,7 @@ openEditor <- function(...) {
                             shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
                                                   multiple = FALSE,
                                                   choices = NULL),
-                            praatUI_input("praatIO")
+                            praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory)
                           )
             ),
             shiny::column(width = 6,

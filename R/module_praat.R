@@ -1,4 +1,7 @@
-praatUI_input <- function(id) {
+praatUI_input <- function(id,
+                          praat_path = "./Praat.exe",
+                          audio_directory = "./audio",
+                          textgrid_directory = "./audio") {
   ns <- NS(id)
 
   tagList(
@@ -13,7 +16,7 @@ praatUI_input <- function(id) {
                            shiny::textInput(
                              inputId = ns("pathToPraat"),
                              label = "Praat Path (relative to working directory)",
-                             value = "./Praat.exe",
+                             value = praat_path,
                              width = "100%",
                            ),
                            span(style = "display:inline-block;",
@@ -29,13 +32,13 @@ praatUI_input <- function(id) {
                            shiny::textInput(
                              inputId = ns("audioDirInput"),
                              label  = "Audio Directory",
-                             value = "./audio",
+                             value = audio_directory,
                              width = "100%"
                            ),
                            shiny::textInput(
                              inputId = ns("textgridDirInput"),
                              label = "TextGrid Directory",
-                             value = "./audio",
+                             value = textgrid_directory,
                              width = "100%"
                            )
     )

@@ -4,7 +4,14 @@
 \alias{openEditor}
 \title{Run pulse editor GUI}
 \usage{
-openEditor(...)
+openEditor(
+  input_dir = get_example_f0_data("."),
+  output_dir = "./",
+  praat_path = "./Praat.exe",
+  audio_directory = "./audio",
+  textgrid_directory = "./audio",
+  ...
+)
 }
 \arguments{
 \item{...}{not used}
