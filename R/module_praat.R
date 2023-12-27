@@ -99,7 +99,13 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         # Set up a temporary script that will read in all the files
         temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
 
-        pitch_range <- paste(pitchRangeInput(), collapse = ", ")
+        pitch_range <- pitchRangeInput()
+
+        # Can't set the pitch floor at 0
+        if (!where_not_zero(pitch_range[1L]))
+          ptich_range[1L] <- 40
+
+        pitch_range <- paste(pitch_range, collapse = ", ")
 
         script_lines <- c(
           paste0('obj = Read from file: "', open_paths[1], '"'),
@@ -128,8 +134,8 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
 
         writeLines(c(script_lines, read_file_lines, paste0('deleteFile: "', temp_script, '"')), temp_script)
 
-        systemcall <- paste(input$pathToPraat,
-                            '--send --hide-picture "',
+        systemcall <- paste0(input$pathToPraat,
+                            ' --send --hide-picture "',
                             temp_script,
                             '"',
                             sep = " ")
