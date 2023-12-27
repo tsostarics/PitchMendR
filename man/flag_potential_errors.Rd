@@ -14,7 +14,8 @@ flag_potential_errors(
   .speaker = NA,
   rise_threshold = 1.2631578947,
   fall_threshold = 1.7142857143,
-  .as_vec = FALSE
+  .as_vec = FALSE,
+  .ignore_0s = TRUE
 )
 }
 \arguments{
@@ -35,6 +36,17 @@ flag_potential_errors(
 \item{rise_threshold}{Rise threshold to use for errors}
 
 \item{fall_threshold}{Fall threshold to use for errors}
+
+\item{.as_vec}{Whether just the results should be returned as a logical vector
+(TRUE) or if the whole dataframe should be returned (FALSE)}
+
+\item{.ignore_0s}{If TRUE, will separate the dataset into two parts: where
+.hz is equal to 0 or NA, and where it is not (i.e., actual F0 values). The
+algorithm will run with the latter set, then the former will be merged back
+into the final dataset. This way the missing values are ignored, but the
+results are of the same size as the input. If this is set to FALSE, then
+you will get more false positives due to having many more F0 jumps from a
+starting value of 0.}
 }
 \value{
 Dataframe with potential errors coded in the \code{flagged_samples} column

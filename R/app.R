@@ -1294,7 +1294,8 @@ openEditor <- function(...) {
       praatServer("praatIO",
                   loadedFile,
                   fileHandler,
-                  reactive(input$filenameColumnInput))
+                  reactive(input$filenameColumnInput),
+                  reactive(input$pitchRangeInput))
 
     playAudioServer("playAudio",
                     loadedFile,

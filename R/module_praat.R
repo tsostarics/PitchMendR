@@ -54,7 +54,7 @@ praatUI_button <- function(id) {
   )
 }
 
-praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
+praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchRangeInput) {
   moduleServer(id, function(input, output, session) {
 
     shinyjs::onclick(id = "glueQuestion", {
@@ -78,14 +78,15 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
 
     })
 
+
     # When the user clicks the Send to Praat button, all files currently displayed
     # in the editor will be sent to Praat
     shiny::observeEvent(input$sendToPraatButton, {
       message("Send to Praat Pressed")
       if (is.null(loadedFile$data))
         return(NULL)
-      if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
 
+      if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
         # Use the columns of the loaded data and the provided glue string to
         # send the files currently displayed in the editor to Praat
         files_to_open <- unique(glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
@@ -93,14 +94,51 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput) {
         open_paths <- file.path(input$audioDirInput, files_to_open)
 
         if (!is.null(input$textgridDirInput))
-          open_paths <- c(open_paths, file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid$", files_to_open)))
+          open_paths <- c(open_paths, file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open)))
+
+        # Set up a temporary script that will read in all the files
+        temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
+
+        pitch_range <- paste(pitchRangeInput(), collapse = ", ")
+
+        script_lines <- c(
+          paste0('obj = Read from file: "', open_paths[1], '"'),
+          "editorName$ = selected$()",
+          "View & Edit",
+          "editor: editorName$",
+          paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
+          "endeditor"
+        )
+
+        # If we're loading more than one file, then we don't want to load the
+        # first file twice. If we're only loading one file, then we don't need
+        # to read anything more.
+        read_file_lines <- ""
+        if (length(open_paths) > 1) {
+          read_file_lines <- paste0('Read from file: \"', open_paths[-1], '"')
+        }
+
+        # Praat streams in the script lines instead of loading the whole file
+        # into memory, so we need to wait until the script is done running
+        # before we try and delete the file. BUT, if we use wait = TRUE, the
+        # script won't send back a return value even if you use exitScript() as
+        # the last line. To get around this, we have the praat script delete
+        # itself when it's done executing (hence the deleteFile line)
+        # and then wait until the file stops existing so we can continue.
+
+        writeLines(c(script_lines, read_file_lines, paste0('deleteFile: "', temp_script, '"')), temp_script)
 
         systemcall <- paste(input$pathToPraat,
-                            "--new-open --hide-picture",
-                            paste0(open_paths[file.exists(open_paths)], collapse = " "),
+                            "--send --hide-picture",
+                            temp_script,
                             sep = " ")
+        message("Praat script start: ", Sys.time())
         message(systemcall)
-        base::system(systemcall, wait = FALSE)
+        base::system(systemcall, wait = FALSE) # Runs the script, deletes self at end
+        while (file.exists(temp_script)) {}    # Waits until the script has deleted itself
+        message("Praat script end: ", Sys.time()) # Continue on
+
+
       }
     }
     )
