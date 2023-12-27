@@ -817,7 +817,7 @@ openEditor <- function(...) {
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       } else {
         shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
-        updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
+        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
         set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
       }
 
