@@ -93,14 +93,17 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         # send the files currently displayed in the editor to Praat
         files_to_open <- unique(glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
                                               input$fileNameGlue))
-        open_paths <- file.path(input$audioDirInput, files_to_open)
+        audio_paths <- file.path(input$audioDirInput, files_to_open)
+        audio_paths <- audio_paths[file.exists(audio_paths)]
 
-        if (!is.null(input$textgridDirInput))
-          open_paths <- c(open_paths, file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open)))
+        tg_paths <- c(NULL)
+        if (!is.null(input$textgridDirInput)){
+          tg_paths <- file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open))
+          tg_paths <- tg_paths[file.exists(tg_paths)]
+        }
 
-        open_paths <- open_paths[file.exists(open_paths)]
 
-        if (length(open_paths) == 0){
+        if (length(audio_paths) == 0){
           message("No files found")
           return(NULL)
         }
@@ -117,10 +120,23 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
 
         pitch_range <- paste(pitch_range, collapse = ", ")
 
-        script_lines <- c(
-          paste0('obj = Read from file: "', open_paths[1], '"'),
+        tg_lines <- c(
           "editorName$ = selected$()",
-          "View & Edit",
+          'View & Edit'
+        )
+
+        if (length(tg_paths) > 0) {
+          tg_lines <- c(
+            paste0('tgObj = Read from file: "', tg_paths[1], '"'),
+            "editorName$ = selected$()",
+            'plusObject: obj',
+            'View & Edit'
+          )
+        }
+
+        script_lines <- c(
+          paste0('obj = Read from file: "', audio_paths[1], '"'),
+          tg_lines,
           "editor: editorName$",
           paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
           "endeditor"
@@ -130,8 +146,8 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         # first file twice. If we're only loading one file, then we don't need
         # to read anything more.
         read_file_lines <- ""
-        if (length(open_paths) > 1) {
-          read_file_lines <- paste0('Read from file: \"', open_paths[-1], '"')
+        if (length(audio_paths) > 1) {
+          read_file_lines <- paste0('Read from file: \"', audio_paths[-1], '"')
         }
 
         # Praat streams in the script lines instead of loading the whole file
