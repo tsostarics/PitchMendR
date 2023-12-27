@@ -1008,7 +1008,7 @@ openEditor <- function(...) {
       min_transform_value <- min(loadedFile$data[[transformedColumn$name]])
       if (current_pitch_range[1L] > min_transform_value){
         new_pitch_min <-
-          ceiling(add_semitones(max_transform_value, sign(-min_transform_value)*1L))
+          ceiling(add_semitones(min_transform_value, sign(-min_transform_value)*1L))
         shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
                                               value = c(new_pitch_min,
                                                         current_pitch_range[2L]))
