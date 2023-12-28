@@ -13,7 +13,8 @@ annotate_errors(
   .add_semitones = NA,
   .speaker = NA,
   rise_threshold = 1.2631578947,
-  fall_threshold = 1.7142857143
+  fall_threshold = 1.7142857143,
+  .window_size = 1
 )
 }
 \arguments{
@@ -41,6 +42,11 @@ transformed to semitones, even if \code{F0_semitones} is present in the datafram
 \item{rise_threshold}{Rise threshold to use for errors}
 
 \item{fall_threshold}{Fall threshold to use for errors}
+
+\item{.window_size}{Numeric multiplier of the sample rate to ignore pulses.
+For example, if you want to ignore pulses that are greater than 1 sample rate
+away, leave as 1. If you want to ignore intervals of 80ms and the sampling
+rate is 10ms, set to 8.}
 }
 \value{
 Dataframe with annotated F0 data

@@ -1,15 +1,9 @@
 #' Flag errors wrapper
 #'
 #' Flags potential sample-to-sample errors in F0 data. Uses a modified version
-#' of the algorithm described in Steffman & Cole (2022). The original algorithm
-#' skips over pairs of samples that are further apart than the sampling rate to
-#' account for voiceless intervals, but this is a bit too stringent for the
-#' purposes of this app. The version here is a bit more lenient, only skipping
-#' pairs that are more than 8 times the sampling rate apart (typically, 80ms).
-#' The multiplier is a ballpark estimate based on some productions of /s/ in fast
-#' speech. What this buys us is identifying regions of interest that may
-#' contain errors. The implementaion here is also much faster than the original
-#' version and doesn't rely on NAs as much.
+#' of the algorithm described in Steffman & Cole (2022). The implementaion here
+#' is much faster than the original version and avoids NA issues and
+#' overprocessing short files when longer files exist.
 #'
 #' @param data Data frame
 #' @param .unique_file Column name containing unique file IDs
@@ -29,6 +23,10 @@
 #' results are of the same size as the input. If this is set to FALSE, then
 #' you will get more false positives due to having many more F0 jumps from a
 #' starting value of 0.
+#' @param .window_size Numeric multiplier of the sample rate to ignore pulses.
+#' For example, if you want to ignore pulses that are greater than 1 sample rate
+#' away, leave as 1. If you want to ignore intervals of 80ms and the sampling
+#' rate is 10ms, set to 8.
 #'
 #' @return Dataframe with potential errors coded in the `flagged_samples` column
 #' @export
@@ -48,7 +46,8 @@ flag_potential_errors <- function(data,
                                   rise_threshold = 1.2631578947,
                                   fall_threshold = 1.7142857143,
                                   .as_vec = FALSE,
-                                  .ignore_0s = TRUE) {
+                                  .ignore_0s = TRUE,
+                                  .window_size = 1) {
   # Ensure that the f0 column is numeric in case missing values are
   # encoded as --undefined-- from Praat output
   data[[.hz]] <- as.numeric(data[[.hz]]) # Coerces non-numeric strings to NA!
@@ -58,6 +57,7 @@ flag_potential_errors <- function(data,
   data[[trans_time_column]] <- datalist[['time']]
 
   if (.ignore_0s) {
+    requireNamespace("data.table", quietly = TRUE)
 
     # We need a unique id to use; the load file button will add this for us
     # but just in case it's not there we need to have it available
@@ -67,7 +67,9 @@ flag_potential_errors <- function(data,
     # Split the data into two separate tables: the actual data, and where
     # there was no F0 detected (encoded as either 0 or NA).
     data[["where_not_zero__"]] <- where_not_zero(data[[.hz]])
-    data_split <- split(data, by= 'where_not_zero__')
+
+    # Using data.table split method
+    data_split <- split(data, ~ data[['where_not_zero__']])
 
     if (!"TRUE" %in% names(data_split))
       stop("No non-zero values found")
@@ -79,20 +81,19 @@ flag_potential_errors <- function(data,
                       .time = trans_time_column,
                       .samplerate = datalist[['samplerate']],
                       .add_semitones = .add_semitones,
-                      .speaker = .speaker) |>
+                      .speaker = .speaker,
+                      .window_size = .window_size) |>
       code_carryover_effects(.unique_file = .unique_file,
                              .hz = .hz,
                              .time = trans_time_column,
                              rise_threshold = rise_threshold,
                              fall_threshold = fall_threshold) |>
-      dplyr::select(-dplyr::all_of(trans_time_column)) |>
       dplyr::ungroup()
 
     # If we had any bad values in our dataset, we need to
     # make the columns match those of the actual dataset
     if ("FALSE" %in% names(data_split)) {
       data_split[["FALSE"]][['flagged_samples']] <- TRUE
-      data_split[["FALSE"]][[trans_time_column]] <- NULL
       data_split[["FALSE"]][["F0_semitones"]] <- NA
 
       updated_df <- rbind(updated_df, data_split[['FALSE']])
@@ -109,16 +110,18 @@ flag_potential_errors <- function(data,
                       .time = trans_time_column,
                       .samplerate = datalist[['samplerate']],
                       .add_semitones = .add_semitones,
-                      .speaker = .speaker) |>
+                      .speaker = .speaker,
+                      .window_size = .window_size) |>
       code_carryover_effects(.unique_file = .unique_file,
                              .hz = .hz,
                              .time = trans_time_column,
                              rise_threshold = rise_threshold,
                              fall_threshold = fall_threshold) |>
-      dplyr::select(-dplyr::all_of(trans_time_column)) |>
       dplyr::ungroup()
+
   }
 
+  updated_df[[trans_time_column]] <- NULL
 
   if (.as_vec)
     return(updated_df[['flagged_samples']])
@@ -190,6 +193,10 @@ flag_potential_errors <- function(data,
 #' @param fall_threshold Fall threshold to use for errors
 #' @param .unique_file Column name containing unique file IDs
 #' @param .speaker Column name containing speaker IDs
+#' @param .window_size Numeric multiplier of the sample rate to ignore pulses.
+#' For example, if you want to ignore pulses that are greater than 1 sample rate
+#' away, leave as 1. If you want to ignore intervals of 80ms and the sampling
+#' rate is 10ms, set to 8.
 #'
 #' @return Dataframe with annotated F0 data
 #' @export
@@ -206,7 +213,8 @@ annotate_errors <- function(data,
                             .add_semitones = NA,
                             .speaker = NA,
                             rise_threshold = 1.2631578947,
-                            fall_threshold = 1.7142857143) {
+                            fall_threshold = 1.7142857143,
+                            .window_size = 1) {
 
 
   time_mutation <-  .samplerate/10
@@ -240,7 +248,7 @@ annotate_errors <- function(data,
       diff = lead_F0_semitones-F0_semitones,
       time_diff = dplyr::lead(.data[[.time]]) - .data[[.time]],
       ratio_Hz = lead_F0_Hz/.data[[.hz]],
-      err = (!is.na(time_diff)) & (time_diff <= .samplerate*8) & ## this ignore time differences larger than 8*the time step, e.g., over voiceless intervals.
+      err = (!is.na(time_diff)) & (time_diff <= .samplerate * .window_size) & ## this ignore time differences larger than 8*the time step, e.g., over voiceless intervals.
         (diff>0 & (abs(diff)*time_mutation)>rise_threshold |
            diff<0 & (abs(diff)*time_mutation)>fall_threshold),
       # err_prop_by_ID = mean(err, na.rm = TRUE),

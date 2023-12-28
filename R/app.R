@@ -3,6 +3,14 @@
 #' Runs the shiny app
 #'
 #' @param ... not used
+#' @param input_directory Directory containing the csv files to load
+#' @param output_directory Directory to save annotated csv files to
+#' @param audio_directory Directory containing .wav files to play or send to
+#' praat
+#' @param textgrid_directory Directory containing .TextGrid files to send to
+#' praat
+#' @param praat_path For Windows, the path to a Praat executable. For linux and
+#' mac, this should just be Praat assuming it's available as a terminal command.
 #'
 #' @return Nothing
 #' @export
@@ -1300,7 +1308,7 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
 
-      updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
+      shiny::updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
 
       loadedFile$data[['flagged_samples']] <-
         flag_potential_errors(loadedFile$data,
@@ -1315,7 +1323,7 @@ openEditor <- function(
         loadedFile$data <- data.table(loadedFile$data)
 
       shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
-      updateActionButton(session, "flagSamplesButton", icon = icon("check"))
+      shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
       shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
       set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       refilterSubset()

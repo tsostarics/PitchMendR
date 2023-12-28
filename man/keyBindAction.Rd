@@ -7,12 +7,13 @@
 keyBindAction(bindexpr, msg = NULL)
 }
 \arguments{
-\item{bindexpr}{Reactive expression to execute}
+\item{bindexpr}{Reactive expression or function to execute}
 
 \item{msg}{Message to use, no message is sent if NULL}
 }
 \value{
-A reactive that also sends a message
+A function that sends a message and executes the given function or
+reactive
 }
 \description{
 Bundles together a message with a reactive expression to be used as a key

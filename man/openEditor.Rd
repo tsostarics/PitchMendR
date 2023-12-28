@@ -14,6 +14,19 @@ openEditor(
 )
 }
 \arguments{
+\item{input_directory}{Directory containing the csv files to load}
+
+\item{output_directory}{Directory to save annotated csv files to}
+
+\item{audio_directory}{Directory containing .wav files to play or send to
+praat}
+
+\item{textgrid_directory}{Directory containing .TextGrid files to send to
+praat}
+
+\item{praat_path}{For Windows, the path to a Praat executable. For linux and
+mac, this should just be Praat assuming it's available as a terminal command.}
+
 \item{...}{not used}
 }
 \value{
