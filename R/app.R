@@ -486,7 +486,7 @@ openEditor <- function(
       # Key bindings only apply on the editor page
       if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
         return(NULL)
-# browser()
+
       # Call the appropriate reactive from the keybindings we set
       boundKeys[[input$keys]]()
     })

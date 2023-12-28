@@ -9,8 +9,10 @@
 #' continue.
 #'
 #' @param lines Character vector, each string is a line of the praat script
+#' @param praat_path Path to praat, use audioInfo$praatPath() outside of the
+#' praat module
 #'
-#' @return
+#' @return Invisibly returns 0
 run_temp_script <- function(lines, praat_path = "./Praat.exe") {
   temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
 
@@ -30,5 +32,5 @@ run_temp_script <- function(lines, praat_path = "./Praat.exe") {
   while (file.exists(temp_script)) {}    # Waits until the script has deleted itself
   message("Praat script end: ", Sys.time()) # Continue on
 
-  0
+  invisible(0)
 }

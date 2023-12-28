@@ -3,10 +3,11 @@
 #' Bundles together a message with a reactive expression to be used as a key
 #' binding action.
 #'
-#' @param bindexpr Reactive expression to execute
+#' @param bindexpr Reactive expression or function to execute
 #' @param msg Message to use, no message is sent if NULL
 #'
-#' @return A reactive that also sends a message
+#' @return A function that sends a message and executes the given function or
+#' reactive
 keyBindAction <- function(bindexpr, msg = NULL) {
   function(){
     if (!is.null(msg))
