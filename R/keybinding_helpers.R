@@ -8,12 +8,12 @@
 #'
 #' @return A reactive that also sends a message
 keyBindAction <- function(bindexpr, msg = NULL) {
-  reactive({
+  function(){
     if (!is.null(msg))
       message(msg)
 
     bindexpr()
-  })
+  }
 }
 
 #' Change key binding

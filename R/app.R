@@ -15,7 +15,7 @@ openEditor <- function(
     audio_directory = "./audio",
     textgrid_directory = "./audio",
     praat_path = "./Praat.exe",
-                       ...) {
+    ...) {
   # Keyboard shortcuts run in the RStudio viewer will also execute in RStudio,
   # so we'll try to open a new file to avoid cases where keybindings modify
   # an active file.
@@ -52,7 +52,8 @@ openEditor <- function(
                                       "a",
                                       "ctrl+z",
                                       "command+z",
-                                      "v")
+                                      "v",
+                                      "p")
       ),
       title = "Tools",
       shiny::actionButton(
@@ -453,8 +454,8 @@ openEditor <- function(
     # Here what we're doing is setting each key to a reactive that's also mapped
     # to a button on the visible UI. This way all we need to change is the
     # reactive value and both the button and keybinding will be changed.
-    boundKeys <- shiny::reactiveValues(
-      keys = list("f" = keyBindAction(togglePulses, "[F] Pressed (Toggle)"),
+    boundKeys <- #shiny::reactiveValues(
+      list("f" = keyBindAction(togglePulses, "[F] Pressed (Toggle)"),
                   "r" = keyBindAction(removePulses, "[R] Pressed (Remove)"),
                   "e" = keyBindAction(keepPulses, "[E] Pressed (Keep)"),
                   "s" = keyBindAction(toggleShowLine, "[S] Pressed (Show Line)"),
@@ -465,17 +466,29 @@ openEditor <- function(
                   "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
                   "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)"),
                   "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
-                  "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)")
-    ))
+                  "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
+                  "p" = keyBindAction(closePraatFiles, "[P] Pressed (Clear Praat Objects)"))
+      # )
 
+
+    closePraatFiles <- function() {
+      # If there aren't any objects available the praat will throw an error,
+      # so we make a small object at the start just in case
+      delete_script_lines <-
+        c(
+          'Create Sound from formula: "sineWithNoise", 1, 0, 0.01, 400, "0"',
+          "select all",
+          "Remove")
+      run_temp_script(delete_script_lines, audioInfo$praatPath())
+    }
 
     observeEvent(input$keys, {
       # Key bindings only apply on the editor page
       if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
         return(NULL)
-
+# browser()
       # Call the appropriate reactive from the keybindings we set
-      boundKeys$keys[[input$keys]]()
+      boundKeys[[input$keys]]()
     })
 
 
@@ -494,18 +507,12 @@ openEditor <- function(
     plotSubset <- reactiveValues(data = NULL)
 
     refilterSubset <- function(){
-      message('trying to filter')
-
       if (is.null(loadedFile$data))
         return(NULL)
 
       message("Filtering")
-      # lastTransformation
-
       plotSubset$data <<- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
 
-
-      message("Filtering done")
     }
 
     output$pulsePlot <- shiny::renderPlot({
