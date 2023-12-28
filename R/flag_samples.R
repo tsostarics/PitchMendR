@@ -47,7 +47,7 @@ flag_potential_errors <- function(data,
                                   fall_threshold = 1.7142857143,
                                   .as_vec = FALSE,
                                   .ignore_0s = TRUE,
-                                  .window_size = 1) {
+                                  .window_size = 8) {
   # Ensure that the f0 column is numeric in case missing values are
   # encoded as --undefined-- from Praat output
   data[[.hz]] <- as.numeric(data[[.hz]]) # Coerces non-numeric strings to NA!
@@ -69,7 +69,7 @@ flag_potential_errors <- function(data,
     data[["where_not_zero__"]] <- where_not_zero(data[[.hz]])
 
     # Using data.table split method
-    data_split <- split(data, ~ data[['where_not_zero__']])
+    data_split <- split(data, by= 'where_not_zero__')
 
     if (!"TRUE" %in% names(data_split))
       stop("No non-zero values found")
