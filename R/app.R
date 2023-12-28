@@ -252,7 +252,7 @@ openEditor <- function(
                                       shinyWidgets::awesomeCheckbox(
                                         inputId = "saveOptionButton",
                                         label = "Save on file navigation",
-                                        value = TRUE,
+                                        value = FALSE,
                                         status = "info"
                                       ),
                                       shinyWidgets::awesomeCheckbox(
