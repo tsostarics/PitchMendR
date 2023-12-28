@@ -123,6 +123,14 @@ openEditor <- function(
         height = NULL,
         heights_equal = "row",
         style = htmltools::css(grid_template_columns = "275px 9fr"),
+        # tags$head(
+        #  tags$style(HTML("
+        #    #pitchRangeInput-label.control-label {
+        #      width: 100px;
+        #    }
+        #    "
+        #  ))
+        # ),
         bslib::card( height = "88vh",
                      title = "Plot Settings",
                      shiny::textOutput(outputId = "workingFileOutput"),
@@ -464,19 +472,19 @@ openEditor <- function(
     # reactive value and both the button and keybinding will be changed.
     boundKeys <- #shiny::reactiveValues(
       list("f" = keyBindAction(togglePulses, "[F] Pressed (Toggle)"),
-                  "r" = keyBindAction(removePulses, "[R] Pressed (Remove)"),
-                  "e" = keyBindAction(keepPulses, "[E] Pressed (Keep)"),
-                  "s" = keyBindAction(toggleShowLine, "[S] Pressed (Show Line)"),
-                  "q" = keyBindAction(filenav$goToPreviousFile, "[Q] Pressed (Previous File)"),
-                  "w" = keyBindAction(filenav$goToNextFile, "[W] Pressed (Next File)"),
-                  "b" = keyBindAction(plotBrushed, "[B] Pressed (Plot Brushed)"),
-                  "d" = keyBindAction(doublePulses, "[D] Pressed (Double Pulses)"),
-                  "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
-                  "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)"),
-                  "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
-                  "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
-                  "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"))
-      # )
+           "r" = keyBindAction(removePulses, "[R] Pressed (Remove)"),
+           "e" = keyBindAction(keepPulses, "[E] Pressed (Keep)"),
+           "s" = keyBindAction(toggleShowLine, "[S] Pressed (Show Line)"),
+           "q" = keyBindAction(filenav$goToPreviousFile, "[Q] Pressed (Previous File)"),
+           "w" = keyBindAction(filenav$goToNextFile, "[W] Pressed (Next File)"),
+           "b" = keyBindAction(plotBrushed, "[B] Pressed (Plot Brushed)"),
+           "d" = keyBindAction(doublePulses, "[D] Pressed (Double Pulses)"),
+           "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
+           "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)"),
+           "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
+           "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
+           "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"))
+    # )
 
 
 
@@ -999,7 +1007,7 @@ openEditor <- function(
 
       current_pitch_range <- isolate(input$pitchRangeInput)
       max_transform_value <- max(loadedFile$data[[transformedColumn$name]])
-      if (current_pitch_range[2L] < max_transform_value){
+      if (input$lockButton %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
         new_pitch_max <-
           ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
         shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
@@ -1031,7 +1039,7 @@ openEditor <- function(
 
       current_pitch_range <- isolate(input$pitchRangeInput)
       min_transform_value <- min(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])])
-      if (current_pitch_range[1L] > min_transform_value){
+      if (input$lockButton %% 2 == 0 && current_pitch_range[1L] > min_transform_value){
         new_pitch_min <-
           ceiling(add_semitones(min_transform_value, sign(-min_transform_value)*1L))
         shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
@@ -1164,16 +1172,41 @@ openEditor <- function(
       }
 
       shinyWidgets::numericRangeInput("pitchRangeInput",
-                                      span(id = "resetPitchRange",
-                                           title = "Click to reset to default",
-                                           style = "cursor:pointer;",
-                                           HTML(paste0(icon("clock-rotate-left"), " Pitch Range"))),
+                                      label =
+                                        tags$span(style = "display:inline-block",
+                                                  span(id = "resetPitchRange",
+                                                       title = "Click to reset to default",
+                                                       # style = "cursor:pointer",
+                                                       style = "cursor:pointer;display:block;width:110px;float:left;margin-bottom:-8px;margin-right:109px",
+                                                       HTML(paste0(icon("clock-rotate-left"), " Pitch Range"))),
+                                                  shiny::actionButton(
+                                                    inputId = ("lockButton"),
+                                                    label = NULL,
+                                                    style  = "cursor:pointer;width:16px;display:block;float:right;margin-bottom:-8px;margin-left:8px;padding:0px",
+                                                    title = "Click to lock pitch range and prevent dynamic changes",
+                                                    icon = shiny::icon("lock-open"),
+                                                    class = "showStopButton"
+                                                  )
+                                        ),
                                       value = pitch_range,
                                       min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1])*8))),
 
                                       max = ceiling(add_semitones(pitch_range[2], sign(pitch_range[1])*24)),
                                       step = one_st_step,
                                       width = "100%")
+    })
+
+    observeEvent(input$lockButton, {
+      if (input$lockButton %% 2 == 0) {
+
+        shiny::updateActionButton(session, "lockButton",
+                                  icon = shiny::icon("lock-open"))
+        shinyjs::enable(selector = "#pitchRangeInput .input-numeric-range")
+      } else {
+        shiny::updateActionButton(session, "lockButton",
+                                  icon = shiny::icon("lock"))
+        shinyjs::disable(selector = "#pitchRangeInput .input-numeric-range")
+      }
     })
 
     shinyjs::onclick("resetPitchRange", {
