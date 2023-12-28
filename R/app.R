@@ -520,6 +520,7 @@ openEditor <- function(
         return(NULL)
 
       message("Filtering")
+      # browser()
       plotSubset$data <<- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
       nPlotted$n <- sum(fileHandler$isPlotted)
       nPlotted$is_one <- nPlotted$n == 1
@@ -1077,8 +1078,10 @@ openEditor <- function(
     changeTransformedColumn <- shiny::reactive({
       if (is.null(loadedFile$data))
         return(NULL)
+      # browser()
       transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
-      loadedFile$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
+      new_values <- loadedFile$data[['pulse_transform']] * loadedFile$data[[input$yValColumnInput]]
+      loadedFile$data[, (transformedColumn$name) := new_values]
       refilterSubset()
       # plotSubset$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
     })
@@ -1366,7 +1369,7 @@ openEditor <- function(
 
       shiny::updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
 
-      loadedFile$data[['flagged_samples']] <-
+      flagged_values <-
         flag_potential_errors(loadedFile$data,
                               .unique_file = input$filenameColumnInput,
                               .hz = input$yValColumnInput,
@@ -1374,6 +1377,8 @@ openEditor <- function(
                               .samplerate = NA,
                               .speaker = "Speaker", # change this later
                               .as_vec = TRUE)
+
+      loadedFile$data[, flagged_samples := flagged_values]
 
       if (!data.table::is.data.table(loadedFile$data))
         loadedFile$data <- data.table(loadedFile$data)
