@@ -924,10 +924,12 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
       annotations$saveNotes()
-      brushed_regex <- paste0("(", filesBrushed$filenames, ")", collapse = "|")
-      fileHandler$isPlotted <- grepl(brushed_regex,fileHandler$filenames)
+      annotations$saveBadges()
 
+      brushed_regex <- paste0("(", filesBrushed$filenames, ")", collapse = "|")
+            fileHandler$isPlotted <- grepl(brushed_regex,fileHandler$filenames)
       message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
+
       annotations$updateBadges()
       annotations$updateNotes()
       refilterSubset()
@@ -1225,8 +1227,12 @@ openEditor <- function(
                        if (!is.null(input$uneditedFileSelectBox) && !identical(input$uneditedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+                         annotations$saveBadges()
+                         annotations$saveNotes()
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$uneditedFileSelectBox] <- TRUE
+                         annotations$updateBadges()
+                         annotations$updateNotes()
                          refilterSubset()
                          updatePlot()
                          # updatePlotSettingsData()
@@ -1239,8 +1245,12 @@ openEditor <- function(
                        if (!is.null(input$editedFileSelectBox) && !identical(input$editedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+                         annotations$saveBadges()
+                         annotations$saveNotes()
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$editedFileSelectBox] <- TRUE
+                         annotations$updateBadges()
+                         annotations$updateNotes()
                          refilterSubset()
                          updatePlot()
                          # updatePlotSettingsData()

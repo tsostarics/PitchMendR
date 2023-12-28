@@ -111,13 +111,13 @@ fileNavServer <- function(id,
       # that haven't been checked, keep cycling through files until we find
       # the first unchecked file we can get to.
       if (skipCheckedFilesToggle() && !all(fileHandler$fileChecked)) {
-      while (fileHandler$fileChecked[current_min]) {
-        current_min <- current_min - 1
+        while (fileHandler$fileChecked[current_min]) {
+          current_min <- current_min - 1
 
-        # Wrap around to the other end if we've reached the beginning
-        if (current_min < 1) # == 0
-          current_min <- length(fileHandler$filenames)
-      }
+          # Wrap around to the other end if we've reached the beginning
+          if (current_min < 1) # == 0
+            current_min <- length(fileHandler$filenames)
+        }
       }else {
         current_min <- current_min - 1
         if (current_min < 1) # == 0
@@ -125,13 +125,15 @@ fileNavServer <- function(id,
       }
 
       fileHandler$isPlotted[current_min] <- TRUE
-      annotations$updateBadges()
-      annotations$updateNotes()
+
 
       if (saveOptionButton()) {
         saveData()
       }
+
       refilterSubset()
+      annotations$updateBadges()
+      annotations$updateNotes()
       destroyLoadedAudio()
 
     })
@@ -171,14 +173,15 @@ fileNavServer <- function(id,
 
 
       fileHandler$isPlotted[current_max] <- TRUE
-      annotations$updateBadges()
-      annotations$updateNotes()
+
 
       # If we have the save-on-next option enabled, save the data
       if (saveOptionButton()) {
         saveData()
       }
       refilterSubset()
+      annotations$updateBadges()
+      annotations$updateNotes()
       destroyLoadedAudio()
     })
 
@@ -200,4 +203,4 @@ fileNavServer <- function(id,
   }
 
   )
-  }
+}

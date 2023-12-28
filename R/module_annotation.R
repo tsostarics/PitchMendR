@@ -36,6 +36,7 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
                              input_noteToggle,
                              input_badgeToggle) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
     badges_to_string <- function(badges){
       paste0(badges, collapse = "+")
     }
@@ -47,7 +48,9 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
     }
 
     updateBadges <- reactive({
-      shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", selected = c())
+      message("updating badges")
+      shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", selected = character(0))
+
       if (is.null(loadedFile$data)) {
         shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = TRUE)
         return(NULL)
@@ -58,6 +61,8 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       } else {
         current_file <- fileHandler$filenames[fileHandler$isPlotted]
         current_badges <- string_to_badges(loadedFile$data[loadedFile$data[[input_filename()]] == current_file, 'tags'][1][[1]])
+        message(current_badges)
+        # shinyjs::enable("badgeInput")
         shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = FALSE, selected = current_badges)
 
       }
@@ -79,6 +84,7 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       }
 
       if (sum(fileHandler$isPlotted) != 1) {
+        shiny::updateTextAreaInput(session, "notepadInput", value = NULL)
         shinyjs::disable("notepadInput")
       } else {
         current_file <- fileHandler$filenames[fileHandler$isPlotted]

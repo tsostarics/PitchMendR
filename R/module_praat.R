@@ -116,7 +116,6 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
                                               input$fileNameGlue))
         audio_paths <- file.path(input$audioDirInput, files_to_open)
         audio_paths <- audio_paths[file.exists(audio_paths)]
-
         tg_paths <- c(NULL)
         if (!is.null(input$textgridDirInput)){
           tg_paths <- file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open))
