@@ -467,20 +467,11 @@ openEditor <- function(
                   "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)"),
                   "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
                   "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
-                  "p" = keyBindAction(closePraatFiles, "[P] Pressed (Clear Praat Objects)"))
+                  "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"))
       # )
 
 
-    closePraatFiles <- function() {
-      # If there aren't any objects available the praat will throw an error,
-      # so we make a small object at the start just in case
-      delete_script_lines <-
-        c(
-          'Create Sound from formula: "sineWithNoise", 1, 0, 0.01, 400, "0"',
-          "select all",
-          "Remove")
-      run_temp_script(delete_script_lines, audioInfo$praatPath())
-    }
+
 
     observeEvent(input$keys, {
       # Key bindings only apply on the editor page
@@ -1337,7 +1328,8 @@ openEditor <- function(
                   fileHandler,
                   reactive(input$filenameColumnInput),
                   reactive(input$pitchRangeInput),
-                  filenav$saveData)
+                  filenav$saveData,
+                  reactive(input$navbar))
 
     playAudioServer("playAudio",
                     loadedFile,

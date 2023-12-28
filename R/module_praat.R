@@ -50,14 +50,27 @@ praatUI_input <- function(id,
 praatUI_button <- function(id) {
   ns <- NS(id)
 
-  shiny::actionButton(
-    inputId = ns("sendToPraatButton"),
-    title = "Open the currently visible files in a new Praat window",
-    label = "Open in Praat",
+  span(style = "display:inline-block",
+       # HTML(
+       shiny::actionButton(
+         inputId = ns("sendToPraatButton"),
+         title = "Open the currently visible files in a new Praat window",
+         label = "Open in Praat",
+         class = "smallPlayButton",
+         style = "padding-left:2px;padding-right:2px"
+       ),
+       shiny::actionButton(
+         inputId = ns("clearPraatButton"),
+         label = NULL,
+         title = "Click to remove all open Praat objects",
+         icon = shiny::icon("file-circle-minus", style = "font-size:1.5em;"),
+         class = "showStopButton"
+       )
   )
 }
 
-praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchRangeInput, saveData) {
+praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchRangeInput, saveData,
+                        navbarInput) {
   moduleServer(id, function(input, output, session) {
 
     shinyjs::onclick(id = "glueQuestion", {
@@ -81,12 +94,17 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
 
     })
 
+    shiny::observeEvent(input$clearPraatButton, {
+      message("Clear praat objects pressed")
+      closePraatFiles()()
+    })
+
 
     # When the user clicks the Send to Praat button, all files currently displayed
     # in the editor will be sent to Praat
     shiny::observeEvent(input$sendToPraatButton, {
       message("Send to Praat Pressed")
-      if (is.null(loadedFile$data))
+      if (is.null(loadedFile$data) | navbarInput() != "Editor")
         return(NULL)
 
       saveData()
@@ -160,8 +178,21 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
     }
     )
 
+    closePraatFiles <- reactive({
+      function(praatPath = input$pathToPraat) {
+      # If there aren't any objects available the praat will throw an error,
+      # so we make a small object at the start just in case
+      delete_script_lines <-
+        c(
+          'Create Sound from formula: "sineWithNoise", 1, 0, 0.01, 400, "0"',
+          "select all",
+          "Remove")
+      run_temp_script(delete_script_lines, praatPath)
+      }
+    })
+
     return(list(audioDirectory= reactive(input$audioDirInput),
                 glueString= reactive(input$fileNameGlue),
-                praatPath = reactive(input$pathToPraat)))
+                closePraatFiles = closePraatFiles))
   })
 }
