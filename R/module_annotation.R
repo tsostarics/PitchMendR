@@ -34,7 +34,8 @@ annotationUI <- function(id) {
 annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
                              input_filename,
                              input_noteToggle,
-                             input_badgeToggle) {
+                             input_badgeToggle,
+                             nPlotted) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     badges_to_string <- function(badges){
@@ -42,54 +43,50 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
     }
 
     string_to_badges <- function(string){
-      if (is.na(string))
-        return(c())
+      if (length(string) == 0 || is.na(string))
+        return(character(0))
       strsplit(string, split = "\\+")[[1]]
     }
 
     updateBadges <- reactive({
-      message("updating badges")
-      shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", selected = character(0))
 
       if (is.null(loadedFile$data)) {
         shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = TRUE)
         return(NULL)
       }
 
-      if (sum(fileHandler$isPlotted) != 1) {
-        shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = TRUE)
+      if (!nPlotted$is_one) {
+        shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", selected = character(0), disabled = TRUE)
       } else {
         current_file <- fileHandler$filenames[fileHandler$isPlotted]
-        current_badges <- string_to_badges(loadedFile$data[loadedFile$data[[input_filename()]] == current_file, 'tags'][1][[1]])
-        message(current_badges)
-        # shinyjs::enable("badgeInput")
+        current_badges <- string_to_badges(fileHandler$badges[current_file])
         shinyWidgets::updateCheckboxGroupButtons(session, "badgeInput", disabled = FALSE, selected = current_badges)
-
       }
     })
 
     saveBadges <- reactive({
-      if (sum(fileHandler$isPlotted) == 1) {
+      if (nPlotted$is_one) {
         current_file <- fileHandler$filenames[fileHandler$isPlotted]
-
-        loadedFile$data[loadedFile$data[[input_filename()]] == current_file, tags := badges_to_string(input$badgeInput)]
+        fileHandler$badges[current_file] <- badges_to_string(input$badgeInput)
       }
     })
 
     updateNotes <- reactive({
-      shiny::updateTextAreaInput(session, "notepadInput", value = "")
+      # shiny::updateTextAreaInput(session, "notepadInput", value = "")
       if (is.null(loadedFile$data)) {
         shinyjs::disable("notepadInput")
         return(NULL)
       }
 
       if (sum(fileHandler$isPlotted) != 1) {
-        shiny::updateTextAreaInput(session, "notepadInput", value = NULL)
+        shiny::updateTextAreaInput(session, "notepadInput", value = character(0))
         shinyjs::disable("notepadInput")
       } else {
         current_file <- fileHandler$filenames[fileHandler$isPlotted]
-        current_note <- loadedFile$data[loadedFile$data[[input_filename()]] == current_file, 'notes'][1][[1]]
-        message(current_note)
+        current_note <- fileHandler$notes[current_file][[1]]
+        if (is.na(current_note))
+          current_note <- character(0)
+
         shinyjs::enable("notepadInput")
         shiny::updateTextAreaInput(session, "notepadInput", value = current_note)
 
@@ -99,13 +96,12 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
     saveNotes <- reactive({
       if (sum(fileHandler$isPlotted) == 1) {
         current_file <- fileHandler$filenames[fileHandler$isPlotted]
-
-        loadedFile$data[loadedFile$data[[input_filename()]] == current_file, notes := input$notepadInput]
+        fileHandler$notes[current_file] <- input$notepadInput
+        # loadedFile$data[loadedFile$data[[input_filename()]] == current_file, notes := input$notepadInput]
       }
     })
 
     shiny::observeEvent(input_noteToggle(),ignoreInit = TRUE, {
-      message("note toggle")
 
       if (!is.null(loadedFile$data)) {
         if (input_noteToggle()) {
@@ -140,10 +136,25 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       }
     })
 
+    mergeAnnotations <- reactive({
+      if (is.null(loadedFile$data)) {
+        return(NULL)
+      }
+
+      if (input_badgeToggle()) {
+        loadedFile$data[, tags := fileHandler$badges[loadedFile$data[[input_filename()]]]]
+      }
+
+      if (input_noteToggle()) {
+        loadedFile$data[, notes := fileHandler$notes[loadedFile$data[[input_filename()]]]]
+      }
+    })
+
     return(list(updateNotes = updateNotes,
                 updateBadges = updateBadges,
                 saveNotes = saveNotes,
-                saveBadges = saveBadges))
+                saveBadges = saveBadges,
+                mergeAnnotations = mergeAnnotations))
 
   }
   )

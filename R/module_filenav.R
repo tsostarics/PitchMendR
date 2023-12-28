@@ -35,22 +35,24 @@ fileNavServer <- function(id,
     ns <- session$ns
     # When the user clicks the save button, save the data to the output directory
     saveIcon <- reactiveValues(value = "floppy-disk")
-    observe({
-      shiny::updateActionButton(session, "saveButton", icon = icon(saveIcon$value))
-    })
+    # observe({
+    #   shiny::updateActionButton(session, "saveButton", icon = icon(saveIcon$value))
+    # })
 
     saveData <- reactive({
-      saveIcon$value <- "spinner"
+      # saveIcon$value <- "spinner"
       if (is.null(loadedFile$data))
         return(NULL)
       # browser()
+      annotations$mergeAnnotations()
       path <- file.path(outputDirInput(), clean_file(fileSelectBox()))
 
       names(fileHandler$fileChecked) <- fileHandler$filenames
       # Update the file checked column before saving
       loadedFile$data[, file_checked := fileHandler$fileChecked[loadedFile$data[[filenameColumnInput()]]]]
       if (!file.exists(path) || file.access(path, mode = 2) == 0) {
-        saveIcon$value <- "spinner"
+        # saveIcon$value <- "spinner"
+        shiny::updateActionButton(session, "saveButton", icon = icon("spinner"))
 
         write_status <- tryCatch(data.table::fwrite(x = loadedFile$data, file = path),
                                  error = \(e) {
@@ -59,11 +61,15 @@ fileNavServer <- function(id,
 
         if (!is.null(write_status)) {
           message(write_status$message)
-          saveIcon$value <- "triangle-exclamation"
+          # saveIcon$value <- "triangle-exclamation"
+          shiny::updateActionButton(session, "saveButton", icon = icon("triangle-exclamation"))
+
           return(NULL)
         }
         message(paste0("Wrote data to ", path))
-        saveIcon$value <- "floppy-disk"
+        # saveIcon$value <- "floppy-disk"
+        shiny::updateActionButton(session, "saveButton", icon = icon("floppy-disk"))
+
       }
 
     })

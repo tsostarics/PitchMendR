@@ -458,7 +458,9 @@ openEditor <- function(
                                           setColors = NULL)
     fileHandler <- shiny::reactiveValues(filenames = NULL,
                                          isPlotted = NULL,
-                                         fileChecked = NULL)
+                                         fileChecked = NULL,
+                                         badges = NULL,
+                                         notes = NULL)
     filesBrushed <- shiny::reactiveValues(filenames = NULL)
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
     lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
@@ -519,7 +521,8 @@ openEditor <- function(
 
       message("Filtering")
       plotSubset$data <<- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
-
+      nPlotted$n <- sum(fileHandler$isPlotted)
+      nPlotted$is_one <- nPlotted$n == 1
     }
 
     output$pulsePlot <- shiny::renderPlot({
@@ -842,22 +845,32 @@ openEditor <- function(
       }
 
       if (input$useBadgesToggle) {
-        if (!"tags" %in% colnames(loadedFile$data))
-          loadedFile$data[, tags := ""]
-        else
+        if (!"tags" %in% colnames(loadedFile$data)) {
+          loadedFile$data[, tags := NA_character_]
+          fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
+          names(fileHandler$badges) <- fileHandler$filenames
+        } else {
+          fileHandler$badges = loadedFile$data[, .(tags = tags[1]), by = c(input$filenameColumnInput)][['tags']]
+          names(fileHandler$badges) <- fileHandler$filenames
           loadedFile$data[,tags := as.character(tags)]
+        }
       }
 
       if (input$useNotesToggle) {
-        if (!"notes" %in% colnames(loadedFile$data))
-          loadedFile$data[, notes := ""]
-        else
+        if (!"notes" %in% colnames(loadedFile$data)) {
+          loadedFile$data[, notes := NA_character_]
+          fileHandler$notes <- rep(NA_character_, length(fileHandler$filenames))
+          names(fileHandler$notes) <- fileHandler$filenames
+        } else {
+          fileHandler$notes = loadedFile$data[, .(notes = notes[1]), by = c(input$filenameColumnInput)][['notes']]
+          names(fileHandler$notes) <- fileHandler$filenames
           loadedFile$data[,notes := as.character(notes)]
+        }
       }
 
-      annotations$updateBadges()
-      annotations$updateNotes()
       refilterSubset()
+      # annotations$updateBadges()
+      # annotations$updateNotes()
       updatePlot()
 
     })
@@ -881,7 +894,7 @@ openEditor <- function(
                                      is_one = NULL)
 
     observe({
-      nPlotted$n= sum(fileHandler$isPlotted)
+      nPlotted$n = sum(fileHandler$isPlotted)
       nPlotted$is_one = nPlotted$n == 1
     })
 
@@ -901,10 +914,12 @@ openEditor <- function(
       print(input$filterRegex)
       annotations$saveNotes()
       annotations$saveBadges()
+
       fileHandler$isPlotted <- grepl(input$filterRegex,fileHandler$filenames)
+
+      refilterSubset()
       annotations$updateBadges()
       annotations$updateNotes()
-      refilterSubset()
       destroyLoadedAudio()
     })
 
@@ -926,13 +941,13 @@ openEditor <- function(
       annotations$saveNotes()
       annotations$saveBadges()
 
-      brushed_regex <- paste0("(", filesBrushed$filenames, ")", collapse = "|")
-            fileHandler$isPlotted <- grepl(brushed_regex,fileHandler$filenames)
+      fileHandler$isPlotted <- fileHandler$filenames %in% filesBrushed$filenames
       message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
+
+      refilterSubset()
 
       annotations$updateBadges()
       annotations$updateNotes()
-      refilterSubset()
       destroyLoadedAudio()
     })
 
@@ -1223,7 +1238,7 @@ openEditor <- function(
     # the plotted file when the user clicks on an option.
     shinyjs::onevent(id = "uneditedFileSelectUI",event = "change",
                      expr= {
-                       message("Click")
+                       # message("Click")
                        if (!is.null(input$uneditedFileSelectBox) && !identical(input$uneditedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
@@ -1241,7 +1256,7 @@ openEditor <- function(
 
     shinyjs::onevent(id = "editedFileSelectUI",event = "change",
                      expr= {
-                       message("Click")
+                       # message("Click")
                        if (!is.null(input$editedFileSelectBox) && !identical(input$editedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
@@ -1291,8 +1306,6 @@ openEditor <- function(
       currentWave$value <<- NULL
       currentWave$path <<- NULL
       currentWave$exists <<- NULL
-
-      print(currentWave$path)
     }
 
     shinyjs::onclick(id = "keysQuestion", {
@@ -1407,7 +1420,8 @@ openEditor <- function(
                                     updatePlot,
                                     reactive(input$filenameColumnInput),
                                     reactive(input$useNotesToggle),
-                                    reactive(input$useBadgesToggle))
+                                    reactive(input$useBadgesToggle),
+                                    nPlotted)
 
 
     filenav <- fileNavServer("fileNav",
