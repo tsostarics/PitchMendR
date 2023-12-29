@@ -913,8 +913,13 @@ openEditor <- function(
 
     plotMatches <- reactive({
       print(input$filterRegex)
-      annotations$saveNotes()
-      annotations$saveBadges()
+
+      # Check off the displayed file if we're only looking at 1
+      if (nPlotted$is_one) {
+        fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+        annotations$saveNotes()
+        annotations$saveBadges()
+      }
 
       fileHandler$isPlotted <- grepl(input$filterRegex,fileHandler$filenames)
 
