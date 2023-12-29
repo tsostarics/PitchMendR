@@ -39,7 +39,7 @@ fileNavServer <- function(id,
     #   shiny::updateActionButton(session, "saveButton", icon = icon(saveIcon$value))
     # })
 
-    saveData <- reactive({
+    saveData <- function(){
       # saveIcon$value <- "spinner"
       if (is.null(loadedFile$data))
         return(NULL)
@@ -72,7 +72,8 @@ fileNavServer <- function(id,
 
       }
 
-    })
+    }
+    #)
 
     # When the user clicks the save button, save the data to the output directory
     shiny::observeEvent(input$saveButton, {
