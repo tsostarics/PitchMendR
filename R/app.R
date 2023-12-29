@@ -921,12 +921,18 @@ openEditor <- function(
         annotations$saveBadges()
       }
 
-      fileHandler$isPlotted <- grepl(input$filterRegex,fileHandler$filenames)
+      selected_files <- grepl(input$filterRegex,fileHandler$filenames)
 
-      refilterSubset()
-      annotations$updateBadges()
-      annotations$updateNotes()
-      destroyLoadedAudio()
+      if (any(selected_files)) {
+
+        fileHandler$isPlotted <- selected_files
+
+        refilterSubset()
+        annotations$updateBadges()
+        annotations$updateNotes()
+        destroyLoadedAudio()
+      }
+
     })
 
     # Display the filenames of the selected points when the user makes a selection
@@ -947,14 +953,19 @@ openEditor <- function(
       annotations$saveNotes()
       annotations$saveBadges()
 
-      fileHandler$isPlotted <- fileHandler$filenames %in% filesBrushed$filenames
-      message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
+      selected_files <- fileHandler$filenames %in% filesBrushed$filenames
 
-      refilterSubset()
+      # any short circuits on the first TRUE value
+      if (any(selected_files)) {
+        fileHandler$isPlotted <- fileHandler$filenames %in% filesBrushed$filenames
+        message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
 
-      annotations$updateBadges()
-      annotations$updateNotes()
-      destroyLoadedAudio()
+        refilterSubset()
+
+        annotations$updateBadges()
+        annotations$updateNotes()
+        destroyLoadedAudio()
+      }
     })
 
     # When the user clicks the go to brushed button, plot only the files that the
