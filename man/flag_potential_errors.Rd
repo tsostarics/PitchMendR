@@ -16,7 +16,7 @@ flag_potential_errors(
   fall_threshold = 1.7142857143,
   .as_vec = FALSE,
   .ignore_0s = TRUE,
-  .window_size = 1
+  .window_size = 8
 )
 }
 \arguments{

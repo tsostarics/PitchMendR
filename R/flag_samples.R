@@ -243,22 +243,15 @@ annotate_errors <- function(data,
   data |>
     dplyr::group_by(dplyr::across(dplyr::all_of(.unique_file))) |>
     dplyr::mutate(
-      lead_F0_semitones= dplyr::lead(F0_semitones, order_by=.data[[.time]]),
-      lead_F0_Hz= dplyr::lead(.data[[.hz]], order_by=.data[[.time]]),
+      lead_F0_semitones= c(F0_semitones[-1L], NA),
+      lead_F0_Hz= c(.data[[.hz]][-1L], NA),
       diff = lead_F0_semitones-F0_semitones,
-      time_diff = dplyr::lead(.data[[.time]]) - .data[[.time]],
+      time_diff = c(.data[[.time]][-1L], NA) - .data[[.time]],
       ratio_Hz = lead_F0_Hz/.data[[.hz]],
       err = (!is.na(time_diff)) & (time_diff <= .samplerate * .window_size) & ## this ignore time differences larger than 8*the time step, e.g., over voiceless intervals.
         (diff>0 & (abs(diff)*time_mutation)>rise_threshold |
            diff<0 & (abs(diff)*time_mutation)>fall_threshold),
-      # err_prop_by_ID = mean(err, na.rm = TRUE),
-      # err_count_by_ID = sum(err, na.rm = TRUE),
-      # err_in_ID = as.numeric(err_prop_by_ID > 0),
-      # time_of_err = ifelse(err_in_ID & err, t_ms, 0),
-      F0_of_err = ifelse(dplyr::lag(err),F0_semitones,0),
-      # oct_jump_prop_by_ID = mean(oct_jump, na.rm = TRUE),
-      # oct_jump_count_by_ID = sum(oct_jump, na.rm = TRUE),
-      # oct_jump_in_ID = as.integer(oct_jump_prop_by_ID > 0)
+      F0_of_err = F0_semitones *  c(0, err[-length(err)])
     ) |>
     dplyr::select(-lead_F0_semitones, -lead_F0_Hz, -diff, -time_diff, -ratio_Hz)
 }
@@ -309,11 +302,8 @@ code_carryover_effects <- function(data_annotated,
   data_annotated <-
     data_annotated |>
     dplyr::group_by(dplyr::across(dplyr::all_of(.unique_file))) |>
-    dplyr::mutate(carryover_err = c(FALSE, dplyr::lag(err)[-1]),
+    dplyr::mutate(carryover_err = c(FALSE, err[-length(err)]),
                   F0_of_err=propagate_f0_of_err(F0_of_err))
-
-  # data_annotated[["F0_of_err"]][is.na(data_annotated[["F0_of_err"]])] <- 0
-
 
   data_annotated <-
     dplyr::mutate(data_annotated,
@@ -322,23 +312,13 @@ code_carryover_effects <- function(data_annotated,
                   is_rise_error = (next_F0_st > F0_semitones & f0_st_diff < (rise_threshold * 1.5)),
                   is_fall_error = (next_F0_st < F0_semitones & f0_st_diff < (fall_threshold * 1.5)),
                   is_threshold_error = is_rise_error | is_fall_error,
-                  # is_threshold_error = ifelse(is.na(is_threshold_error), 0, is_threshold_error),
-                  carryover_err = propagate_while_true(carryover_err, is_threshold_error))
-
-  # data_annotated[["carryover_err"]][is.na(data_annotated[["carryover_err"]])] <- FALSE
-
-  data_annotated |>
-    dplyr::mutate(#carryover_err = ifelse(.data[[.time]]==max(.data[[.time]]) & dplyr::lag(carryover_err) == 1,1, carryover_err),
-      flagged_samples = carryover_err,
-      # flagged_samples includes the seeding samples for carryover error detection- i.e. some actual errors
-      carryover_only = carryover_err & !err) |>
+                  flagged_samples = propagate_while_true(carryover_err, is_threshold_error)) |>
     dplyr::select(-next_F0_st,
                   -carryover_err,
                   -f0_st_diff,
                   -is_rise_error,
                   -is_fall_error,
                   -is_threshold_error,
-                  -carryover_only,
                   -F0_of_err,
                   -err)
 }
