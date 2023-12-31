@@ -100,7 +100,7 @@ flag_potential_errors <- function(data,
     }
 
     updated_df[["where_not_zero__"]] <- NULL
-    updated_df <- dplyr::arrange(updated_df, dplyr::across(dplyr::all_of('pulse_id')))
+    updated_df <- dplyr::arrange(updated_df, pulse_id)
   } else {
 
     updated_df <-
@@ -337,8 +337,12 @@ propagate_f0_of_err <- function(F0_of_err) {
   prev_value <- F0_of_err[1]
   for (i in seq_along(F0_of_err)) {
     cur_value <- F0_of_err[i]
+    if (cur_value == 0) {
+      F0_of_err[i] <- prev_value
+    } else{
+      F0_of_err[i] <- cur_value
+    }
 
-    F0_of_err[i] <- ifelse(cur_value==0, prev_value, cur_value)
     prev_value <- F0_of_err[i]
   }
 
