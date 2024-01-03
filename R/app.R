@@ -77,8 +77,13 @@ openEditor <- function(
       ),
       praatUI_button("praatIO"),
       shinyWidgets::materialSwitch(inputId = "hideToggleInput",
-                                   # title = "Toggle to hide doubling/halving transforms",
-                                   label="Hide transform",
+                                   label= tags$span(title = "Toggle to hide doubling/halving transforms",
+                                                    "Hide transform"),
+                                   value = FALSE,
+                                   status = "info"),
+      shinyWidgets::materialSwitch(inputId = "useRemovedPointsToggleInput",
+                                   label= tags$span(title = "Toggle to draw line through removed points",
+                                                    "Show △s in line"),
                                    value = FALSE,
                                    status = "info"),
       shiny::actionButton(
@@ -550,10 +555,18 @@ openEditor <- function(
                                      y = !!sym(yval),
                                      group = !!sym(input$filenameColumnInput)))
 
-      # Add the line if the user wants it, this should go under the points
+      # Add the line if the user wants it
       if (plotSettings$showLine) {
-        p <- p +
-          ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
+        # If the user wants the line to go through the removed points,
+        # then we don't need to subset the data to only the retained pulses
+        if (input$useRemovedPointsToggleInput) {
+          p <- p +
+            ggplot2::geom_line(data =plotSubset$data, color = lineColor)
+        } else {
+          # use remove points toggle is off
+          p <- p +
+            ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
+        }
       }
 
       # Add the points, if the user wants to use the flagged column, use it to color the points
