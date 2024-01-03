@@ -26,7 +26,7 @@ run_temp_script <- function(lines, praat_path = "./Praat.exe") {
                        sep = " ")
 
   message("Praat script start: ", Sys.time())
-  message("If praat throws an error, close praat and delete ", temp_script, " to return")
+  message("If Praat throws an error, close Praat and delete ", temp_script, " to return")
   message(systemcall)
   base::system(systemcall, wait = FALSE) # Runs the script, deletes self at end
   while (file.exists(temp_script)) {}    # Waits until the script has deleted itself
