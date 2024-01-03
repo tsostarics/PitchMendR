@@ -3,16 +3,19 @@ fileNavUI <- function(id) {
 
   shiny::fluidRow(
     shiny::actionButton(inputId = ns("prevButton"),
+                        title = "Click to go to previous file alphabetically",
                         label = "<",
                         style = "margin:1%;margin-top:0%;margin-bottom:0",
                         width = "28%"),
     shiny::actionButton(inputId = ns("saveButton"),
+                        title = "Click to save annotated file to disk",
                         class="btn-default",
                         label = "Save File",
                         icon = icon("floppy-disk"),
                         style = "margin:1%;margin-top:0%;margin-bottom:0",
                         width = "38%"),
     shiny::actionButton(inputId = ns("nextButton"),
+                        title = "Click to go to next file alphabetically",
                         label = ">",
                         style = "margin:1%;margin-top:0%;margin-bottom:0",
                         width = "28%", )

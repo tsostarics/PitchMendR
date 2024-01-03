@@ -76,16 +76,16 @@ openEditor <- function(
         # shiny::icon("upload")
       ),
       praatUI_button("praatIO"),
-      shinyWidgets::materialSwitch(inputId = "hideToggleInput",
-                                   label= tags$span(title = "Toggle to hide doubling/halving transforms",
-                                                    "Hide transform"),
-                                   value = FALSE,
-                                   status = "info"),
-      shinyWidgets::materialSwitch(inputId = "useRemovedPointsToggleInput",
-                                   label= tags$span(title = "Toggle to draw line through removed points",
-                                                    "Show △s in line"),
-                                   value = FALSE,
-                                   status = "info"),
+      tags$span(title = "Toggle to hide doubling/halving transforms",
+                shinyWidgets::materialSwitch(inputId = "hideToggleInput",
+                                             label= "Hide transform",
+                                             value = FALSE,
+                                             status = "info")),
+      tags$span(title = "Toggle to draw line through removed points",
+                shinyWidgets::materialSwitch(inputId = "useRemovedPointsToggleInput",
+                                             label= "Show △s in line",
+                                             value = FALSE,
+                                             status = "info")),
       shiny::actionButton(
         inputId = "undoTransformButton",
         title = "Click to undo last doubling/halving transform",
@@ -98,8 +98,10 @@ openEditor <- function(
         label = "off visible"
       ),
       playAudioUI("playAudio"),
-      shiny::uiOutput(outputId = "uneditedFileSelectUI"),
-      shiny::uiOutput(outputId = "editedFileSelectUI")
+      tags$span(title = "Select a file that has not been checked yet",
+                shiny::uiOutput(outputId = "uneditedFileSelectUI")),
+      tags$span(title = "Select a file that has already been checked",
+                shiny::uiOutput(outputId = "editedFileSelectUI"))
     ),
     bslib::nav_item(
       bslib::input_dark_mode(id = "dark_mode", mode = "dark")
@@ -141,14 +143,17 @@ openEditor <- function(
                      title = "Plot Settings",
                      shiny::textOutput(outputId = "workingFileOutput"),
                      shiny::uiOutput(outputId = "pitchRangeUI"),
-                     shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3),
+                     tags$span(title = "Drag to change size of points",
+                     shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
+                     tags$span(title = "Drag to change transparency of points",
                      shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
-                                        step = 0.05,ticks = FALSE),
+                                        step = 0.05,ticks = FALSE)),
+                     tags$span(title = "Enter regular expression to plot matching files",
                      shiny::textInput(
                        inputId = "filterRegex",
                        label = "Plot files matching regex",
                        value = "."
-                     ),
+                     )),
                      shiny::actionButton(
                        inputId = "plotMatchesButton",
                        title = "Click to plot files that match regex",
@@ -229,66 +234,74 @@ openEditor <- function(
                       shiny::column(width = 3,
                                     bslib::card(
                                       class = "h-100",
-                                      shiny::selectizeInput("filenameColumnInput",
-                                                            label ="Column name containing individual files",
-                                                            choices = "Filename",
-                                                            selected = "Filename",
-                                                            multiple = FALSE,
-                                                            width = "100%"),
-                                      shiny::selectizeInput("xValColumnInput",
-                                                            label ="X-value column name",
-                                                            choices = "t_ms",
-                                                            selected = "t_ms",
-                                                            multiple = FALSE,
-                                                            width = "100%",),
-                                      shiny::selectizeInput("yValColumnInput",
-                                                            label ="Y-value column name",
-                                                            choices = "f0",
-                                                            selected = "f0",
-                                                            multiple = FALSE,
-                                                            width = "100%",),
+                                      tags$span(title = "Select column that indexes individual files/contours",
+                                                shiny::selectizeInput("filenameColumnInput",
+                                                                      label ="Column name that identifies individual files",
+                                                                      choices = "Filename",
+                                                                      selected = "Filename",
+                                                                      multiple = FALSE,
+                                                                      width = "100%")),
+                                      tags$span(title = "Select column that identifies the x-axis for the plot",
+                                                shiny::selectizeInput("xValColumnInput",
+                                                                      label ="X-value column name",
+                                                                      choices = "t_ms",
+                                                                      selected = "t_ms",
+                                                                      multiple = FALSE,
+                                                                      width = "100%")),
+                                      tags$span(title = "Select column that identifies the y-axis for the plot",
+                                                shiny::selectizeInput("yValColumnInput",
+                                                                      label ="Y-value column name",
+                                                                      choices = "f0",
+                                                                      selected = "f0",
+                                                                      multiple = FALSE,
+                                                                      width = "100%")),
                                       submitTextInput("selectionColumnInput",
                                                       title = "Click button set column name",
                                                       label = "Column name for keep/remove annotations (will be added if it doesn't exist)",
                                                       value = "keep_pulse",
-                                                      width = "100%"
-                                      ),
+                                                      width = "100%"),
                                       shiny::markdown(mds = "## UI Options"),
-                                      shinyWidgets::awesomeCheckbox(
-                                        inputId = "saveOptionButton",
-                                        label = "Save on file navigation",
-                                        value = FALSE,
-                                        status = "info"
-                                      ),
-                                      shinyWidgets::awesomeCheckbox(
-                                        inputId = "skipCheckedFilesToggle",
-                                        label = "Skip checked files on file navigation",
-                                        value = TRUE,
-                                        status = "info"
-                                      ),
-                                      shinyWidgets::awesomeCheckbox(
-                                        inputId = "useBadgesToggle",
-                                        label = "Use tag buttons",
-                                        value = TRUE,
-                                        status = "info"
-                                      ),
-                                      shinyWidgets::awesomeCheckbox(
-                                        inputId = "useNotesToggle",
-                                        label = "Use notepad for annotation",
-                                        value = TRUE,
-                                        status = "info"
-                                      ),span(style = "display:inline-block;",
-                                             HTML(shinyWidgets::awesomeCheckbox(
-                                               inputId = "useKeysToggle",
-                                               label = "Use keyboard shortcuts:",
-                                               value = TRUE,
-                                               status = "info"
-                                             ) |> gsub("</label>",
-                                                       paste0("</label>\n",
-                                                              span(id = "keysQuestion",
-                                                                   style = "cursor:pointer;",
-                                                                   shiny::icon("circle-question"))),
-                                                       x=_))
+                                      tags$span(title = "Toggle to save file to disk when plot refreshes with new files",
+                                                shinyWidgets::awesomeCheckbox(
+                                                  inputId = "saveOptionButton",
+                                                  label = "Save on file navigation (disable to improve responsiveness)",
+                                                  value = FALSE,width = "100%",
+                                                  status = "info"
+                                                )),
+                                      tags$span(title = "Toggle to skip checked files when using previous/next file buttons",
+                                                shinyWidgets::awesomeCheckbox(
+                                                  inputId = "skipCheckedFilesToggle",
+                                                  label = "Skip checked files on file navigation",
+                                                  value = TRUE,
+                                                  status = "info"
+                                                )),
+                                      tags$span(title = "Toggle to show annotation buttons in editor pane",
+                                                shinyWidgets::awesomeCheckbox(
+                                                  inputId = "useBadgesToggle",
+                                                  label = "Use tag buttons",
+                                                  value = TRUE,
+                                                  status = "info"
+                                                )),
+                                      tags$span(title = "Toggle to show text area in editor pane",
+                                                shinyWidgets::awesomeCheckbox(
+                                                  inputId = "useNotesToggle",
+                                                  label = "Use notepad for annotation",
+                                                  value = TRUE,
+                                                  status = "info"
+                                                )),
+                                      tags$span(style = "display:inline-block;",
+                                                title = "Toggle to use keyboard shortcuts (click ? for more info)",
+                                                HTML(shinyWidgets::awesomeCheckbox(
+                                                  inputId = "useKeysToggle",
+                                                  label = "Use keyboard shortcuts:",
+                                                  value = TRUE,
+                                                  status = "info"
+                                                ) |> gsub("</label>",
+                                                          paste0("</label>\n",
+                                                                 span(id = "keysQuestion",
+                                                                      style = "cursor:pointer;",
+                                                                      shiny::icon("circle-question"))),
+                                                          x=_))
                                       ),
                                     )
                       ),
@@ -298,12 +311,13 @@ openEditor <- function(
                                       title = "Color Settings",
                                       "Override default color settings below:",
                                       colorUI("colors"),
+                                      tags$span(title = "Toggle to use column in dataset for color coding",
                                       shinyWidgets::materialSwitch(
                                         inputId = "useFlaggedColumnToggle",
                                         label="Color points by column:",
                                         value = FALSE,
                                         inline = TRUE,
-                                        status = "info"),
+                                        status = "info")),
                                       # Tabset panel to hide/show color code
                                       # column input based on whether the
                                       # useFlaggedColumnToggle is set to TRUE.
@@ -315,6 +329,7 @@ openEditor <- function(
                                       shiny::tabsetPanel(type = "hidden",
                                                          id = "switchColorCode",
                                                          shiny::tabPanelBody("showColorCodeColumnInput",
+                                                                             tags$span(title = "Select column to use for color coding",
                                                                              shiny::selectizeInput(
                                                                                inputId = "colorCodeColumnInput",
                                                                                label = NULL,
@@ -322,7 +337,7 @@ openEditor <- function(
                                                                                selected = "flagged_samples",
                                                                                multiple = FALSE,
                                                                                width = "100%"
-                                                                             )),
+                                                                             ))),
                                                          shiny::tabPanelBody("hideColorCodeColumnInput", NULL)))
                       ),
                       shiny::column(width = 6,
@@ -363,15 +378,17 @@ openEditor <- function(
         bslib::card_body(
           shiny::actionButton(
             inputId = "refreshProgressButton",
+            title = "Click to recompute summary statistics on this page",
             label = "Refresh Diagnostics"
           ),
           shiny::actionButton(
             inputId = "plotUneditedFilesButton",
+            title = "Click to send all unedited files to the editor pane",
             label = "Send Unedited Files to Editor"
           ),
           "Percentage of pulses removed from current dataset:",
           shiny::verbatimTextOutput(outputId = "percentRemovedText"),
-          "Average variance of sample-to-sample semitone differences (+/- 2 se, averaged across all files)",
+          "Average variance of sample-to-sample semitone differences (+/- 2 se, averaged across all files and normalized to sampling period)",
           shiny::verbatimTextOutput(outputId = "changeInVarianceOutput"),
           "Total proportion of files that have been mended:",
           shiny::verbatimTextOutput(outputId = "nEditedFilesText"),
@@ -396,23 +413,27 @@ openEditor <- function(
                           title = "Directory Settings",
                           "Current working directory:",
                           shiny::verbatimTextOutput(outputId = "cwd"),
-                          shiny::textInput(
-                            inputId = "inputDirInput",
-                            label = "Input directory",
-                            value = input_directory,
-                            width = "100%"
-                          ),
-                          shiny::textInput(
-
-                            inputId = "outputDirInput",
-                            label = "Output directory",
-                            value = output_directory,
-                            width = "100%"
-                          ),
-                          shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
-                                                multiple = FALSE,
-                                                choices = NULL),
-                          praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory)
+                          tags$span(title = "Enter the directory containing spreadsheet to load",
+                                    shiny::textInput(
+                                      inputId = "inputDirInput",
+                                      label =  "Dataset input directory",
+                                      value = input_directory,
+                                      width = "100%"
+                                    )),
+                          tags$span(title = "Enter the directory to save annotated spreadsheet to",
+                                    shiny::textInput(
+                                      inputId = "outputDirInput",
+                                      label =  "Output directory for annotated datasets",
+                                      value = output_directory,
+                                      width = "100%"
+                                    )),
+                          tags$span(title = "Select a file to load from the input directory",
+                                    shiny::selectizeInput(inputId ="fileSelectBox",
+                                                          label =  "Files Available (*=not processed yet)",
+                                                          multiple = FALSE,
+                                                          choices = NULL)),
+                          tags$span(title = "Click to expand audio options",
+                                    praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
                           # )
             ),
             shiny::column(width = 6,
@@ -444,6 +465,7 @@ openEditor <- function(
                           ),
                     shiny::actionButton(
                       inputId = "flagSamplesButton",
+                      title = "Click to flag potential errors in loaded dataset",
                       icon = icon('flag'),
                       width = "100%",
                       label = "Flag Samples"
@@ -1234,7 +1256,7 @@ openEditor <- function(
         defaultPitchRange$min <- pitch_range[1]
         defaultPitchRange$max <- pitch_range[2]
       }
-
+      tags$span(title = "Enter values to use as y-axis limits",
       shinyWidgets::numericRangeInput("pitchRangeInput",
                                       label =
                                         tags$span(style = "display:inline-block",
@@ -1257,7 +1279,7 @@ openEditor <- function(
 
                                       max = ceiling(add_semitones(pitch_range[2], sign(pitch_range[1])*24)),
                                       step = one_st_step,
-                                      width = "100%")
+                                      width = "100%"))
     })
 
     observeEvent(input$lockButton, {
@@ -1378,7 +1400,7 @@ openEditor <- function(
                        inline_kbd_button('b', " - {KEY}: Plot brushed files"),
                        inline_kbd_button('d', " - {KEY}: Double selected pulses"),
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
-                       inline_kbd_button(c("v"), " - {KEY}: Plot files matching regex"),
+                       inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
                        inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",

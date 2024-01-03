@@ -14,27 +14,30 @@ colorUI <- function(id) {
   #   title = "Color Settings",
   #   "Override default color settings below:",
   tagList(
-    colourpicker::colourInput(
-      inputId = ns("lineColor"),
-      label = "Line color",
-      value = "blue",
-      showColour = "both",
-      palette = "square"
-    ),
-    colourpicker::colourInput(
-      inputId = ns("keepTrueColor"),
-      showColour = "both",
-      palette = "square",
-      label = "Color for pulses to KEEP",
-      value = "black"
-    ),
-    colourpicker::colourInput(
-      inputId = ns("keepFalseColor"),
-      showColour = "both",
-      palette = "square",
-      label = "Color for pulses to REMOVE",
-      value = "grey60"
-    )
+    tags$span(title = "Select color of drawn lines",
+              colourpicker::colourInput(
+                inputId = ns("lineColor"),
+                label = "Line color",
+                value = "blue",
+                showColour = "both",
+                palette = "square"
+              )),
+    tags$span(title = "Select color of points where value is TRUE",
+              colourpicker::colourInput(
+                inputId = ns("keepTrueColor"),
+                showColour = "both",
+                palette = "square",
+                label = "Color for points to KEEP/are not flagged",
+                value = "black"
+              )),
+    tags$span(title = "Select color of points where value is FALSE",
+              colourpicker::colourInput(
+                inputId = ns("keepFalseColor"),
+                showColour = "both",
+                palette = "square",
+                label = "Color for points to REMOVE/are flagged",
+                value = "grey60"
+              ))
   )
 }
 
@@ -83,10 +86,12 @@ colorServer <- function(id,
         # things: changes the color picker values to a new color, which does not
         # cause the plot to re-render; then sets all 3 colors at once for the
         # plot settings, which causes the plot to re-render ONLY once.
+
         colourpicker::updateColourInput(session, "lineColor", value = "#10EBFF")
         colourpicker::updateColourInput(session, "keepTrueColor", value = "#fdae61")
         colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
         plotSettings_ref$setColors <- c("#10EBFF", "#df4461", "#fdae61")
+
         plotSettings_ref$themeColors <-
           ggplot2::theme(
             panel.background = ggplot2::element_rect(fill = "#1d1f21"),
@@ -142,4 +147,4 @@ colorServer <- function(id,
       # updateLoadFileColors()
       set_theme_colors()
     })
-})}
+  })}

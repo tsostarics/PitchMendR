@@ -5,7 +5,9 @@ annotationUI <- function(id) {
     shiny::fluidRow(
       shiny::tabsetPanel(type = "hidden",
                          id = ns("switchBadges"),
+
                          shiny::tabPanelBody(value = "showBadges",
+                                             tags$span(title = "Click to add fast annotations to displayed file",
                                              shinyWidgets::checkboxGroupButtons(
                                                inputId = ns("badgeInput"),
                                                label = NULL,
@@ -14,11 +16,12 @@ annotationUI <- function(id) {
                                                status = "default ", # Trailing space prevents btn-default from being changed to btn-primary
                                                individual = FALSE,
                                                choices = c("Unusable", "Needs Attention", "Good Example"),
-                                               justified = TRUE)),
+                                               justified = TRUE))),
                          shiny::tabPanelBody(value = "hideBadges", NULL))),
     shiny::fluidRow(
       shiny::tabsetPanel(type = "hidden",
                          id = ns("switchNotepad"),
+                         tags$span(title = "Enter annotations for displayed file",
                          shiny::tabPanelBody(value = "showNotepad",
                                              shiny::textAreaInput(
                                                inputId = ns("notepadInput"),
@@ -26,7 +29,7 @@ annotationUI <- function(id) {
                                                width = "100%",
                                                height = "20px",
                                                resize = "both"
-                                             )),
+                                             ))),
                          shiny::tabPanelBody(value = "hideNotepad", NULL)))
   )
 }

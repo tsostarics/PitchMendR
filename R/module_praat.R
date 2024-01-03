@@ -12,13 +12,14 @@ praatUI_input <- function(id,
     width = "100%",
     bslib::accordion_panel(title = "Audio file options",
                            icon = icon('file-audio'),
-
+                    tags$span(title = "Enter path to directory containing Praat",
                            shiny::textInput(
                              inputId = ns("pathToPraat"),
                              label = "Praat Path (relative to working directory)",
                              value = praat_path,
                              width = "100%",
-                           ),
+                           )),
+                    tags$span(title = "Enter string to be interpolated, click ? for more info",
                            span(style = "display:inline-block;",
                                 "Glue string to match file names to directory",
                                 id = ns("glueQuestion"),
@@ -28,19 +29,21 @@ praatUI_input <- function(id,
                              label = NULL,
                              value = "{Speaker}_{Filename}.wav",
                              width = "100%",
-                           ),
+                           )),
+                    tags$span(title = "Enter path to directory containing audio files",
                            shiny::textInput(
                              inputId = ns("audioDirInput"),
                              label  = "Audio Directory",
                              value = audio_directory,
                              width = "100%"
-                           ),
+                           )),
+                    tags$span(title = "Enter path to directory containing text grid files",
                            shiny::textInput(
                              inputId = ns("textgridDirInput"),
                              label = "TextGrid Directory",
                              value = textgrid_directory,
                              width = "100%"
-                           )
+                           ))
     )
   )
   )
