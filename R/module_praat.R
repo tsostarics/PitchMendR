@@ -5,47 +5,51 @@ praatUI_input <- function(id,
   ns <- NS(id)
 
   tagList(
-    "The following are only used to send files to Praat or play audio files from the editor.",
-  bslib::accordion(
-    id = ns("praatAccordion"),
-    open = FALSE,
-    width = "100%",
-    bslib::accordion_panel(title = "Audio file options",
-                           icon = icon('file-audio'),
-                    tags$span(title = "Enter path to directory containing Praat",
-                           shiny::textInput(
-                             inputId = ns("pathToPraat"),
-                             label = "Praat Path (relative to working directory)",
-                             value = praat_path,
-                             width = "100%",
-                           )),
-                    tags$span(title = "Enter string to be interpolated, click ? for more info",
-                           span(style = "display:inline-block;",
-                                "Glue string to match file names to directory",
-                                id = ns("glueQuestion"),
-                                span(style = "cursor:pointer;", shiny::icon("circle-question"))),
-                           shiny::textInput(
-                             inputId = ns("fileNameGlue"),
-                             label = NULL,
-                             value = "{Speaker}_{Filename}.wav",
-                             width = "100%",
-                           )),
-                    tags$span(title = "Enter path to directory containing audio files",
-                           shiny::textInput(
-                             inputId = ns("audioDirInput"),
-                             label  = "Audio Directory",
-                             value = audio_directory,
-                             width = "100%"
-                           )),
-                    tags$span(title = "Enter path to directory containing text grid files",
-                           shiny::textInput(
-                             inputId = ns("textgridDirInput"),
-                             label = "TextGrid Directory",
-                             value = textgrid_directory,
-                             width = "100%"
-                           ))
+    singleton(tags$span(style = "dispaly:inline-block",
+                        "The following are only used to send files to Praat or play audio files from the editor.",
+                        tags$span(id = ns("praatQuestion"),
+                                  style = "cursor:pointer",
+                                  shiny::icon("circle-question")))),
+    bslib::accordion(
+      id = ns("praatAccordion"),
+      open = FALSE,
+      width = "100%",
+      bslib::accordion_panel(title = "Audio file options",
+                             icon = icon('file-audio'),
+                             tags$span(title = "Enter path to directory containing Praat",
+                                       shiny::textInput(
+                                         inputId = ns("pathToPraat"),
+                                         label = "Praat Path (relative to working directory)",
+                                         value = praat_path,
+                                         width = "100%",
+                                       )),
+                             tags$span(title = "Enter string to be interpolated, click ? for more info",
+                                       span(style = "display:inline-block;",
+                                            "Glue string to match file names to directory",
+                                            id = ns("glueQuestion"),
+                                            span(style = "cursor:pointer;", shiny::icon("circle-question"))),
+                                       shiny::textInput(
+                                         inputId = ns("fileNameGlue"),
+                                         label = NULL,
+                                         value = "{Speaker}_{Filename}.wav",
+                                         width = "100%",
+                                       )),
+                             tags$span(title = "Enter path to directory containing audio files",
+                                       shiny::textInput(
+                                         inputId = ns("audioDirInput"),
+                                         label  = "Audio Directory",
+                                         value = audio_directory,
+                                         width = "100%"
+                                       )),
+                             tags$span(title = "Enter path to directory containing text grid files",
+                                       shiny::textInput(
+                                         inputId = ns("textgridDirInput"),
+                                         label = "TextGrid Directory",
+                                         value = textgrid_directory,
+                                         width = "100%"
+                                       ))
+      )
     )
-  )
   )
 
 }
@@ -116,7 +120,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         # Use the columns of the loaded data and the provided glue string to
         # send the files currently displayed in the editor to Praat
         files_to_open <- unique(glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                              input$fileNameGlue))
+                                                     input$fileNameGlue))
         audio_paths <- file.path(input$audioDirInput, files_to_open)
         audio_paths <- audio_paths[file.exists(audio_paths)]
         tg_paths <- c(NULL)
@@ -149,56 +153,111 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         if (!is.null(time_range_values)) {
           time_range_values <- paste(time_range_values, collapse = ", ")
           select_time_lines <- paste0("Select: ", time_range_values)
-      }
+        }
         # Ensure we have an editor even if we don't open any TextGrids
         tg_lines <- c(
+          "if obj <> undefined",
           "editorName$ = selected$()",
-          'View & Edit'
+          "fileOpened = 1",
+          'View & Edit',
+          "endif"
         )
 
         if (length(tg_paths) > 0) {
           tg_lines <- c(
-            paste0('tgObj = Read from file: "', tg_paths[1], '"'),
+            paste0('tgObj = nocheck Read from file: "', tg_paths[1], '"'),
+            "if tgObj <> undefined",
             "editorName$ = selected$()",
+            "if obj <> undefined",
             'plusObject: obj',
-            'View & Edit'
+            "endif",
+            "fileOpened = 1",
+            'View & Edit',
+            "endif"
           )
         }
 
         script_lines <- c(
-          paste0('obj = Read from file: "', audio_paths[1], '"'),
+          paste0('obj = nocheck Read from file: "', audio_paths[1], '"'),
+          "fileOpened = 0",
           tg_lines,
+          "if fileOpened = 1",
           "editor: editorName$",
           paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
           select_time_lines,
-          "endeditor"
+          "endeditor",
+          "endif"
         )
 
         # If we're loading more than one file, then we don't want to load the
         # first file twice. If we're only loading one file, then we don't need
         # to read anything more.
-        read_file_lines <- ""
+        read_audio_lines <- ""
         if (length(audio_paths) > 1) {
-          read_file_lines <- paste0('Read from file: \"', audio_paths[-1], '"')
+          read_audio_lines <-
+            paste0('nocheck Read from file: \"', audio_paths[-1], '"')
+        }
+
+        read_tg_lines <- ""
+        if (length(tg_paths) > 1) {
+          read_tg_lines <-
+            paste0('nocheck Read from file: \"', tg_paths[-1], '"')
+        }
+
+        # Usually true if the directories are set up correctly, but we check
+        # just to be absolutely certain to avoid indexing errors. This allows
+        # corresponding audio and textgrid files to be opened one after the
+        # other. I.e., opens files in the object pane in the order on the left.
+        #                           as opposed to:
+        #         Sound file1                      Sound file1
+        #         TextGrid file1                   Sound file2
+        #         Sound file2                      TextGrid file1
+        #         TextGrid file 2                  TextGrid file 2
+
+        if (length(read_audio_lines) == length(read_tg_lines)){
+          read_file_lines <- unlist(lapply(seq_along(read_audio_lines),
+                                    \(i) c(read_audio_lines[i],
+                                           read_tg_lines[i])))
+        } else {
+          read_file_lines <- c(read_audio_lines, read_tg_lines)
         }
 
         # Run a self-deleting script that will open all the files in Praat
-        run_temp_script(c(script_lines, read_file_lines), input$pathToPraat)
+        run_temp_script(c(script_lines,read_file_lines), input$pathToPraat)
 
       }
     }
     )
 
+
+    shinyjs::onclick(id = "praatQuestion", {
+      shinyWidgets::show_alert(
+
+        title = "How is Praat used?",
+        type = 'info',
+        width = "35em",
+        html = TRUE,
+        text =
+          tags$div(style = css(`text-align` = 'left'),
+                   markdown(c("Temporary Praat scripts are created in the current working directory and contain commands to open or close files.",
+                              "These scripts will automatically delete themselves once they are complete.",
+                              "The app will be temporarily suspended while the Praat script runs, but will reactivate once the script completes.",
+                              "If the script throws an error, the app may remain suspended and the temporary file will not automatically delete.",
+                              "In this case, manually close Praat and delete the temporary script."))
+          )
+      )
+    })
+
     closePraatFiles <- reactive({
       function(praatPath = input$pathToPraat) {
-      # If there aren't any objects available the praat will throw an error,
-      # so we make a small object at the start just in case
-      delete_script_lines <-
-        c(
-          'Create Sound from formula: "sineWithNoise", 1, 0, 0.01, 400, "0"',
-          "select all",
-          "Remove")
-      run_temp_script(delete_script_lines, praatPath)
+        # If there aren't any objects available the praat will throw an error,
+        # so we make a small object at the start just in case
+        delete_script_lines <-
+          c(
+            'Create Sound from formula: "sineWithNoise", 1, 0, 0.01, 400, "0"',
+            "select all",
+            "Remove")
+        run_temp_script(delete_script_lines, praatPath)
       }
     })
 
