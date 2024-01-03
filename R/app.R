@@ -629,7 +629,7 @@ openEditor <- function(
       }
     })
 
-    shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = TRUE, {
+    shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = FALSE, {
       message("flag toggle")
       if (input$useFlaggedColumnToggle){
         shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
