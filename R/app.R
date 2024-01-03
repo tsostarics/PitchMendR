@@ -68,12 +68,9 @@ openEditor <- function(
       shiny::actionButton(
         inputId = "loadFileButton",
         title = "Click to load selected file",
-        # label = shiny::uiOutput(outputId = "loadFileButtonLabel"),
         label = "Load File",
         class = "btn-warning",
         icon = icon("spinner"),
-        # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
-        # shiny::icon("upload")
       ),
       praatUI_button("praatIO"),
       tags$span(title = "Toggle to hide doubling/halving transforms",
@@ -83,7 +80,7 @@ openEditor <- function(
                                              status = "info")),
       tags$span(title = "Toggle to draw line through removed points",
                 shinyWidgets::materialSwitch(inputId = "useRemovedPointsToggleInput",
-                                             label= "Show △s in line",
+                                             label= "Show \u25B3s in line",
                                              value = FALSE,
                                              status = "info")),
       shiny::actionButton(

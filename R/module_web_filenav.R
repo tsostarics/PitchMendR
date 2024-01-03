@@ -45,7 +45,7 @@ web_fileNavServer <- function(id,
     })
 
     # Merge annotations and download annotated file when download is clicked
-    output$saveButton <- downloadHandler(
+    output$saveButton <- shiny::downloadHandler(
       filename = function() {
         # browser()
         # uploaded_filename <- basename(uploadInput()$datapath)

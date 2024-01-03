@@ -239,7 +239,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         html = TRUE,
         text =
           tags$div(style = css(`text-align` = 'left'),
-                   markdown(c("Temporary Praat scripts are created in the current working directory and contain commands to open or close files.",
+                   shiny::markdown(c("Temporary Praat scripts are created in the current working directory and contain commands to open or close files.",
                               "These scripts will automatically delete themselves once they are complete.",
                               "The app will be temporarily suspended while the Praat script runs, but will reactivate once the script completes.",
                               "If the script throws an error, the app may remain suspended and the temporary file will not automatically delete.",

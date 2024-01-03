@@ -98,7 +98,7 @@ demoEditor <- function(
                                              status = "info")),
       tags$span(title = "Toggle to draw line through removed points",
                 shinyWidgets::materialSwitch(inputId = "useRemovedPointsToggleInput",
-                                             label= "Show △s in line",
+                                             label= "Show \u25B3s in line",
                                              value = FALSE,
                                              status = "info")),
       shiny::actionButton(
@@ -412,7 +412,7 @@ demoEditor <- function(
                           # bslib::card(
 
                           tags$span(title = "Click to browse for and upload a csv file",
-                          fileInput("rawFileUpload",
+                          shiny::fileInput("rawFileUpload",
                                     "Choose CSV File",
                                     multiple = FALSE,
                                     buttonLabel = tags$span(icon("file-csv"), "Upload"),
