@@ -21,8 +21,9 @@ annotationUI <- function(id) {
     shiny::fluidRow(
       shiny::tabsetPanel(type = "hidden",
                          id = ns("switchNotepad"),
-                         tags$span(title = "Enter annotations for displayed file",
+
                          shiny::tabPanelBody(value = "showNotepad",
+                                             tags$span(title = "Enter annotations for displayed file",
                                              shiny::textAreaInput(
                                                inputId = ns("notepadInput"),
                                                label = NULL,
