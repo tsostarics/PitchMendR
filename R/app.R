@@ -387,7 +387,8 @@ openEditor <- function(
 
           shiny::fluidRow(
             shiny::column(width = 6,
-                          bslib::card(
+                          class = "h-100",
+                          # bslib::card(height = "100%",
                             title = "Directory Settings",
                             "Current working directory:",
                             shiny::verbatimTextOutput(outputId = "cwd"),
@@ -408,10 +409,11 @@ openEditor <- function(
                                                   multiple = FALSE,
                                                   choices = NULL),
                             praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory)
-                          )
+                          # )
             ),
             shiny::column(width = 6,
-                          bslib::card(
+                          class = "h-100",
+                          # bslib::card(
                             title = "Flagging Samples",
                             shiny::markdown(
                               mds = c(
@@ -441,7 +443,7 @@ openEditor <- function(
                       icon = icon('flag'),
                       label = "Flag Samples"
                     )
-                          )
+                          # )
             )
           )
         )
