@@ -154,9 +154,7 @@ fileNavServer <- function(id,
       # Get the maximum index of the files that are currently plotted,
       # if we're already at the last file, wrap around to the first file
       current_max <- max(which(fileHandler$isPlotted))
-      # if (current_max >= length(fileHandler$filenames))
-      #   current_max <- 0
-      # browser()
+
       # Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
