@@ -70,7 +70,7 @@ praatUI_button <- function(id) {
 }
 
 praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchRangeInput, saveData,
-                        navbarInput) {
+                        navbarInput, brushedArea) {
   moduleServer(id, function(input, output, session) {
 
     shinyjs::onclick(id = "glueQuestion", {
@@ -132,14 +132,22 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
         # Set up a temporary script that will read in all the files
         temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
 
+        # Handle the pitch range options
         pitch_range <- pitchRangeInput()
-
         # Can't set the pitch floor at 0
         if (!where_not_zero(pitch_range[1L]))
           ptich_range[1L] <- 40
 
         pitch_range <- paste(pitch_range, collapse = ", ")
 
+        # Get the selected points, if any
+        time_range_values <- unlist(brushedArea()[c('xmin', 'xmax')])
+        select_time_lines <- ""
+        if (!is.null(time_range_values)) {
+          time_range_values <- paste(time_range_values, collapse = ", ")
+          select_time_lines <- paste0("Select: ", time_range_values)
+      }
+        # Ensure we have an editor even if we don't open any TextGrids
         tg_lines <- c(
           "editorName$ = selected$()",
           'View & Edit'
@@ -159,6 +167,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
           tg_lines,
           "editor: editorName$",
           paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
+          select_time_lines,
           "endeditor"
         )
 
