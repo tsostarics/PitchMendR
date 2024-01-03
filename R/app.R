@@ -1401,6 +1401,7 @@ openEditor <- function(
                        inline_kbd_button('d', " - {KEY}: Double selected pulses"),
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
                        inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
+                       inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
                        inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
