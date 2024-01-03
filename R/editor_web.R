@@ -3,14 +3,6 @@
 #' Runs the web app version of the app
 #'
 #' @param ... not used
-#' @param input_directory Directory containing the csv files to load
-#' @param output_directory Directory to save annotated csv files to
-#' @param audio_directory Directory containing .wav files to play or send to
-#' praat
-#' @param textgrid_directory Directory containing .TextGrid files to send to
-#' praat
-#' @param praat_path For Windows, the path to a Praat executable. For linux and
-#' mac, this should just be Praat assuming it's available as a terminal command.
 #'
 #' @return Nothing
 #' @export
@@ -18,13 +10,7 @@
 #' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req reactiveValues observe
 #' @importFrom rlang sym
 #' @importFrom stats median
-demoEditor <- function(
-    input_directory = get_example_f0_data("."),
-    output_directory = "./",
-    audio_directory = "./audio",
-    textgrid_directory = "./audio",
-    praat_path = "./Praat.exe",
-    ...) {
+demoEditor <- function(...) {
   options(shiny.maxRequestSize = 10 * 1024^2)
   # Keyboard shortcuts run in the RStudio viewer will also execute in RStudio,
   # so we'll try to open a new file to avoid cases where keybindings modify
@@ -179,7 +165,7 @@ demoEditor <- function(
           shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot",
                                                       click = "plot_click",
                                                       brush = "plot_brush",
-                                                      height = "70%"),
+                                                      height = "60%"),
                                     options = list(containment = "parent",
                                                    save = TRUE)),
           fill = TRUE,
@@ -1469,7 +1455,6 @@ demoEditor <- function(
                        inline_kbd_button('d', " - {KEY}: Double selected pulses"),
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
                        inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
-                       inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
                        inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",

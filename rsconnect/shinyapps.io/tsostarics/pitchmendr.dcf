@@ -1,0 +1,13 @@
+name: pitchmendr
+title:
+username: tsostarics
+account: tsostarics
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10865821
+bundleId: 8106499
+url: https://tsostarics.shinyapps.io/pitchmendr/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: demo_data.csv|Praat.exe|audio
