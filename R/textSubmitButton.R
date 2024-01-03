@@ -29,6 +29,9 @@
 submitTextInput <- function(inputId, label, value = "",
                       width = NULL, icon = "share-from-square",
                       placeholder = "Enter text here", disabled = FALSE, ...) {
+  # Borrow unexported functions from shiny package and avoid notes
+  validateIcon <- utils::getFromNamespace("validateIcon", "shiny")
+  shinyInputLabel <- utils::getFromNamespace("shinyInputLabel", "shiny")
 
   value <- shiny::restoreInput(id = inputId, default = value)
 
@@ -41,13 +44,13 @@ submitTextInput <- function(inputId, label, value = "",
                           class="btn btn-default action-button",
                           `data-val` = value,
                           disabled = if (isTRUE(disabled)) NA else NULL,
-                          list(shiny:::validateIcon(shiny::icon(icon))),
+                          list(validateIcon(shiny::icon(icon))),
                           ...
   )
 
   div(class = "form-group shiny-input-container",
       style = htmltools::css(width = shiny::validateCssUnit(width)),
-      shiny:::shinyInputLabel(inputId, label),
+      shinyInputLabel(inputId, label),
 
       div(class = "input-group",
           # input-group-prepend is for bootstrap 4 compat
