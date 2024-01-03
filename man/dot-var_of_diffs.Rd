@@ -4,10 +4,14 @@
 \alias{.var_of_diffs}
 \title{Variance of semitone difference}
 \usage{
-.var_of_diffs(x)
+.var_of_diffs(x, t, samplerate = 0.01)
 }
 \arguments{
 \item{x}{Hz values}
+
+\item{t}{Timestamps}
+
+\item{samplerate}{Sampling rate}
 }
 \value{
 Variance of semitone differences
@@ -15,5 +19,9 @@ Variance of semitone differences
 \description{
 A heuristic calculation of the variance of the sample-to-sample semitone
 differences. Contours with fewer extreme changes in semitones will have
-lower variance.
+lower variance. The values are normalized to the sampling period such that
+the semitone difference between (t, f) values (1.00, 110) and (1.01, 220)
+would be 12, but the difference between (1.00, 110) and (1.02, 220) would be
+6. This helps to account for instances where individual pulses have been removed,
+which changes which pulses are adjacent to one another.
 }
