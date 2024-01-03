@@ -18,7 +18,6 @@ Imports:
     ggplot2,
     glue,
     htmltools,
-    jsonlite,
     keys,
     rlang,
     shiny (>= 1.7.4),
