@@ -17,6 +17,7 @@
 #'
 #' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req reactiveValues observe
 #' @importFrom rlang sym
+#' @importFrom stats median
 openEditor <- function(
     input_directory = get_example_f0_data("."),
     output_directory = "./",
@@ -1408,7 +1409,7 @@ openEditor <- function(
                               .speaker = "Speaker", # change this later
                               .as_vec = TRUE)
 
-      loadedFile$data[, flagged_samples := flagged_values]
+      loadedFile$data[, ("flagged_samples") := flagged_values]
 
       if (!data.table::is.data.table(loadedFile$data))
         loadedFile$data <- data.table(loadedFile$data)
@@ -1428,7 +1429,8 @@ openEditor <- function(
                   reactive(input$filenameColumnInput),
                   reactive(input$pitchRangeInput),
                   filenav$saveData,
-                  reactive(input$navbar))
+                  reactive(input$navbar),
+                  reactive(input$plot_brush))
 
     playAudioServer("playAudio",
                     loadedFile,
