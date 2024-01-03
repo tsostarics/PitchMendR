@@ -527,7 +527,7 @@ demoEditor <- function(...) {
       if (is.null(loadedFile$data))
         return(NULL)
 
-      message("Filtering")
+      # message("Filtering")
       # browser()
       plotSubset$data <<- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
       nPlotted$n <- sum(fileHandler$isPlotted)
@@ -535,7 +535,7 @@ demoEditor <- function(...) {
     }
 
     output$pulsePlot <- shiny::renderPlot({
-      message('Rerendering')
+      # message('Rerendering')
       plotFlag$value
       if (is.null(loadedFile$data))
         return(NULL)
@@ -631,7 +631,7 @@ demoEditor <- function(...) {
 
     # When the user clicks the toggle button, toggle the logical keep_pulse value
     shiny::observeEvent(input$toggleButton, {
-      message("Toggle Pressed")
+      # message("Toggle Pressed")
       togglePulses()
     })
 
@@ -645,7 +645,7 @@ demoEditor <- function(...) {
     })
 
     shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = FALSE, {
-      message("flag toggle")
+      # message("flag toggle")
       if (input$useFlaggedColumnToggle){
         shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
       } else {
@@ -713,14 +713,14 @@ demoEditor <- function(...) {
 
     # When the user clicks the keep button, set the logical keep_pulse value to TRUE
     shiny::observeEvent(input$keepButton, {
-      message("Keep Pressed")
+      # message("Keep Pressed")
       keepPulses()
 
     })
 
     # When the user clicks the remove button, set the logical keep_pulse value to FALSE
     shiny::observeEvent(input$removeButton, {
-      message("Remove Pressed")
+      # message("Remove Pressed")
       removePulses()
     })
 
@@ -772,10 +772,10 @@ demoEditor <- function(...) {
 
       req(input$rawFileUpload)
     # shiny::observeEvent(input$loadFileButton, {
-      message("Load File Pressed")
+      # message("Load File Pressed")
 
       file_to_load <- input$rawFileUpload$datapath
-      message(paste0("Loading file ", file_to_load))
+      # message(paste0("Loading file ", file_to_load))
       loadedFile$data <- NULL # If previous data was loaded, throw it out
       loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
 
@@ -791,7 +791,7 @@ demoEditor <- function(...) {
       # If the file doesn't contain the specified columns, return null and move
       # to the settings page
       if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
-        message("File doesn't contain the specified columns")
+        # message("File doesn't contain the specified columns")
         loadedFile$data <- NULL
         shiny::updateNavbarPage(session, "navbar", "Settings")
         return(NULL)
@@ -874,25 +874,13 @@ demoEditor <- function(...) {
 
     })
 
-    # observe({
-    #   if (!is.null(input$fileSelectBox) && !is.null(input$inputDirInput)) {
-    #     shinyjs::removeClass("loadFileButton", class = "btn-warning")
-    #     shinyjs::addClass("loadFileButton", class = "btn-primary")
-    #     shiny::updateActionButton(session, "loadFileButton",icon = icon("upload"))
-    #   } else {
-    #     shinyjs::removeClass("loadFileButton", class = "btn-primary")
-    #     shinyjs::addClass("loadFileButton", class = "btn-warning")
-    #     shiny::updateActionButton(session, "loadFileButton",icon = icon("spinner"))
-    #   }
-    # })
-
     shiny::observeEvent(input$loadFileButton, {
-      message("Load demo file Pressed")
+      # message("Load demo file Pressed")
 
       file_to_load <- file.path(get_example_f0_data("."), "demo_data.csv")
 
 
-      message(paste0("Loading file ", file_to_load))
+      # message(paste0("Loading file ", file_to_load))
       loadedFile$data <- NULL # If previous data was loaded, throw it out
       loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
 
@@ -912,7 +900,7 @@ demoEditor <- function(...) {
       # If the file doesn't contain the specified columns, return null and move
       # to the settings page
       if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
-        message("File doesn't contain the specified columns")
+        # message("File doesn't contain the specified columns")
         loadedFile$data <- NULL
         shiny::updateNavbarPage(session, "navbar", "Settings")
         return(NULL)
@@ -1026,7 +1014,7 @@ demoEditor <- function(...) {
     # When the user clicks the plot matches button, plot the files that match the
     # regex in the filter regex box
     shiny::observeEvent(input$plotMatchesButton, {
-      message("Plot Matches Pressed")
+      # message("Plot Matches Pressed")
       plotMatches()
     })
 
@@ -1077,7 +1065,7 @@ demoEditor <- function(...) {
       # any short circuits on the first TRUE value
       if (any(selected_files)) {
         fileHandler$isPlotted <- fileHandler$filenames %in% filesBrushed$filenames
-        message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
+        # message(paste0("Plotting ", sum(fileHandler$isPlotted), " files from selection"))
 
         refilterSubset()
 
@@ -1090,7 +1078,7 @@ demoEditor <- function(...) {
     # When the user clicks the go to brushed button, plot only the files that the
     # user selected in the editor
     shiny::observeEvent(input$goToBrushButton, {
-      message("Go to brushed pressed")
+      # message("Go to brushed pressed")
       plotBrushed()
     })
 
@@ -1218,7 +1206,7 @@ demoEditor <- function(...) {
 
     # Multiply selected points by 2 (fixes halving errors)
     shiny::observeEvent(input$doubleButton, {
-      message("Double Pressed")
+      # message("Double Pressed")
       doublePulses()
     })
 
@@ -1236,7 +1224,7 @@ demoEditor <- function(...) {
     shiny::observeEvent(input$yValColumnInputButton, {
       if (is.null(loadedFile$data))
         return(NULL)
-      message(input$yValColumnInput)
+      # message(input$yValColumnInput)
       changeTransformedColumn()
 
       updatePlot()
@@ -1246,7 +1234,7 @@ demoEditor <- function(...) {
 
     # Multiply selected points by 0.5 (fixes doubling errors)
     shiny::observeEvent(input$halfButton, {
-      message("Halve Pressed")
+      # message("Halve Pressed")
       halvePulses()
     })
 
@@ -1269,7 +1257,7 @@ demoEditor <- function(...) {
 
     # Undo the last transformation, resetting the transformation to 1
     shiny::observeEvent(input$undoTransformButton, {
-      message("Undo Pressed")
+      # message("Undo Pressed")
       undoTransformation()
     })
 
@@ -1470,7 +1458,7 @@ demoEditor <- function(...) {
     # When the user clicks the Check off Files button, all files currently displayed
     # will have their fileChecked values set to TRUE.
     shiny::observeEvent(input$checkVisibleFilesButton, {
-      message("Check visible files pressed")
+      # message("Check visible files pressed")
       if (!is.null(fileHandler$filenames) && any(fileHandler$isPlotted)) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
       }
@@ -1483,7 +1471,7 @@ demoEditor <- function(...) {
     # flagged_samples column. So the user can can tell that the process worked,
     # the button will change color and the icon will change to a checkmark.
     shiny::observeEvent(input$flagSamplesButton, {
-      message("Flag Samples Pressed")
+      # message("Flag Samples Pressed")
       if (is.null(loadedFile$data))
         return(NULL)
 
