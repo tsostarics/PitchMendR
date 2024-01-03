@@ -243,7 +243,10 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
                               "These scripts will automatically delete themselves once they are complete.",
                               "The app will be temporarily suspended while the Praat script runs, but will reactivate once the script completes.",
                               "If the script throws an error, the app may remain suspended and the temporary file will not automatically delete.",
-                              "In this case, manually close Praat and delete the temporary script."))
+                              "In this case, manually close Praat and delete the temporary script.",
+                              "",
+                              "If Praat is not currently running, a new Praat process will be launched.",
+                              "The new Praat process will be a child process of the app, and so will be closed when the app is closed."))
           )
       )
     })
