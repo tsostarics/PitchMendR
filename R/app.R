@@ -363,12 +363,12 @@ openEditor <- function(
             inputId = "plotUneditedFilesButton",
             label = "Send Unedited Files to Editor"
           ),
-          "Percentage of pulses removed from current file:",
-          shiny::textOutput(outputId = "percentRemovedText"),
-          "Change in average variance of semitone differences (+/- 2 se)",
+          "Percentage of pulses removed from current dataset:",
+          shiny::verbatimTextOutput(outputId = "percentRemovedText"),
+          "Average variance of sample-to-sample semitone differences (+/- 2 se, averaged across all files)",
           shiny::verbatimTextOutput(outputId = "changeInVarianceOutput"),
-          "Number of files / total files found with any pulses removed:",
-          shiny::textOutput(outputId = "nEditedFilesText"),
+          "Total proportion of files that have been mended:",
+          shiny::verbatimTextOutput(outputId = "nEditedFilesText"),
           "These files have received no edits:",
           shiny::verbatimTextOutput(outputId = "uneditedFilesText")
         )
@@ -387,37 +387,37 @@ openEditor <- function(
             shiny::column(width = 6,
                           class = "h-100",
                           # bslib::card(height = "100%",
-                            title = "Directory Settings",
-                            "Current working directory:",
-                            shiny::verbatimTextOutput(outputId = "cwd"),
-                            shiny::textInput(
-                              inputId = "inputDirInput",
-                              label = "Input directory",
-                              value = input_directory,
-                              width = "100%"
-                            ),
-                            shiny::textInput(
+                          title = "Directory Settings",
+                          "Current working directory:",
+                          shiny::verbatimTextOutput(outputId = "cwd"),
+                          shiny::textInput(
+                            inputId = "inputDirInput",
+                            label = "Input directory",
+                            value = input_directory,
+                            width = "100%"
+                          ),
+                          shiny::textInput(
 
-                              inputId = "outputDirInput",
-                              label = "Output directory",
-                              value = output_directory,
-                              width = "100%"
-                            ),
-                            shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
-                                                  multiple = FALSE,
-                                                  choices = NULL),
-                            praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory)
+                            inputId = "outputDirInput",
+                            label = "Output directory",
+                            value = output_directory,
+                            width = "100%"
+                          ),
+                          shiny::selectizeInput("fileSelectBox", "Files Available (*=not processed yet)",
+                                                multiple = FALSE,
+                                                choices = NULL),
+                          praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory)
                           # )
             ),
             shiny::column(width = 6,
                           class = "h-100",
                           # bslib::card(
-                            title = "Flagging Samples",
-                            shiny::markdown(
-                              mds = c(
-                                "## Flagging samples",
-                                "",
-                                "After loading your data, you can use an automated method to flag potential tracking errors.
+                          title = "Flagging Samples",
+                          shiny::markdown(
+                            mds = c(
+                              "## Flagging samples",
+                              "",
+                              "After loading your data, you can use an automated method to flag potential tracking errors.
                     This method is based on identifying octave jumps between adjacent samples.
                     Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.
                     It is best used to identify regions of interest that should be investigated for errors.",
@@ -434,15 +434,15 @@ openEditor <- function(
                     "The column `flagged_samples` will be added if it doesn't exist.
                     Once the column is added, or if it already exists, the button will turn green.
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
-                              )
-                            ),
+                            )
+                          ),
                     shiny::actionButton(
                       inputId = "flagSamplesButton",
                       icon = icon('flag'),
                       width = "100%",
                       label = "Flag Samples"
                     )
-                          # )
+                    # )
             )
           )
         )
@@ -980,36 +980,48 @@ openEditor <- function(
     shiny::observeEvent(input$refreshProgressButton,{
       if (is.null(loadedFile$data))
         return(NULL)
-      filtered_data <- loadedFile$data[where_not_zero(get(input$yValColumnInput))]
+      # browser()
+      filtered_data <- loadedFile$data[where_not_zero(get(input$yValColumnInput)),]
+
+      uneditedFiles$filenames <-
+        filtered_data[, .(n_edited = any(!get(input$selectionColumnInput))), by = c(input$filenameColumnInput)][!(n_edited), .SD[[input$filenameColumnInput]]]
+
 
       output$percentRemovedText <- shiny::renderText({
         paste0(round(sum(!filtered_data[[input$selectionColumnInput]]) / nrow(filtered_data)*100, 2), "%")
       })
 
       output$nEditedFilesText <- shiny::renderText({
-        n_edited <- loadedFile$data[, .(n_edited = sum(!get(input$selectionColumnInput))), by = c(input$filenameColumnInput)][n_edited > 0, .N]
-        paste0(n_edited, " / ", length(unique(filtered_data[[input$filenameColumnInput]])))
+        n_files <- length(fileHandler$filenames)
+        n_edited <- n_files - length(uneditedFiles$filenames)
+        paste0(n_edited, " / ", n_files)
       })
 
       output$changeInVarianceOutput <- shiny::renderText({
+        samplerate <- median(diff(loadedFile$data[[input$xValColumnInput]][1:100]))
+
         variance_values <-
           loadedFile$data |>
           dplyr::group_by(dplyr::across(dplyr::all_of(input$filenameColumnInput))) |>
-          dplyr::reframe(original_variance = .var_of_diffs(.data[[input$yValColumnInput]][where_not_zero(.data[[input$yValColumnInput]])]),
-                         new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[[input$selectionColumnInput]]])) |>
+
+          dplyr::reframe(
+            original_variance = .var_of_diffs(.data[[input$yValColumnInput]][where_not_zero(.data[[input$yValColumnInput]])],
+                                              .data[[input$xValColumnInput]],
+                                              samplerate),
+            new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[[input$selectionColumnInput]] & where_not_zero(.data[[input$yValColumnInput]])],
+                                         .data[[input$xValColumnInput]],
+                                         samplerate)) |>
           dplyr::ungroup()
 
         mean_se1 <- ggplot2::mean_se(variance_values$original_variance, mult = 2)
         mean_se2 <- ggplot2::mean_se(variance_values$new_variance, mult = 2)
 
-        paste0("Original Variance: ", round(mean_se1['y'], 2), "[", round(mean_se1['ymin'], 2), ",", round(mean_se1['ymax']), "]\n",
-               "New Variance: ", round(mean_se2['y'], 2), "[", round(mean_se2['ymin'], 2), ",", round(mean_se2['ymax']), "]\n")
+        paste0("Original Variance: ", round(mean_se1['y'], 3), "[", round(mean_se1['ymin'], 3), ",", round(mean_se1['ymax'], 3), "]\n",
+               "New Variance: ", round(mean_se2['y'], 3), "[", round(mean_se2['ymin'], 3), ",", round(mean_se2['ymax'], 3), "]\n")
 
       })
 
       output$uneditedFilesText <- shiny::renderText({
-        uneditedFiles$filenames <-
-          filtered_data[, .(n_edited = sum(!get(input$selectionColumnInput))), by = c(input$filenameColumnInput)][n_edited == 0, unique(.SD[[input$filenameColumnInput]])]
 
         paste(uneditedFiles$filenames, collapse = "\n")
       })
@@ -1151,7 +1163,8 @@ openEditor <- function(
         return(NULL)
 
       fileHandler$isPlotted <- fileHandler$filenames %in% uneditedFiles$filenames
-
+      refilterSubset()
+      updatePlot()
     })
 
     # Renders the selectInput for all unedited files.

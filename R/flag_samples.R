@@ -143,10 +143,11 @@ flag_potential_errors <- function(data,
 #' @param .samplerate sampling rate for the unit of time in the dataframe,
 #' so for a 10ms sampling rate with times in ms, this should be 10; if it's
 #' recorded in seconds, this should be 0.01
+#' @param only_samplerate Whether to return only the sampling rate, default FALSE
 #'
 #' @return A list containing the transformed time and the sampling
 #' rate in milliseconds
-.convert_time_to_ms <- function(data, .time, .samplerate) {
+.convert_time_to_ms <- function(data, .time, .samplerate, only_samplerate = FALSE) {
   # If the sampling rate is not specified, we need to try and calculate
   # it ourselves
   if (is.na(.samplerate))
@@ -164,6 +165,8 @@ flag_potential_errors <- function(data,
             " (", example_value, "s->", example_value*1000, "ms)")
   }
 
+  if (only_samplerate)
+    return(list('samplerate' = .samplerate))
 
   list('time' = transformed_time,
        'samplerate' = .samplerate)

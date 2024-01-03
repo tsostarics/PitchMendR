@@ -44,15 +44,25 @@ hz_to_semitones <- function(hz_vals,
 #'
 #' A heuristic calculation of the variance of the sample-to-sample semitone
 #' differences. Contours with fewer extreme changes in semitones will have
-#' lower variance.
+#' lower variance. The values are normalized to the sampling period such that
+#' the semitone difference between (t, f) values (1.00, 110) and (1.01, 220)
+#' would be 12, but the difference between (1.00, 110) and (1.02, 220) would be
+#' 6. This helps to account for instances where individual pulses have been removed,
+#' which changes which pulses are adjacent to one another.
 #'
 #' @param x Hz values
+#' @param t Timestamps
+#' @param samplerate Sampling rate
 #'
 #' @return Variance of semitone differences
-.var_of_diffs <- function(x) {
+.var_of_diffs <- function(x, t, samplerate = .01) {
+
   stats::var(vapply(seq_along(x)[-1],
              \(i) {
-               hz_to_semitones(x[i], x[i - 1],.quiet = TRUE)
+               f0_jump <- hz_to_semitones(x[i], x[i - 1],.quiet = TRUE)
+               time_diff <- t[i] - t[i-1]
+
+               (f0_jump / time_diff) * samplerate
              }, 1.0))
 }
 
