@@ -219,11 +219,10 @@ openEditor <- function(
     ),
     bslib::nav_panel(
       title = "Settings",
-      shiny::fluidRow(height = "100%",
+      shiny::fluidRow(class = "h-100",
                       shiny::column(width = 3,
                                     bslib::card(
-                                      height = '88vh',fill = TRUE,
-                                      # title = "Press button to set column",
+                                      class = "h-100",
                                       shiny::selectizeInput("filenameColumnInput",
                                                             label ="Column name containing individual files",
                                                             choices = "Filename",
@@ -289,8 +288,7 @@ openEditor <- function(
                       ),
                       shiny::column(width = 3,
                                     bslib::card(
-                                      height = '88vh',
-                                      fill = TRUE,
+                                      class = "h-100",
                                       title = "Color Settings",
                                       "Override default color settings below:",
                                       colorUI("colors"),
@@ -323,7 +321,7 @@ openEditor <- function(
                       ),
                       shiny::column(width = 6,
                                     bslib::card(
-                                      height = '88vh',fill = TRUE,
+                                      class = "h-100",
                                       title = "Instructions",
                                       shiny::markdown(
                                         mds = c(
@@ -441,6 +439,7 @@ openEditor <- function(
                     shiny::actionButton(
                       inputId = "flagSamplesButton",
                       icon = icon('flag'),
+                      width = "100%",
                       label = "Flag Samples"
                     )
                           # )
