@@ -1434,7 +1434,7 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
 
-      shiny::updateActionButton(session, "flagSamplesButton", icon = icon("spinner"))
+      shinyjs::addClass("flagSamplesButton", class = "btn-warning")
 
       flagged_values <-
         flag_potential_errors(loadedFile$data,
@@ -1450,6 +1450,7 @@ openEditor <- function(
       if (!data.table::is.data.table(loadedFile$data))
         loadedFile$data <- data.table(loadedFile$data)
 
+      shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
       shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
       shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
       shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
