@@ -22,3 +22,17 @@ utils::globalVariables(c("F0_of_err",
                          "next_F0_st",
                          "ratio_Hz",
                          "time_diff"))
+
+.onLoad <- function(libname, pkgname) {
+  shiny::addResourcePath(
+    prefix = "img",
+    directoryPath = system.file(
+      "www/images",
+      package = "PitchMendR"
+    )
+  )
+}
+
+.onUnload <- function(libname, pkgname) {
+  shiny::removeResourcePath("img")
+}
