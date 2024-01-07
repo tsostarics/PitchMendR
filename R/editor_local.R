@@ -65,24 +65,30 @@ openEditor <- function(
                                       "p")
       ),
       title = "Tools",
-      shiny::actionButton(
-        inputId = "loadFileButton",
-        title = "Click to load selected file",
-        label = "Load File",
-        class = "btn-warning",
-        icon = icon("spinner"),
-      ),
-      praatUI_button("praatIO"),
+      # shiny::actionButton(
+      #   inputId = "loadFileButton",
+      #   title = "Click to load selected file",
+      #   label = "Load File",
+      #   class = "btn-warning",
+      #   icon = icon("spinner"),
+      # ),
+      tags$span(title = "Click to show/hide contour lines",
+                shinyWidgets::awesomeCheckbox(
+                  inputId = "showLineButton",
+                  label = "Hide contour line",
+                  value = FALSE,
+                  status = "info")),
       tags$span(title = "Toggle to hide doubling/halving transforms",
-                shinyWidgets::materialSwitch(inputId = "hideToggleInput",
-                                             label= "Hide transform",
-                                             value = FALSE,
-                                             status = "info")),
+                shinyWidgets::awesomeCheckbox(inputId = "hideToggleInput",
+                                              label= "Hide transform",
+                                              value = FALSE,
+                                              status = "info")),
       tags$span(title = "Toggle to draw line through removed points",
-                shinyWidgets::materialSwitch(inputId = "useRemovedPointsToggleInput",
-                                             label= "Show \u25B3s in line",
-                                             value = FALSE,
-                                             status = "info")),
+                shinyWidgets::awesomeCheckbox(inputId = "useRemovedPointsToggleInput",
+                                              label= "Show \u25B3s in line",
+                                              value = FALSE,
+                                              status = "info")),
+      praatUI_button("praatIO"),
       shiny::actionButton(
         inputId = "undoTransformButton",
         title = "Click to undo last doubling/halving transform",
@@ -180,12 +186,12 @@ openEditor <- function(
           tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
           bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
                                 bslib::card(fill = TRUE,
-                                            shiny::fluidRow(
-                                              shiny::actionButton(width = "98%",
-                                                                  inputId = "showLineButton",
-                                                                  label = "Show Line",
-                                                                  title = "Click to show/hide contour lines",
-                                                                  style = "margin-left:1%;margin-right:1%")),
+                                            # shiny::fluidRow(
+                                            #   shiny::actionButton(width = "98%",
+                                            #                       inputId = "showLineButton",
+                                            #                       label = "Show Line",
+                                            #                       title = "Click to show/hide contour lines",
+                                            #                       style = "margin-left:1%;margin-right:1%")),
                                             fileNavUI("fileNav"),
                                             annotationUI("annotations")
                                 ),
@@ -358,8 +364,7 @@ openEditor <- function(
         "",
         "## Praat integration",
         "",
-        "Using the `[Open Files in Praat]` button will open the files that are visible in the plot using the praat executable at the given path.
-        This is accomplished via a `--new-open` system call.
+        "Use the `[Open in Praat]` button to open the files that are plotted using the praat executable at the given path.
         This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
                                         )
                                       ),
@@ -429,6 +434,16 @@ openEditor <- function(
                                                           label =  "Files Available (*=not processed yet)",
                                                           multiple = FALSE,
                                                           choices = NULL)),
+                          shiny::actionButton(
+                            inputId = "loadFileButton",
+                            title = "Click to load selected file",
+                            label = "Load File",
+                            class = "btn-warning",
+                            icon = icon("spinner"),
+                            width = "100%",
+                            style = "margin-bottom:8px"
+                          ),
+                          "",
                           tags$span(title = "Click to expand audio options",
                                     praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
                           # )
@@ -441,19 +456,12 @@ openEditor <- function(
                             mds = c(
                               "## Flagging samples",
                               "",
-                              "After loading your data, you can use an automated method to flag potential tracking errors.
-                    This method is based on identifying octave jumps between adjacent samples.
-                    Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.
-                    It is best used to identify regions of interest that should be investigated for errors.",
+                              "Click the button below to automatically annotate potential F0 tracking errors as regions of interest.",
+                    "Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
                     "",
                     "If the column `F0_semitones` already exists, it will be used to identify errors.
-                    If not, this column will be added by computing semitones from the mean pitch of all of the speaker's files.
+                    If not, this column will be added by computing semitones from the speaker's median pitch.
                     Check the settings tab for the column names used for the time, pitch, and filename values.",
-                    "",
-                    "The algorithm assumes that time is provided in millisecond units (e.g., t=1410ms).
-                    If time is provided in seconds (e.g., t=1.41s) then the time column will be converted to milliseconds.
-                    The sampling rate is computed automatically, but if your time values are not in either seconds or milliseconds,
-                    then it may not work correctly.",
                     "",
                     "The column `flagged_samples` will be added if it doesn't exist.
                     Once the column is added, or if it already exists, the button will turn green.
@@ -472,8 +480,13 @@ openEditor <- function(
           )
         )
       )
+    ),
+    bslib::nav_panel(
+      title = "How-to",
+      shiny::column(width = 7,
+      howto_UI("howto")
     )
-  )
+  ))
 
 
   server <- function(input, output, session) {
@@ -859,8 +872,7 @@ openEditor <- function(
         fileHandler$fileChecked <- file_checks[fileHandler$filenames]
       }
 
-      plotSettings$showLine <- FALSE
-
+      plotSettings$showLine <- TRUE
       output$workingFileOutput <- shiny::renderText({
         paste0("Working File:\n", clean_file(input$fileSelectBox))
       })
@@ -914,14 +926,13 @@ openEditor <- function(
     toggleShowLine <- reactive({
       if (is.null(loadedFile$data))
         return(NULL)
-      plotSettings$showLine <- !plotSettings$showLine
+      plotSettings$showLine <- !input$showLineButton
     })
 
     # Toggle whether the line should be shown or not
     shiny::observeEvent(input$showLineButton, {
       toggleShowLine()
     })
-
 
 
 
