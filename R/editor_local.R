@@ -65,13 +65,6 @@ openEditor <- function(
                                       "p")
       ),
       title = "Tools",
-      # shiny::actionButton(
-      #   inputId = "loadFileButton",
-      #   title = "Click to load selected file",
-      #   label = "Load File",
-      #   class = "btn-warning",
-      #   icon = icon("spinner"),
-      # ),
       tags$span(title = "Click to show/hide contour lines",
                 shinyWidgets::awesomeCheckbox(
                   inputId = "showLineButton",
@@ -88,7 +81,6 @@ openEditor <- function(
                                               label= "Show \u25B3s in line",
                                               value = FALSE,
                                               status = "info")),
-      praatUI_button("praatIO"),
       shiny::actionButton(
         inputId = "undoTransformButton",
         title = "Click to undo last doubling/halving transform",
@@ -100,6 +92,7 @@ openEditor <- function(
         icon = shiny::icon('check'),
         label = "off visible"
       ),
+      praatUI_button("praatIO"),
       playAudioUI("playAudio"),
       tags$span(title = "Select a file that has not been checked yet",
                 shiny::uiOutput(outputId = "uneditedFileSelectUI")),
@@ -186,12 +179,6 @@ openEditor <- function(
           tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
           bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
                                 bslib::card(fill = TRUE,
-                                            # shiny::fluidRow(
-                                            #   shiny::actionButton(width = "98%",
-                                            #                       inputId = "showLineButton",
-                                            #                       label = "Show Line",
-                                            #                       title = "Click to show/hide contour lines",
-                                            #                       style = "margin-left:1%;margin-right:1%")),
                                             fileNavUI("fileNav"),
                                             annotationUI("annotations")
                                 ),
@@ -343,33 +330,7 @@ openEditor <- function(
                                                                              ))),
                                                          shiny::tabPanelBody("hideColorCodeColumnInput", NULL)))
                       ),
-                      shiny::column(width = 6,
-                                    bslib::card(
-                                      class = "h-100",
-                                      title = "Instructions",
-                                      shiny::markdown(
-                                        mds = c(
-                                          "## Selecting points",
-                                          "",
-                                          "Upon opening a new dataframe to annotate, a new column (`keep_points`) will be added to the dataframe and filled with `TRUE`.",
-                                          "",
-                                          "The pitch pulses for a specified file will be plotted in the main plotting region.
-        Points that you want to keep (`keep_points=TRUE`) will be shown in closed circles, while points you want to remove (`keep_points=TRUE`) will be replaced with an open triangle.
-        You can use the `[Show Line]` toggle button to plot a line through all the retained points.",
-        "",
-        "To remove a point, click and drag to select the desired points, then click the `[Remove]` button.
-        To keep a point, click the `[Keep]` Button.
-        You can click the `[Toggle Pulse]` button to flip the values of the selecteed points (all removed points will be switched to keep, all kept values will be switched to remove).
-        ",
-        "",
-        "## Praat integration",
-        "",
-        "Use the `[Open in Praat]` button to open the files that are plotted using the praat executable at the given path.
-        This can be useful when it's not clear based on just the extracted pitch contour whether particular pulses are tracking errors or not or if you just need to listen to the audio files."
-                                        )
-                                      ),
-                                    )
-                      ),
+                      shiny::column(width = 6, columnInfo_UI("columnInfo")),
 
       )),
     bslib::nav_panel(
@@ -484,7 +445,7 @@ openEditor <- function(
     bslib::nav_panel(
       title = "How-to",
       shiny::column(width = 7,
-      howto_UI("howto")
+      howto_UI("howto", TRUE)
     )
   ))
 
@@ -916,28 +877,26 @@ openEditor <- function(
       }
 
       refilterSubset()
-      # annotations$updateBadges()
-      # annotations$updateNotes()
       updatePlot()
 
     })
 
 
     toggleShowLine <- reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      plotSettings$showLine <- !input$showLineButton
+      shinyWidgets::updateAwesomeCheckbox(session, "showLineButton", value = !input$showLineButton)
     })
 
     # Toggle whether the line should be shown or not
     shiny::observeEvent(input$showLineButton, {
-      toggleShowLine()
+      if (is.null(loadedFile$data))
+        return(NULL)
+      plotSettings$showLine <- !plotSettings$showLine
     })
 
 
 
-    nPlotted = shiny::reactiveValues(n = NULL,
-                                     is_one = NULL)
+
+    nPlotted = shiny::reactiveValues(n = NULL, is_one = NULL)
 
     observe({
       nPlotted$n = sum(fileHandler$isPlotted)

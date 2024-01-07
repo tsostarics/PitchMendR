@@ -1,5 +1,26 @@
-howto_UI <- function(id) {
+howto_UI <- function(id, show_local = TRUE) {
   ns <- NS(id)
+
+  # Only display info about Praat integration if we're on the local version
+  praat_info <- list(NULL)
+  if (show_local) {
+    praat_info <-
+      list(shiny::markdown(c(
+    "",
+    "## Praat and Audio Integration",
+    "The following tools are exclusive to the local version of PitchMendR, and are not available in the web version.",
+    "You can interface directly with Praat by setting the relevant directories in the Audio File Options portion of the Setup tab.",
+    "You can then open the files that are currently displayed in the main plot by clicking the `[Open in Praat]` button in the sidebar.",
+    "This can be useful when it's not clear how to handle an error based on the extracted pitch contour, and so you can double check the spectrogram quickly."
+  )),
+  tags$p("You can also press the ",
+         tags$span(icon("file-circle-minus")),
+         " icon to remove all the currently open objects in the Praat object pane. For more information, please see the (?) icon in the Audio File Options portion of the setup tab."),
+  shiny::markdown(c(
+    "",
+    "If a single file is currently displayed in the plot, then you can also press the `[Play File]` button in the Tools sidebar to play the file through the app without opening it in Praat."
+  )))
+  }
 
   bslib::card(
     full_screen = TRUE,
@@ -16,14 +37,14 @@ howto_UI <- function(id) {
 
       shiny::markdown(c(
         "## Working in the Editor",
-        "The editor page is arranged with the layout below. The Tools sidebar is able to be hidden when not needed.")),
+        "The editor page is arranged with the layout below. The Tools sidebar is can be hidden when not needed.")),
       tags$img(src = "img/layout.svg", width = "50%", style = "max-height:300px"),
       shiny::markdown(c(
         "Upon loading a file, the contours in the dataset will all be plotted.",
         "You can click on individual pulses to remove them, or select a region of pulses by clicking and dragging (or 'brushing').",
         "The plot will automatically resize whenever the window size changes, and you can adjust the size of the plot by clicking and dragging the bottom-right corner."
       )),
-      tags$img(src = "img/plot_manyfiles.svg", width = "50%", style = "max-height:300px"),
+      tags$img(src = "img/plot_manyfiles.svg", width = "60%", style = "max-height:300px"),
       shiny::markdown(c(
         "You can 'zoom in' on the contours that contain the selected pulses by pressing the `[Plot Brushed Files]` button in the plot settings panel.",
         "The selected pulses can be transformed using the buttons in the Pulse Transformation panel."
@@ -78,21 +99,9 @@ howto_UI <- function(id) {
         "for example, the demo data contains contours under three broad classes: rises (`lhh`), falls (`hll`), and rise-fall-rise (`rfr`).",
         "The entire rising subset can be plotted by typing the regex `lhh` and pressing the [Plot Matches] button.",
         "Similarly, all contours except the falling contours could be plotted by using the regex `lhh|rfr`.",
-        "Note that how useful the regex functionality is will depend on the metadata encoded in your dataset's filenames.",
-        "",
-        "## Praat and Audio Integration",
-        "The following tools are exclusive to the local version of PitchMendR, and are not available in the web version.",
-        "You can interface directly with Praat by setting the relevant directories in the Audio File Options portion of the Setup tab.",
-        "You can then open the files that are currently displayed in the main plot by clicking the `[Open in Praat]` button in the sidebar.",
-        "This can be useful when it's not clear how to handle an error based on the extracted pitch contour, and so you can double check the spectrogram quickly."
-      )),
-      tags$p("You can also press the ",
-             tags$span(icon("file-circle-minus")),
-             " icon to remove all the currently open objects in the Praat object pane. For more information, please see the (?) icon in the Audio File Options portion of the setup tab."),
-      shiny::markdown(c(
-        "",
-        "If a single file is currently displayed in the plot, then you can also press the `[Play File]` button in the Tools sidebar to play the file through the app without opening it in Praat."
-      ))
+        "Note that how useful the regex functionality is will depend on the metadata encoded in your dataset's filenames."
+        )),
+      praat_info
     )
   )
 }
