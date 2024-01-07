@@ -69,7 +69,10 @@ flag_potential_errors <- function(data,
     data[["where_not_zero__"]] <- where_not_zero(data[[.hz]])
 
     # Using data.table split method
-    data_split <- split(data, by= 'where_not_zero__')
+    if (data.table::is.data.table(data))
+      data_split <- split(data, by= 'where_not_zero__')
+    else
+      data_split <- split(data, ~ data[['where_not_zero__']])
 
     if (!"TRUE" %in% names(data_split))
       stop("No non-zero values found")
