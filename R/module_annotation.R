@@ -82,7 +82,7 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
         return(NULL)
       }
 
-      if (sum(fileHandler$isPlotted) != 1) {
+      if (!nPlotted$is_one) {
         shiny::updateTextAreaInput(session, "notepadInput", value = character(0))
         shinyjs::disable("notepadInput")
       } else {
@@ -105,7 +105,7 @@ annotationServer <- function(id, loadedFile, fileHandler, updatePlot,
       }
     })
 
-    shiny::observeEvent(input_noteToggle(),ignoreInit = TRUE, {
+    shiny::observeEvent(input_noteToggle(),ignoreInit = FALSE, {
 
       if (!is.null(loadedFile$data)) {
         if (input_noteToggle()) {
