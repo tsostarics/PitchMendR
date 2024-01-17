@@ -795,7 +795,7 @@ demoEditor <- function(...) {
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
       fileHandler$indices <-
         lapply(fileHandler$filenames,
-               \(fname) which(df$Filename == fname)) |>
+               \(fname) which(loadedFile$data[[input$filenameColumnInput]] == fname)) |>
         `names<-`(fileHandler$filenames)
 
       if (!"file_checked" %in% colnames(loadedFile$data)) {
@@ -909,7 +909,7 @@ demoEditor <- function(...) {
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
       fileHandler$indices <-
         lapply(fileHandler$filenames,
-               \(fname) which(df$Filename == fname)) |>
+               \(fname) which(loadedFile$data[[input$filenameColumnInput]] == fname)) |>
         `names<-`(fileHandler$filenames)
 
       if (!"file_checked" %in% colnames(loadedFile$data)) {
