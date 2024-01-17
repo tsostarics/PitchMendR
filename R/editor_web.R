@@ -552,19 +552,15 @@ demoEditor <- function(...) {
 
       # Add the points, if the user wants to use the flagged column, use it to color the points
       # otherwise just use the keep_pulse column to redundantly code that information
-      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data)) {
+      colorColumn <- input$selectionColumnInput
+      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data))
+        colorColumn <- input$colorCodeColumnInput
+
         p <- p +
-          ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput),
-                                           shape = !!sym(input$selectionColumnInput)),
+          ggplot2::geom_point(aes(color = !!sym(colorColumn),
+                                  shape = !!sym(input$selectionColumnInput)),
                               size = input$sizeSlider,
                               alpha = input$alphaSlider)
-      } else {
-        p <- p +
-          ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput),
-                                           shape = !!sym(input$selectionColumnInput)),
-                              size = input$sizeSlider,
-                              alpha = input$alphaSlider)
-      }
 
       # Color code logical values
       if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
@@ -1440,6 +1436,16 @@ demoEditor <- function(...) {
                           tags$a(href = "https://github.com/r4fun/keys", "{keys}"))),
         ))
 
+    })
+
+
+    # When the user clicks the Check off Files button, all files currently displayed
+    # will have their fileChecked values set to TRUE.
+    shiny::observeEvent(input$checkVisibleFilesButton, {
+      message("Check visible files pressed")
+      if (!is.null(fileHandler$filenames) && any(fileHandler$isPlotted)) {
+        fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
+      }
     })
 
     # When the user clicks the Check off Files button, all files currently displayed

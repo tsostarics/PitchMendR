@@ -140,16 +140,16 @@ openEditor <- function(
                      shiny::textOutput(outputId = "workingFileOutput"),
                      shiny::uiOutput(outputId = "pitchRangeUI"),
                      tags$span(title = "Drag to change size of points",
-                     shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
+                               shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
                      tags$span(title = "Drag to change transparency of points",
-                     shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
-                                        step = 0.05,ticks = FALSE)),
+                               shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
+                                                  step = 0.05,ticks = FALSE)),
                      tags$span(title = "Enter regular expression to plot matching files",
-                     shiny::textInput(
-                       inputId = "filterRegex",
-                       label = "Plot files matching regex",
-                       value = "."
-                     )),
+                               shiny::textInput(
+                                 inputId = "filterRegex",
+                                 label = "Plot files matching regex",
+                                 value = "."
+                               )),
                      shiny::actionButton(
                        inputId = "plotMatchesButton",
                        title = "Click to plot files that match regex",
@@ -279,6 +279,20 @@ openEditor <- function(
                                                   value = TRUE,
                                                   status = "info"
                                                 )),
+                                      # tags$span(style = "display:inline-block;",
+                                      #           title = "Toggle to use faster but lower quality plot with (click ? for more info)",
+                                      #           HTML(shinyWidgets::awesomeCheckbox(
+                                      #             inputId = "useRasterToggle",
+                                      #             label = "Use rasterized points:",
+                                      #             value = FALSE,
+                                      #             status = "info"
+                                      #           ) |> gsub("</label>",
+                                      #                     paste0("</label>\n",
+                                      #                            span(id = "useRasterQuestion",
+                                      #                                 style = "cursor:pointer;",
+                                      #                                 shiny::icon("circle-question"))),
+                                      #                     x=_))
+                                      # ),
                                       tags$span(style = "display:inline-block;",
                                                 title = "Toggle to use keyboard shortcuts (click ? for more info)",
                                                 HTML(shinyWidgets::awesomeCheckbox(
@@ -302,12 +316,12 @@ openEditor <- function(
                                       "Override default color settings below:",
                                       colorUI("colors"),
                                       tags$span(title = "Toggle to use column in dataset for color coding",
-                                      shinyWidgets::materialSwitch(
-                                        inputId = "useFlaggedColumnToggle",
-                                        label="Color points by column:",
-                                        value = FALSE,
-                                        inline = TRUE,
-                                        status = "info")),
+                                                shinyWidgets::materialSwitch(
+                                                  inputId = "useFlaggedColumnToggle",
+                                                  label="Color points by column:",
+                                                  value = FALSE,
+                                                  inline = TRUE,
+                                                  status = "info")),
                                       # Tabset panel to hide/show color code
                                       # column input based on whether the
                                       # useFlaggedColumnToggle is set to TRUE.
@@ -320,14 +334,14 @@ openEditor <- function(
                                                          id = "switchColorCode",
                                                          shiny::tabPanelBody("showColorCodeColumnInput",
                                                                              tags$span(title = "Select column to use for color coding",
-                                                                             shiny::selectizeInput(
-                                                                               inputId = "colorCodeColumnInput",
-                                                                               label = NULL,
-                                                                               choices = "flagged_samples",
-                                                                               selected = "flagged_samples",
-                                                                               multiple = FALSE,
-                                                                               width = "100%"
-                                                                             ))),
+                                                                                       shiny::selectizeInput(
+                                                                                         inputId = "colorCodeColumnInput",
+                                                                                         label = NULL,
+                                                                                         choices = "flagged_samples",
+                                                                                         selected = "flagged_samples",
+                                                                                         multiple = FALSE,
+                                                                                         width = "100%"
+                                                                                       ))),
                                                          shiny::tabPanelBody("hideColorCodeColumnInput", NULL)))
                       ),
                       shiny::column(width = 6, columnInfo_UI("columnInfo")),
@@ -418,9 +432,9 @@ openEditor <- function(
                               "## Flagging samples",
                               "",
                               "Click the button below to automatically annotate potential F0 tracking errors as regions of interest.",
-                    "Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
-                    "",
-                    "If the column `F0_semitones` already exists, it will be used to identify errors.
+                              "Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
+                              "",
+                              "If the column `F0_semitones` already exists, it will be used to identify errors.
                     If not, this column will be added by computing semitones from the speaker's median pitch.
                     Check the settings tab for the column names used for the time, pitch, and filename values.",
                     "",
@@ -445,9 +459,9 @@ openEditor <- function(
     bslib::nav_panel(
       title = "How-to",
       shiny::column(width = 7,
-      howto_UI("howto", TRUE)
-    )
-  ))
+                    howto_UI("howto", TRUE)
+      )
+    ))
 
 
   server <- function(input, output, session) {
@@ -566,21 +580,18 @@ openEditor <- function(
         }
       }
 
-      # Add the points, if the user wants to use the flagged column, use it to color the points
-      # otherwise just use the keep_pulse column to redundantly code that information
-      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data)) {
+      colorColumn <- input$selectionColumnInput
+      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data))
+        colorColumn <- input$colorCodeColumnInput
+
         p <- p +
-          ggplot2::geom_point(ggplot2::aes(color = !!sym(input$colorCodeColumnInput),
-                                           shape = !!sym(input$selectionColumnInput)),
+          ggplot2::geom_point(aes(color = !!sym(colorColumn),
+                                  shape = !!sym(input$selectionColumnInput)),
                               size = input$sizeSlider,
                               alpha = input$alphaSlider)
-      } else {
-        p <- p +
-          ggplot2::geom_point(ggplot2::aes(color = !!sym(input$selectionColumnInput),
-                                           shape = !!sym(input$selectionColumnInput)),
-                              size = input$sizeSlider,
-                              alpha = input$alphaSlider)
-      }
+
+
+
 
       # Color code logical values
       if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
@@ -595,16 +606,14 @@ openEditor <- function(
       p <- p +
         ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
         ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
-        ggplot2::xlab(input$xValColumnInput) +
-        ggplot2::ylab(input$yValColumnInput) +
         ggplot2::theme_bw(base_size = 16) +
-        ggplot2::theme(legend.position = 'top') +
-        ggplot2::theme(panel.grid = ggplot2::element_line(linewidth = .3)) +
         plotSettings$themeColors +
         # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
-        ggplot2::ggtitle(label = ifelse(nPlotted$is_one,
-                                        fileHandler$filenames[fileHandler$isPlotted],
-                                        "Multiple Files"))
+        ggplot2::labs(x = input$xValColumnInput,
+                      y = input$yValColumnInput,
+                      title = ifelse(nPlotted$is_one,
+                                     fileHandler$filenames[fileHandler$isPlotted],
+                                     "Multiple Files"))
 
 
       p
@@ -1232,29 +1241,29 @@ openEditor <- function(
         defaultPitchRange$max <- pitch_range[2]
       }
       tags$span(title = "Enter values to use as y-axis limits",
-      shinyWidgets::numericRangeInput("pitchRangeInput",
-                                      label =
-                                        tags$span(style = "display:inline-block",
-                                                  span(id = "resetPitchRange",
-                                                       title = "Click to reset to default",
-                                                       # style = "cursor:pointer",
-                                                       style = "cursor:pointer;display:block;width:110px;float:left;margin-bottom:-8px;margin-right:109px",
-                                                       HTML(paste0(icon("clock-rotate-left"), " Pitch Range"))),
-                                                  shiny::actionButton(
-                                                    inputId = ("lockButton"),
-                                                    label = NULL,
-                                                    style  = "cursor:pointer;width:16px;display:block;float:right;margin-bottom:-8px;margin-left:8px;padding:0px",
-                                                    title = "Click to lock pitch range and prevent dynamic changes",
-                                                    icon = shiny::icon("lock-open"),
-                                                    class = "showStopButton"
-                                                  )
-                                        ),
-                                      value = pitch_range,
-                                      min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1])*8))),
+                shinyWidgets::numericRangeInput("pitchRangeInput",
+                                                label =
+                                                  tags$span(style = "display:inline-block",
+                                                            span(id = "resetPitchRange",
+                                                                 title = "Click to reset to default",
+                                                                 # style = "cursor:pointer",
+                                                                 style = "cursor:pointer;display:block;width:110px;float:left;margin-bottom:-8px;margin-right:109px",
+                                                                 HTML(paste0(icon("clock-rotate-left"), " Pitch Range"))),
+                                                            shiny::actionButton(
+                                                              inputId = ("lockButton"),
+                                                              label = NULL,
+                                                              style  = "cursor:pointer;width:16px;display:block;float:right;margin-bottom:-8px;margin-left:8px;padding:0px",
+                                                              title = "Click to lock pitch range and prevent dynamic changes",
+                                                              icon = shiny::icon("lock-open"),
+                                                              class = "showStopButton"
+                                                            )
+                                                  ),
+                                                value = pitch_range,
+                                                min = ifelse(pitch_range[1] > 0, 0, floor(add_semitones(pitch_range[1], sign(-pitch_range[1])*8))),
 
-                                      max = ceiling(add_semitones(pitch_range[2], sign(pitch_range[1])*24)),
-                                      step = one_st_step,
-                                      width = "100%"))
+                                                max = ceiling(add_semitones(pitch_range[2], sign(pitch_range[1])*24)),
+                                                step = one_st_step,
+                                                width = "100%"))
     })
 
     observeEvent(input$lockButton, {
@@ -1388,6 +1397,20 @@ openEditor <- function(
         ))
 
     })
+
+    # shinyjs::onclick(id = "useRasterQuestion", {
+    #   shinyWidgets::show_alert(
+    #
+    #     title = "Using Rasterized Points",
+    #     type = 'info',
+    #     width = "35em",
+    #     html = TRUE,
+    #     text = shiny::markdown(c(
+    #       "Enabling this option will plot points at a lower resolution.",
+    #       "This can potentially make rendering plots faster when there are MANY files shown at once.",
+    #       "This is accomplished via the scattermore package.")))
+    #
+    # })
 
     # When the user clicks the Check off Files button, all files currently displayed
     # will have their fileChecked values set to TRUE.
