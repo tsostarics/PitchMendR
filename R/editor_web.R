@@ -444,7 +444,8 @@ demoEditor <- function(...) {
                                          isPlotted = NULL,
                                          fileChecked = NULL,
                                          badges = NULL,
-                                         notes = NULL)
+                                         notes = NULL,
+                                         indices = NULL)
     filesBrushed <- shiny::reactiveValues(filenames = NULL)
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
     lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
@@ -497,6 +498,9 @@ demoEditor <- function(...) {
     })
 
     plotSubset <- reactiveValues(data = NULL)
+    getIndices <- reactive({
+      unlist(fileHandler$indices[fileHandler$isPlotted], recursive = FALSE, use.names = FALSE)
+    })
 
     refilterSubset <- function(){
       if (is.null(loadedFile$data))
@@ -504,7 +508,8 @@ demoEditor <- function(...) {
 
       # message("Filtering")
       # browser()
-      plotSubset$data <<- loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],]
+      plotted_indices <- getIndices()
+      plotSubset$data <<- loadedFile$data[plotted_indices,]
       nPlotted$n <- sum(fileHandler$isPlotted)
       nPlotted$is_one <- nPlotted$n == 1
     }
@@ -788,6 +793,10 @@ demoEditor <- function(...) {
 
       fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
+      fileHandler$indices <-
+        lapply(fileHandler$filenames,
+               \(fname) which(df$Filename == fname)) |>
+        `names<-`(fileHandler$filenames)
 
       if (!"file_checked" %in% colnames(loadedFile$data)) {
         loadedFile$data[, file_checked := FALSE]
@@ -898,6 +907,10 @@ demoEditor <- function(...) {
 
       fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
+      fileHandler$indices <-
+        lapply(fileHandler$filenames,
+               \(fname) which(df$Filename == fname)) |>
+        `names<-`(fileHandler$filenames)
 
       if (!"file_checked" %in% colnames(loadedFile$data)) {
         loadedFile$data[, file_checked := FALSE]
