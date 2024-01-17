@@ -575,16 +575,14 @@ demoEditor <- function(...) {
       p <- p +
         ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
         ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
-        ggplot2::xlab(input$xValColumnInput) +
-        ggplot2::ylab(input$yValColumnInput) +
         ggplot2::theme_bw(base_size = 16) +
-        ggplot2::theme(legend.position = 'top') +
-        ggplot2::theme(panel.grid = ggplot2::element_line(linewidth = .3)) +
         plotSettings$themeColors +
         # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
-        ggplot2::ggtitle(label = ifelse(nPlotted$is_one,
-                                        fileHandler$filenames[fileHandler$isPlotted],
-                                        "Multiple Files"))
+        ggplot2::labs(x = input$xValColumnInput,
+                      y = input$yValColumnInput,
+                      title = ifelse(nPlotted$is_one,
+                                     fileHandler$filenames[fileHandler$isPlotted],
+                                     "Multiple Files"))
 
 
       p
