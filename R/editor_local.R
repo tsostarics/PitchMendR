@@ -279,20 +279,6 @@ openEditor <- function(
                                                   value = TRUE,
                                                   status = "info"
                                                 )),
-                                      # tags$span(style = "display:inline-block;",
-                                      #           title = "Toggle to use faster but lower quality plot with (click ? for more info)",
-                                      #           HTML(shinyWidgets::awesomeCheckbox(
-                                      #             inputId = "useRasterToggle",
-                                      #             label = "Use rasterized points:",
-                                      #             value = FALSE,
-                                      #             status = "info"
-                                      #           ) |> gsub("</label>",
-                                      #                     paste0("</label>\n",
-                                      #                            span(id = "useRasterQuestion",
-                                      #                                 style = "cursor:pointer;",
-                                      #                                 shiny::icon("circle-question"))),
-                                      #                     x=_))
-                                      # ),
                                       tags$span(style = "display:inline-block;",
                                                 title = "Toggle to use keyboard shortcuts (click ? for more info)",
                                                 HTML(shinyWidgets::awesomeCheckbox(
@@ -1397,20 +1383,6 @@ openEditor <- function(
         ))
 
     })
-
-    # shinyjs::onclick(id = "useRasterQuestion", {
-    #   shinyWidgets::show_alert(
-    #
-    #     title = "Using Rasterized Points",
-    #     type = 'info',
-    #     width = "35em",
-    #     html = TRUE,
-    #     text = shiny::markdown(c(
-    #       "Enabling this option will plot points at a lower resolution.",
-    #       "This can potentially make rendering plots faster when there are MANY files shown at once.",
-    #       "This is accomplished via the scattermore package.")))
-    #
-    # })
 
     # When the user clicks the Check off Files button, all files currently displayed
     # will have their fileChecked values set to TRUE.
