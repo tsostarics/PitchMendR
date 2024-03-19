@@ -2,6 +2,24 @@
 
 This package provides a shiny app used to modify F0 pitch pulses held in a spreadsheet.
 
+## Citation
+
+If you use this software in your research, please cite the following paper:
+
+Sostarics, T., & Cole, J. (2024). *PitchMendR: A Tool for the Diagnosis and Treatment of F0 Tracking Errors*. In Proceedings of Speech Prosody 2024.
+
+Bibtex:
+
+```
+@inproceedings{sostarics2024sp,
+author = {Sostarics, Thomas and Cole, Jennifer},
+year = {2024},
+month = {6},
+title = {{PitchMendR}: A Tool for the Diagnosis and Treatment of {F0} Tracking Errors},
+booktitle = {Proceedings of Speech Prosody 2024},
+}
+```
+
 ## Installation
 
 You can install the development version from GitHub with:
