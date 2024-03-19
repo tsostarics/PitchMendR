@@ -19,6 +19,7 @@ Imports:
     glue,
     htmltools,
     keys,
+    plotly,
     ragg,
     rlang,
     shiny (>= 1.7.4),
