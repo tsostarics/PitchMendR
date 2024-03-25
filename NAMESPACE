@@ -3,6 +3,7 @@
 export(annotate_errors)
 export(code_carryover_effects)
 export(demoEditor)
+export(edditor)
 export(flag_potential_errors)
 export(get_example_f0_data)
 export(hz_to_semitones)

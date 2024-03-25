@@ -18,7 +18,7 @@ colorUI <- function(id) {
               colourpicker::colourInput(
                 inputId = ns("lineColor"),
                 label = "Line color",
-                value = "blue",
+                value = "#10EBFF",
                 showColour = "both",
                 palette = "square"
               )),
@@ -28,7 +28,7 @@ colorUI <- function(id) {
                 showColour = "both",
                 palette = "square",
                 label = "Color for points to KEEP/are not flagged",
-                value = "black"
+                value = "#fdae61"
               )),
     tags$span(title = "Select color of points where value is FALSE",
               colourpicker::colourInput(
@@ -36,7 +36,7 @@ colorUI <- function(id) {
                 showColour = "both",
                 palette = "square",
                 label = "Color for points to REMOVE/are flagged",
-                value = "grey60"
+                value = "#df4461"
               ))
   )
 }
@@ -61,7 +61,9 @@ colorUI <- function(id) {
 colorServer <- function(id,
                         plotSettings_ref,
                         updatePlot_reactive,
-                        dark_mode_in) {
+                        dark_mode_in,
+                        fileHandler,
+                        file_db) {
   moduleServer(id, function(input, output, session) {
     # Update the color pickers only when the user leaves the input, if we use
     # observeEvent then the plot will re-render when using updateColourInput
@@ -82,6 +84,7 @@ colorServer <- function(id,
     })
 
     set_theme_colors <- reactive({
+      # req(file_db)
       if (dark_mode_in() == "dark") {
         # Since we don't have any observers on the color pickers, this does two
         # things: changes the color picker values to a new color, which does not
@@ -91,65 +94,48 @@ colorServer <- function(id,
         colourpicker::updateColourInput(session, "lineColor", value = "#10EBFF")
         colourpicker::updateColourInput(session, "keepTrueColor", value = "#fdae61")
         colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
-        plotSettings_ref$setColors <- c("#10EBFF", "#df4461", "#fdae61")
-
-        plotSettings_ref$themeColors <-
-          ggplot2::theme(
-            panel.background = element_rect(fill = "#1d1f21"),
-            panel.grid.major = element_line(colour = "grey20"),
-            panel.grid.minor = element_line(colour = "grey20"),
-            axis.line = element_line(colour = "grey20"),
-            axis.text.x = element_text(colour = "white"),
-            axis.text.y = element_text(colour = "white"),
-            axis.title.x = element_text(colour = "white"),
-            axis.title.y = element_text(colour = "white"),
-            strip.background = element_rect(fill = "grey20"),
-            strip.text = element_text(colour = "white"),
-            legend.background = element_rect(fill = "grey20"),
-            legend.text = element_text(colour = "white"),
-            legend.title = element_text(colour = "white"),
-            plot.title = element_text(colour = "white"),
-            plot.subtitle = element_text(colour = "white"),
-            plot.caption = element_text(colour = "white"),
-            plot.background = element_rect(fill = "#1d1f21"),
-            panel.grid = element_line(linewidth = .3),
-            legend.position = 'top',
-          )
+        plotSettings_ref$setColors <- c("#10EBFF", "#fdae61",  "#df4461")
       } else{
         colourpicker::updateColourInput(session, "lineColor", value = "blue")
         colourpicker::updateColourInput(session, "keepTrueColor", value = "#111320")
         colourpicker::updateColourInput(session, "keepFalseColor", value = "#df4461")
-        plotSettings_ref$setColors <- c("blue", "#df4461",  "#111320")
-
-        plotSettings_ref$themeColors <-
-          ggplot2::theme(
-            panel.background = element_rect(fill = "white"),
-            panel.grid.major = element_line(colour = "grey80"),
-            panel.grid.minor = element_line(colour = "grey80"),
-            axis.line = element_line(colour = "grey80"),
-            axis.text.x = element_text(colour = "black"),
-            axis.text.y = element_text(colour = "black"),
-            axis.title.x = element_text(colour = "black"),
-            axis.title.y = element_text(colour = "black"),
-            strip.background = element_rect(fill = "grey80"),
-            strip.text = element_text(colour = "black"),
-            legend.background = element_rect(fill = "white"),
-            legend.text = element_text(colour = "black"),
-            legend.title = element_text(colour = "black"),
-            plot.title = element_text(colour = "black"),
-            plot.subtitle = element_text(colour = "black"),
-            plot.caption = element_text(colour = "black"),
-            plot.background = element_rect(fill = "white"),
-            panel.grid = element_line(linewidth = .3),
-            legend.position = 'top'
-          )
+        plotSettings_ref$setColors <- c("blue", "#111320",  "#df4461")
       }
-      updatePlot_reactive()
+      # updatePlot_reactive()
+#
+      print(plotSettings_ref$setColors)
     })
 
-    shiny::observeEvent(dark_mode_in(), {
-      message("theme")
-      # updateLoadFileColors()
-      set_theme_colors()
-    })
+    # shiny::observeEvent(dark_mode_in(), {
+    #   message("theme")
+    #   # updateLoadFileColors()
+    #   set_theme_colors()
+      # browser()
+#
+#       if (is.null(fileHandler$indices))
+#         return(NULL)
+#
+#       plotly::plotlyProxy("pulsePlot", session) |>
+#         plotly::plotlyProxyInvoke("restyle",list(line.color = input$lineColor))#,
+#                                   # seq(1,length(fileHandler$indices), 2))
+    # })
+
+    # change_colors <- reactive({
+    #   req(input$lineColor,
+    #       input$keepTrueColor,
+    #       input$keepFalseColor,
+    #       fileHandler,
+    #       file_db)
+    #
+    #   plotly::plotlyProxy("pulsePlot", session) |>
+    #     plotly::plotlyProxyInvoke("restyle",
+    #                               list(color = input$lineColor),
+    #                               seq(1,length(file_db$indices), 2)
+    #                               which(file_db$indices %in% files_to_add))
+    # })
+
+    return(list(lineColor = reactive(input$lineColor),
+                trueColor = reactive(input$keepTrueColor),
+                falseColor = reactive(input$keepFalseColor),
+                set_theme_colors = set_theme_colors))
   })}

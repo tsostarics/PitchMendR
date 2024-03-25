@@ -23,6 +23,7 @@ Imports:
     ragg,
     rlang,
     shiny (>= 1.7.4),
+    shinycssloaders,
     shinyjqui,
     shinyjs,
     shinyWidgets
