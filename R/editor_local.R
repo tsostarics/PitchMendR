@@ -336,33 +336,7 @@ openEditor <- function(
                       shiny::column(width = 6, columnInfo_UI("columnInfo")),
 
       )),
-    bslib::nav_panel(
-      title = "Progress",
-      bslib::card(
-        full_screen = TRUE,
-        bslib::card_header(""),
-        bslib::card_body(
-          shiny::actionButton(
-            inputId = "refreshProgressButton",
-            title = "Click to recompute summary statistics on this page",
-            label = "Refresh Diagnostics"
-          ),
-          shiny::actionButton(
-            inputId = "plotUneditedFilesButton",
-            title = "Click to send all unedited files to the editor pane",
-            label = "Send Unedited Files to Editor"
-          ),
-          "Percentage of pulses removed from current dataset:",
-          shiny::verbatimTextOutput(outputId = "percentRemovedText"),
-          "Average variance of sample-to-sample semitone differences (+/- 2 se, averaged across all files and normalized to sampling period)",
-          shiny::verbatimTextOutput(outputId = "changeInVarianceOutput"),
-          "Total proportion of files that have been mended:",
-          shiny::verbatimTextOutput(outputId = "nEditedFilesText"),
-          "These files have received no edits:",
-          shiny::verbatimTextOutput(outputId = "uneditedFilesText")
-        )
-      )
-    ),
+    diagnosticsUI('diagnostics'),
     bslib::nav_panel(
       tags$head(tags$style("body{overflow:hidden;}")),
       title = "Setup",
@@ -458,7 +432,7 @@ openEditor <- function(
                                          notes = NULL,
                                          indices = NULL)
     filesBrushed <- shiny::reactiveValues(filenames = NULL)
-    uneditedFiles <- shiny::reactiveValues(filenames = NULL)
+    # uneditedFiles <- shiny::reactiveValues(filenames = NULL)
     lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
     loadedFile <- shiny::reactiveValues(data = NULL)
     transformedColumn <- shiny::reactiveValues(name = NULL)
@@ -468,7 +442,7 @@ openEditor <- function(
     # Here what we're doing is setting each key to a reactive that's also mapped
     # to a button on the visible UI. This way all we need to change is the
     # reactive value and both the button and keybinding will be changed.
-    boundKeys <- #shiny::reactiveValues(
+    boundKeys <-
       list(
         "f" = keyBindAction(togglePulses,   "[F] Pressed (Toggle)"),
         "r" = keyBindAction(removePulses,   "[R] Pressed (Remove)"),
@@ -833,57 +807,6 @@ openEditor <- function(
       plotBrushed()
     })
 
-    # Refresh the diagnostics pane when the user clicks the refresh button
-    shiny::observeEvent(input$refreshProgressButton,{
-      if (is.null(loadedFile$data))
-        return(NULL)
-      # browser()
-      filtered_data <- loadedFile$data[where_not_zero(get(input$yValColumnInput)),]
-
-      uneditedFiles$filenames <-
-        filtered_data[, .(n_edited = any(!get(input$selectionColumnInput))), by = c(input$filenameColumnInput)][!(n_edited), .SD[[input$filenameColumnInput]]]
-
-
-      output$percentRemovedText <- shiny::renderText({
-        paste0(round(sum(!filtered_data[[input$selectionColumnInput]]) / nrow(filtered_data)*100, 2), "%")
-      })
-
-      output$nEditedFilesText <- shiny::renderText({
-        n_files <- length(fileHandler$filenames)
-        n_edited <- n_files - length(uneditedFiles$filenames)
-        paste0(n_edited, " / ", n_files)
-      })
-
-      output$changeInVarianceOutput <- shiny::renderText({
-        samplerate <- median(diff(loadedFile$data[[input$xValColumnInput]][1:100]))
-
-        variance_values <-
-          loadedFile$data |>
-          dplyr::group_by(dplyr::across(dplyr::all_of(input$filenameColumnInput))) |>
-
-          dplyr::reframe(
-            original_variance = .var_of_diffs(.data[[input$yValColumnInput]][where_not_zero(.data[[input$yValColumnInput]])],
-                                              .data[[input$xValColumnInput]],
-                                              samplerate),
-            new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[[input$selectionColumnInput]] & where_not_zero(.data[[input$yValColumnInput]])],
-                                         .data[[input$xValColumnInput]],
-                                         samplerate)) |>
-          dplyr::ungroup()
-
-        mean_se1 <- ggplot2::mean_se(variance_values$original_variance, mult = 2)
-        mean_se2 <- ggplot2::mean_se(variance_values$new_variance, mult = 2)
-
-        paste0("Original Variance: ", round(mean_se1['y'], 3), "[", round(mean_se1['ymin'], 3), ",", round(mean_se1['ymax'], 3), "]\n",
-               "New Variance: ", round(mean_se2['y'], 3), "[", round(mean_se2['ymin'], 3), ",", round(mean_se2['ymax'], 3), "]\n")
-
-      })
-
-      output$uneditedFilesText <- shiny::renderText({
-
-        paste(uneditedFiles$filenames, collapse = "\n")
-      })
-
-    })
 
     plotSubsetFlag <- shiny::reactiveValues(value = FALSE)
 
@@ -911,18 +834,6 @@ openEditor <- function(
 
       updatePlot()
 
-    })
-
-    # When the user clicks the plot unedited files button, plot only the files
-    # that the user has not edited. Must be done after the user has refreshed
-    # the diagnostics pane
-    shiny::observeEvent(input$plotUneditedFilesButton, {
-      if(is.null(loadedFile$data) || is.null(uneditedFiles$filenames))
-        return(NULL)
-
-      fileHandler$isPlotted <- fileHandler$filenames %in% uneditedFiles$filenames
-      refilterSubset()
-      updatePlot()
     })
 
     # Renders the selectInput for all unedited files.
@@ -1232,7 +1143,16 @@ openEditor <- function(
                                      reactive(input$pitchRangeInput),
                                      reactive(input$lockButton))
 
-
+  diagnostics <- diagnosticsServer('diagnostics',
+                                   loadedFile,
+                                   fileHandler,
+                                   transformedColumn,
+                                   reactive(input$xValColumnInput),
+                                   reactive(input$yValColumnInput),
+                                   reactive(input$filenameColumnInput),
+                                   reactive(input$selectionColumnInput),
+                                   refilterSubset,
+                                   updatePlot)
 
   }
 
