@@ -81,11 +81,12 @@ openEditor <- function(
                                               label= "Show \u25B3s in line",
                                               value = FALSE,
                                               status = "info")),
-      shiny::actionButton(
-        inputId = "undoTransformButton",
-        title = "Click to undo last doubling/halving transform",
-        label = "Undo Transform"
-      ),
+      undoTransformUI('octaveshift'),
+      # shiny::actionButton(
+      #   inputId = "undoTransformButton",
+      #   title = "Click to undo last doubling/halving transform",
+      #   label = "Undo Transform"
+      # ),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         title = "Click to check off currently plotted files",
@@ -137,7 +138,8 @@ openEditor <- function(
         # ),
         bslib::card( height = "88vh",
                      title = "Plot Settings",
-                     shiny::textOutput(outputId = "workingFileOutput"),
+                     loadFile_workingFileOutput('loadFile'),
+                     # shiny::textOutput(outputId = "workingFileOutput"),
                      shiny::uiOutput(outputId = "pitchRangeUI"),
                      tags$span(title = "Drag to change size of points",
                                shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
@@ -200,17 +202,18 @@ openEditor <- function(
                                                                   label = "Remove",
                                                                   title = "Click to remove selected points",
                                                                   style = "margin: 1%;margin-top:0%;margin-bottom:0")),
-                                            shiny::fluidRow(
-                                              shiny::actionButton(width = "48%",
-                                                                  inputId = "halfButton",
-                                                                  label = "Halve Pulses",
-                                                                  title = "Click to halve point y-values",
-                                                                  style = "margin: 1%;margin-top:0%;margin-bottom:0"),
-                                              shiny::actionButton(width = "48%",
-                                                                  inputId = "doubleButton",
-                                                                  label = "Double Pulses",
-                                                                  title = "Click to double point y-values",
-                                                                  style = "margin: 1%;margin-top:0%;margin-bottom:0"))
+                                            octaveShiftUI('octaveShift')
+                                            # shiny::fluidRow(
+                                            #   shiny::actionButton(width = "48%",
+                                            #                       inputId = "halfButton",
+                                            #                       label = "Halve Pulses",
+                                            #                       title = "Click to halve point y-values",
+                                            #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"),
+                                            #   shiny::actionButton(width = "48%",
+                                            #                       inputId = "doubleButton",
+                                            #                       label = "Double Pulses",
+                                            #                       title = "Click to double point y-values",
+                                            #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"))
                                 )
           )
           # )
@@ -395,15 +398,7 @@ openEditor <- function(
                                                           label =  "Files Available (*=not processed yet)",
                                                           multiple = FALSE,
                                                           choices = NULL)),
-                          shiny::actionButton(
-                            inputId = "loadFileButton",
-                            title = "Click to load selected file",
-                            label = "Load File",
-                            class = "btn-warning",
-                            icon = icon("spinner"),
-                            width = "100%",
-                            style = "margin-bottom:8px"
-                          ),
+                          loadFileUI('loadFile'),
                           "",
                           tags$span(title = "Click to expand audio options",
                                     praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
@@ -474,21 +469,21 @@ openEditor <- function(
     # to a button on the visible UI. This way all we need to change is the
     # reactive value and both the button and keybinding will be changed.
     boundKeys <- #shiny::reactiveValues(
-      list("f" = keyBindAction(togglePulses, "[F] Pressed (Toggle)"),
-           "r" = keyBindAction(removePulses, "[R] Pressed (Remove)"),
-           "e" = keyBindAction(keepPulses, "[E] Pressed (Keep)"),
-           "s" = keyBindAction(toggleShowLine, "[S] Pressed (Show Line)"),
-           "q" = keyBindAction(filenav$goToPreviousFile, "[Q] Pressed (Previous File)"),
-           "w" = keyBindAction(filenav$goToNextFile, "[W] Pressed (Next File)"),
-           "b" = keyBindAction(plotBrushed, "[B] Pressed (Plot Brushed)"),
-           "d" = keyBindAction(doublePulses, "[D] Pressed (Double Pulses)"),
-           "a" = keyBindAction(halvePulses, "[A] Pressed (Halve Pulses)"),
-           "v" = keyBindAction(plotMatches, "[V] pressed (Plot Matches)"),
-           "ctrl+z" = keyBindAction(undoTransformation, "[Ctrl+Z] Pressed (Undo Transform)"),
-           "command+z" = keyBindAction(undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
-           "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"))
-
-
+      list(
+        "f" = keyBindAction(togglePulses,   "[F] Pressed (Toggle)"),
+        "r" = keyBindAction(removePulses,   "[R] Pressed (Remove)"),
+        "e" = keyBindAction(keepPulses,     "[E] Pressed (Keep)"),
+        "s" = keyBindAction(toggleShowLine, "[S] Pressed (Show Line)"),
+        "q" = keyBindAction(filenav$goToPreviousFile, "[Q] Pressed (Previous File)"),
+        "w" = keyBindAction(filenav$goToNextFile,     "[W] Pressed (Next File)"),
+        "b" = keyBindAction(plotBrushed,              "[B] Pressed (Plot Brushed)"),
+        "d" = keyBindAction(octaveShift$doublePulses, "[D] Pressed (Double Pulses)"),
+        "a" = keyBindAction(octaveShift$halvePulses,  "[A] Pressed (Halve Pulses)"),
+        "v" = keyBindAction(plotMatches,              "[V] pressed (Plot Matches)"),
+        "ctrl+z" = keyBindAction(octaveShift$undoTransformation,    "[Ctrl+Z] Pressed (Undo Transform)"),
+        "command+z" = keyBindAction(octaveShift$undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
+        "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)")
+      )
 
 
     observeEvent(input$keys, {
@@ -570,11 +565,11 @@ openEditor <- function(
       if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data))
         colorColumn <- input$colorCodeColumnInput
 
-        p <- p +
-          ggplot2::geom_point(aes(color = !!sym(colorColumn),
-                                  shape = !!sym(input$selectionColumnInput)),
-                              size = input$sizeSlider,
-                              alpha = input$alphaSlider)
+      p <- p +
+        ggplot2::geom_point(aes(color = !!sym(colorColumn),
+                                shape = !!sym(input$selectionColumnInput)),
+                            size = input$sizeSlider,
+                            alpha = input$alphaSlider)
 
 
 
@@ -715,40 +710,6 @@ openEditor <- function(
       removePulses()
     })
 
-    # Whenever the user toggles the dark mode, update the colors of the load file
-    # button. It should be blue no matter what if no file is loaded, then fade
-    # to an unselected gray color after a file is loaded.
-
-
-    # When the user clicks the load file button, load the file and initialize
-    # different columns and reactive values
-    # Install and load the data.table package
-
-    set_selectize_choices <- function(session,
-                                      inputId,
-                                      data_ref,
-                                      input_value,
-                                      add = FALSE,
-                                      add_with = TRUE) {
-      reactive({
-        if (is.null(data_ref$data))
-          return(NULL)
-
-        if (add) {
-          if (!input_value %in% colnames(data_ref$data))
-            data_ref$data[, (input_value) := add_with]
-        }
-
-        shiny::updateSelectizeInput(session,
-                                    inputId = inputId,
-                                    choices = colnames(data_ref$data),
-                                    selected = ifelse(input_value %in% colnames(data_ref$data),
-                                                      input_value,
-                                                      colnames(data_ref$data)[1]))
-      }
-      )
-    }
-
     shiny::observeEvent(input$yValColumnInput,ignoreInit = TRUE, {
       if (is.null(loadedFile$data))
         return(NULL)
@@ -759,130 +720,23 @@ openEditor <- function(
       getwd()
     })
 
-    shiny::observeEvent(input$loadFileButton, {
-      message("Load File Pressed")
-
-      if (is.null(input$fileSelectBox) | is.null(input$inputDirInput)){
-        return(NULL)
-      }
-
-      if (!dir.exists(input$inputDirInput)){
-        message("Input directory doesnt exist")
-        return(NULL)
-      }
-
-      file_to_load <- file.path(input$inputDirInput, clean_file(input$fileSelectBox))
-      outFile <- file.path(input$outputDirInput, clean_file(input$fileSelectBox))
-      if (file.exists(outFile)) {
-        message("Resuming progress from existing output file")
-        file_to_load <- outFile
-      }
-
-      message(paste0("Loading file ", file_to_load))
-      loadedFile$data <- NULL # If previous data was loaded, throw it out
-      loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
-
-      # Upon successful load of the file, change the color of the load file button
-      # so it doesn't stand out as much anymore
-      shinyjs::removeClass("loadFileButton", "btn-primary")
-
-      # Add animations to some of the important buttons
-      shinyjs::addClass("fileNav-saveButton", class = "animbutton")
-      shinyjs::addClass("checkVisibleFilesButton", class = "animbutton")
-
-      set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
-      set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
-      set_selectize_choices(session, "yValColumnInput", loadedFile, input$yValColumnInput)()
-
-
-      # If the file doesn't contain the specified columns, return null and move
-      # to the settings page
-      if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
-        message("File doesn't contain the specified columns")
-        loadedFile$data <- NULL
-        shiny::updateNavbarPage(session, "navbar", "Settings")
-        return(NULL)
-      }
-
-      data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
-
-      if (!file.exists(outFile))
-        loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]  # Use := operator from data.table package
-
-      if (!"pulse_id" %in% colnames(loadedFile$data))
-        loadedFile$data[, pulse_id := .I]  # Use .I from data.table package
-
-      if (!"pulse_transform" %in% colnames(loadedFile$data)){
-        loadedFile$data[, pulse_transform := 1.0]
-      }
-
-      changeTransformedColumn()
-
-      fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
-      fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
-      fileHandler$indices <-
-        lapply(fileHandler$filenames,
-               \(fname) which(loadedFile$data[[input$filenameColumnInput]] == fname)) |>
-        `names<-`(fileHandler$filenames)
-
-      if (!"file_checked" %in% colnames(loadedFile$data)) {
-        loadedFile$data[, file_checked := FALSE]
-        fileHandler$fileChecked <- rep(FALSE, length(fileHandler$filenames))
-      } else {
-        loaded_file_check <- loadedFile$data[, .(file_checked = ifelse(is.na(file_checked[1]), FALSE, file_checked[1])), by = c(input$filenameColumnInput)]
-
-        file_checks <- loaded_file_check$file_checked
-        names(file_checks) <- loaded_file_check[[input$filenameColumnInput]]
-        fileHandler$fileChecked <- file_checks[fileHandler$filenames]
-      }
-
-      plotSettings$showLine <- TRUE
-      output$workingFileOutput <- shiny::renderText({
-        paste0("Working File:\n", clean_file(input$fileSelectBox))
-      })
-
-      # If we've loaded another file in the same session then we need
-      # to reset flag samples button
-
-      if ("flagged_samples" %in% colnames(loadedFile$data)) {
-        shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
-        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-      } else {
-        shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
-        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
-      }
-
-      if (input$useBadgesToggle) {
-        if (!"tags" %in% colnames(loadedFile$data)) {
-          loadedFile$data[, tags := NA_character_]
-          fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
-          names(fileHandler$badges) <- fileHandler$filenames
-        } else {
-          fileHandler$badges = loadedFile$data[, .(tags = tags[1]), by = c(input$filenameColumnInput)][['tags']]
-          names(fileHandler$badges) <- fileHandler$filenames
-          loadedFile$data[,tags := as.character(tags)]
-        }
-      }
-
-      if (input$useNotesToggle) {
-        if (!"notes" %in% colnames(loadedFile$data)) {
-          loadedFile$data[, notes := NA_character_]
-          fileHandler$notes <- rep(NA_character_, length(fileHandler$filenames))
-          names(fileHandler$notes) <- fileHandler$filenames
-        } else {
-          fileHandler$notes = loadedFile$data[, .(notes = notes[1]), by = c(input$filenameColumnInput)][['notes']]
-          names(fileHandler$notes) <- fileHandler$filenames
-          loadedFile$data[,notes := as.character(notes)]
-        }
-      }
-
-      refilterSubset()
-      updatePlot()
-
-    })
+    loadFile <- loadFileServer("loadFile",
+                               loadedFile,
+                               reactive(input$fileSelectBox),
+                               reactive(input$inputDirInput),
+                               reactive(input$outputDirInput),
+                               reactive(input$filenameColumnInput),
+                               reactive(input$xValColumnInput),
+                               reactive(input$yValColumnInput),
+                               reactive(input$selectionColumnInput),
+                               reactive(input$colorCodeColumnInput),
+                               reactive(input$useBadgesToggle),
+                               reactive(input$useNotesToggle),
+                               changeTransformedColumn,
+                               fileHandler,
+                               plotSettings,
+                               refilterSubset,
+                               updatePlot)
 
 
     toggleShowLine <- reactive({
@@ -895,9 +749,6 @@ openEditor <- function(
         return(NULL)
       plotSettings$showLine <- !plotSettings$showLine
     })
-
-
-
 
     nPlotted = shiny::reactiveValues(n = NULL, is_one = NULL)
 
@@ -1041,75 +892,6 @@ openEditor <- function(
       plotFlag$value <- !plotFlag$value
     })
 
-
-    doublePulses <- shiny::reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      selectedPoints$data <- getBrushedPoints()
-
-      vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-      plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-
-      loadedFile$data[vals_to_change, pulse_transform := pulse_transform * 2.0]
-      loadedFile$data[vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-      plotSubset$data[plot_vals_to_change, pulse_transform := pulse_transform * 2.0]
-      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-
-      selectedPoints$data <- NULL
-      lastTransformation$pulse_ids <- vals_to_change
-
-      current_pitch_range <- isolate(input$pitchRangeInput)
-      max_transform_value <- max(loadedFile$data[[transformedColumn$name]])
-      if (input$lockButton %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
-        new_pitch_max <-
-          ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
-        shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
-                                              value = c(current_pitch_range[1L],
-                                                        new_pitch_max))
-      } else { # Otherwise the plot will render twice if the pitch range changes
-        updatePlot()
-      }
-
-    })
-
-    halvePulses <- shiny::reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      selectedPoints$data <- getBrushedPoints()
-
-      vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-      plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-
-      # as.numeric needed to avoid implicit coercion to integer,
-      # which turns the transformation from 0.5 to 0
-      loadedFile$data[, pulse_transform:= as.numeric(pulse_transform)][vals_to_change, pulse_transform := pulse_transform * 0.5]
-      loadedFile$data[vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-      plotSubset$data[, pulse_transform:= as.numeric(pulse_transform)][plot_vals_to_change, pulse_transform := pulse_transform * 0.5]
-      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-
-      selectedPoints$data <- NULL
-      lastTransformation$pulse_ids <- vals_to_change
-
-      current_pitch_range <- isolate(input$pitchRangeInput)
-      min_transform_value <- min(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])])
-      if (input$lockButton %% 2 == 0 && current_pitch_range[1L] > min_transform_value){
-        new_pitch_min <-
-          ceiling(add_semitones(min_transform_value, sign(-min_transform_value)*1L))
-        shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
-                                              value = c(new_pitch_min,
-                                                        current_pitch_range[2L]))
-      } else{
-        updatePlot()
-      }
-    })
-
-
-    # Multiply selected points by 2 (fixes halving errors)
-    shiny::observeEvent(input$doubleButton, {
-      message("Double Pressed")
-      doublePulses()
-    })
-
     changeTransformedColumn <- shiny::reactive({
       if (is.null(loadedFile$data))
         return(NULL)
@@ -1129,36 +911,6 @@ openEditor <- function(
 
       updatePlot()
 
-    })
-
-
-    # Multiply selected points by 0.5 (fixes doubling errors)
-    shiny::observeEvent(input$halfButton, {
-      message("Halve Pressed")
-      halvePulses()
-    })
-
-    undoTransformation <- reactive({
-      if (is.null(loadedFile$data) || is.null(lastTransformation$pulse_ids))
-        return(NULL)
-
-      plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
-
-      loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
-      loadedFile$data[lastTransformation$pulse_ids, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-      plotSubset$data[plot_vals_to_change, pulse_transform := 1.0]
-      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-
-      lastTransformation$pulse_ids <- NULL
-      selectedPoints$data <- NULL
-
-      updatePlot()
-    })
-
-    # Undo the last transformation, resetting the transformation to 1
-    shiny::observeEvent(input$undoTransformButton, {
-      message("Undo Pressed")
-      undoTransformation()
     })
 
     # When the user clicks the plot unedited files button, plot only the files
@@ -1310,19 +1062,6 @@ openEditor <- function(
                          # updatePlotSettingsData()
                        }
                      })
-
-    # Reactively update the appearance of the loadfile button
-    observe({
-      if (!is.null(input$fileSelectBox) && !is.null(input$inputDirInput)) {
-        shinyjs::removeClass("loadFileButton", class = "btn-warning")
-        shinyjs::addClass("loadFileButton", class = "btn-primary")
-        shiny::updateActionButton(session, "loadFileButton",icon = icon("upload"))
-      } else {
-        shinyjs::removeClass("loadFileButton", class = "btn-primary")
-        shinyjs::addClass("loadFileButton", class = "btn-warning")
-        shiny::updateActionButton(session, "loadFileButton",icon = icon("spinner"))
-      }
-    })
 
 
     currentWave <- shiny::reactiveValues(value = NULL,
@@ -1480,6 +1219,18 @@ openEditor <- function(
                              annotations,
                              refilterSubset,
                              destroyLoadedAudio)
+
+    octaveShift <- octaveShiftServer('octaveShift',
+                                     loadedFile,
+                                     plotSubset,
+                                     transformedColumn,
+                                     selectedPoints,
+                                     lastTransformation,
+                                     getBrushedPoints,
+                                     updatePlot,
+                                     reactive(input$yValColumnInput),
+                                     reactive(input$pitchRangeInput),
+                                     reactive(input$lockButton))
 
 
 
