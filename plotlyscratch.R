@@ -16,7 +16,8 @@ ui <- fluidPage(
       selectInput("ycol", "Y Variable", NULL),
       selectInput("files", "Files", NULL,multiple = TRUE,selectize = TRUE),
       actionButton("replotButton", "Replot"),
-      actionButton("flipButton", "Flip Points")
+      actionButton("flipButton", "Flip Points"),
+      actionButton("doubleButton", "Double")
     ),
 
     mainPanel(
@@ -40,11 +41,8 @@ server <- function(input, output, session) {
   file_db <- reactiveValues(data = NULL)
 
   file_info <- reactiveValues(fnames = NULL,
-                              marker_indices = NULL,
-                              line_indices = NULL,
                               is_plotted = NULL,
-                              n = NULL,
-                              cur_i = NULL)
+                              n = NULL)
 
   file_indices <- reactiveValues(fn = c())
 
@@ -62,6 +60,22 @@ server <- function(input, output, session) {
       file_info$is_plotted <- `names<-`(rep(FALSE,file_info$n), file_info$fnames)
 
       updateSelectInput(session, "files", choices = file_info$fnames, selected=NULL)
+    }
+  })
+
+  observeEvent(input$doubleButton, {
+    req(file_indices)
+    selected_points <- event_data("plotly_selected")
+
+    selected_curvepoints <- split(selected_points, ~curveNumber)
+    curve_numbers <- names(selected_curvepoints)
+
+    for (curve_i in curve_numbers) {
+      filename <- file_indices$fn[as.integer(curve_i)]
+      rows_to_modify <- selected_curvepoints[[curve_i]][["pointNumber"]]+1
+      file_db$data[[filename]][[input$ycol]][rows_to_modify] <- 2*file_db$data[[filename]][[input$ycol]][rows_to_modify]
+      plotly::plotlyProxy("plot", session) |>
+        plotly::plotlyProxyInvoke("restyle", list(y = list(file_db$data[[filename]][[input$ycol]])), c(0,-1)+as.integer(curve_i))
     }
   })
 

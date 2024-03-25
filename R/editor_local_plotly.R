@@ -464,12 +464,18 @@ openEditor2 <- function(
                                          badges = NULL,
                                          notes = NULL,
                                          indices = NULL)
+    file_info <- reactiveValues(fnames = NULL,
+                                is_plotted = NULL,
+                                n = NULL)
+    file_indices <- reactiveValues(fn = c())
+
     filesBrushed <- shiny::reactiveValues(filenames = NULL)
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
     lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
     loadedFile <- shiny::reactiveValues(data = NULL)
     transformedColumn <- shiny::reactiveValues(name = NULL)
     plotFlag <- shiny::reactiveValues(value = TRUE)
+    file_db <- reactiveValues(data = NULL)
 
     # Default keybindings, see https://craig.is/killing/mice for valid keys
     # Here what we're doing is setting each key to a reactive that's also mapped
@@ -532,79 +538,8 @@ openEditor2 <- function(
       nPlotted$is_one <- nPlotted$n == 1
     }
 
-    output$pulsePlot <- shiny::renderPlot({
-      message('Rerendering')
-      plotFlag$value
-      if (is.null(loadedFile$data))
-        return(NULL)
+    output$pulsePlot <- plotly::renderPlotly({
 
-      # These will update when the user changes the color manually with the
-      # color pickers or if the theme is changed.
-      color_values <-  plotSettings$setColors[2:3]
-      lineColor <- plotSettings$setColors[1]
-
-      yval <- transformedColumn$name
-      if (input$hideToggleInput)
-        yval <- input$yValColumnInput
-
-      # Set up the main aesthetics for the plot
-      p <-
-        ggplot2::ggplot(plotSubset$data,
-                        ggplot2::aes(x = !!sym(input$xValColumnInput),
-                                     y = !!sym(yval),
-                                     group = !!sym(input$filenameColumnInput)))
-
-      # Add the line if the user wants it
-      if (plotSettings$showLine) {
-        # If the user wants the line to go through the removed points,
-        # then we don't need to subset the data to only the retained pulses
-        if (input$useRemovedPointsToggleInput) {
-          p <- p +
-            ggplot2::geom_line(data =plotSubset$data, color = lineColor)
-        } else {
-          # use remove points toggle is off
-          p <- p +
-            ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
-        }
-      }
-
-      colorColumn <- input$selectionColumnInput
-      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data))
-        colorColumn <- input$colorCodeColumnInput
-
-      p <- p +
-        ggplot2::geom_point(aes(color = !!sym(colorColumn),
-                                shape = !!sym(input$selectionColumnInput)),
-                            size = input$sizeSlider,
-                            alpha = input$alphaSlider)
-
-
-
-
-      # Color code logical values
-      if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
-        # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-        if (input$useFlaggedColumnToggle)
-          color_values <- c(color_values[2], color_values[1])
-        p <- p +
-          ggplot2::scale_color_manual(values = color_values)
-      }
-
-      # Finish setting some of the theme options
-      p <- p +
-        ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
-        ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
-        ggplot2::theme_bw(base_size = 16) +
-        plotSettings$themeColors +
-        # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
-        ggplot2::labs(x = input$xValColumnInput,
-                      y = input$yValColumnInput,
-                      title = ifelse(nPlotted$is_one,
-                                     fileHandler$filenames[fileHandler$isPlotted],
-                                     "Multiple Files"))
-
-
-      p
     })
 
     togglePulses <- reactive({
@@ -806,10 +741,10 @@ openEditor2 <- function(
         return(NULL)
       }
 
-      data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
+      data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))
 
       if (!file.exists(outFile))
-        loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]  # Use := operator from data.table package
+        loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]
 
       if (!"pulse_id" %in% colnames(loadedFile$data))
         loadedFile$data[, pulse_id := .I]  # Use .I from data.table package
@@ -881,7 +816,14 @@ openEditor2 <- function(
         }
       }
 
-      refilterSubset()
+      file_db$data <- split(loadedFile$data,input$filenameColumnInput)
+
+
+      file_info$fnames <- names(file_db$data)
+      file_info$n <- length(file_info$fnames)
+      file_info$is_plotted <- `names<-`(rep(FALSE,file_info$n), file_info$fnames)
+
+      # refilterSubset()
       updatePlot()
 
     })
@@ -1045,31 +987,48 @@ openEditor2 <- function(
 
 
     doublePulses <- shiny::reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      selectedPoints$data <- getBrushedPoints()
+      req(file_indices)
+      selectedPoints$data <- event_data("plotly_selected")
 
-      vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-      plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-
-      loadedFile$data[vals_to_change, pulse_transform := pulse_transform * 2.0]
-      loadedFile$data[vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-      plotSubset$data[plot_vals_to_change, pulse_transform := pulse_transform * 2.0]
-      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
-
-      selectedPoints$data <- NULL
-      lastTransformation$pulse_ids <- vals_to_change
+      selected_curvepoints <- split(selectedPoints$data, ~curveNumber)
+      curve_numbers <- names(selected_curvepoints)
 
       current_pitch_range <- isolate(input$pitchRangeInput)
-      max_transform_value <- max(loadedFile$data[[transformedColumn$name]])
-      if (input$lockButton %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
+      new_max <- current_pitch_range[2]
+      for (curve_i in curve_numbers) {
+        filename <- file_indices$fn[as.integer(curve_i)]
+        rows_to_modify <- selected_curvepoints[[curve_i]][["pointNumber"]]+1
+
+        # Change the values in the file database
+        curve_ref <- file_db$data[[filename]]
+        curve_ref[rows_to_modify, pulse_transform := pulse_transform * 2]
+        curve_ref[rows_to_modify, c(transformedColumn$name) := get(input$yValColumnInput) * pulse_transform]
+
+        # Update the trace values in the plot
+        curve_indices <- as.integer(curve_i) + c(0,-1) # marker, line
+        plotly::plotlyProxy("plot", session) |>
+          plotly::plotlyProxyInvoke("restyle", list(y = list(curve_ref[[transformedColumn$name]])), curve_indices)
+
+        new_max <- max(c(new_max, curve_ref[[transformedColumn$name]][rows_to_modify]))
+      }
+
+
+      selectedPoints$data <- NULL
+      # TODO: Change the last transformation indices to be a dataframe or list
+      #       containing the trace indices and the row numbers
+      # lastTransformation$pulse_ids <- sselectedPoints$data[,c('curveNumber', 'pointNumber'))]
+      # lastTransformation$pulse_ids <- vals_to_change
+
+      # current_pitch_range <- isolate(input$pitchRangeInput)
+      # max_transform_value <- max(loadedFile$data[[transformedColumn$name]])
+      if (input$lockButton %% 2 == 0 && current_pitch_range[2L] < new_max){
         new_pitch_max <-
-          ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
+          ceiling(add_semitones(new_max, sign(new_max)*1L))
         shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
                                               value = c(current_pitch_range[1L],
                                                         new_pitch_max))
       } else { # Otherwise the plot will render twice if the pitch range changes
-        updatePlot()
+        # updatePlot()
       }
 
     })
