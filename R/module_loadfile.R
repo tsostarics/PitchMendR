@@ -69,7 +69,7 @@ loadFileServer <- function(id,
       # later on. Otherwise, we run into an issue where we might load a tsv file
       # correctly, but it will be saved as a .tsv file that's actually comma
       # delimited, since the default sep for fwrite is ','.
-      fread_output <- capture.output({loadedFile$data <- data.table::fread(file_to_load, verbose=TRUE)})
+      fread_output <- utils::capture.output({loadedFile$data <- data.table::fread(file_to_load, verbose=TRUE)})
 
       # Separator is on a line like:
       #   sep=','  with  // = , delimiter
