@@ -33,7 +33,8 @@ fileNavServer <- function(id,
                           nPlotted,
                           annotations,
                           refilterSubset,
-                          destroyLoadedAudio) {
+                          destroyLoadedAudio,
+                          fileDelimiter) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     # When the user clicks the save button, save the data to the output directory
@@ -43,21 +44,20 @@ fileNavServer <- function(id,
     # })
 
     saveData <- function(){
-      # saveIcon$value <- "spinner"
       if (is.null(loadedFile$data))
         return(NULL)
-      # browser()
+
       annotations$mergeAnnotations()
       path <- file.path(outputDirInput(), clean_file(fileSelectBox()))
+
 
       names(fileHandler$fileChecked) <- fileHandler$filenames
       # Update the file checked column before saving
       loadedFile$data[, file_checked := fileHandler$fileChecked[loadedFile$data[[filenameColumnInput()]]]]
       if (!file.exists(path) || file.access(path, mode = 2) == 0) {
-        # saveIcon$value <- "spinner"
         shiny::updateActionButton(session, "saveButton", icon = icon("spinner"))
-
-        write_status <- tryCatch(data.table::fwrite(x = loadedFile$data, file = path),
+        write_status <- tryCatch(data.table::fwrite(x = loadedFile$data,
+                                                    file = path,sep = fileDelimiter()),
                                  error = \(e) {
                                    e
                                  })

@@ -35,9 +35,10 @@ loadFileServer <- function(id,
                            refilterSubset,
                            updatePlot) {
   moduleServer(id, function(input, output, session) {
+    fileDelimiter <- shiny::reactiveVal(value=",")
+
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
-
       # Don't run if no file is selected
       if (is.null(fileSelectBox()) | is.null(inputDirInput())){
         return(NULL)
@@ -60,7 +61,36 @@ loadFileServer <- function(id,
 
       message(paste0("Loading file ", file_to_load))
       loadedFile$data <- NULL # If previous data was loaded, throw it out
-      loadedFile$data <- data.table::fread(file_to_load)
+
+      # Load the file using data.table::fread, which will automatically try to
+      # detect the appropriate delimiter for the file in the freadMain C call.
+      # The separator is printed as part of the verbose messaging, so we're going
+      # to exploit that so we can save the delimiter when we go to save the file
+      # later on. Otherwise, we run into an issue where we might load a tsv file
+      # correctly, but it will be saved as a .tsv file that's actually comma
+      # delimited, since the default sep for fwrite is ','.
+      fread_output <- capture.output({loadedFile$data <- data.table::fread(file_to_load, verbose=TRUE)})
+
+      # Separator is on a line like:
+      #   sep=','  with  // = , delimiter
+      #   sep=0x9  with  // = \t delimiter, needs to be converted to a character
+      sep_output <- fread_output[grepl("sep=.+?  with", fread_output)]
+      delimiter <- regmatches(sep_output,regexec("sep='?([^']*?)'?  ",sep_output))[[1]][2]
+
+      # If we've identified a delimiter successfully, then check to see if it
+      # needs to be converted from a hex value to a character value. If that's
+      # successful, or if it's just a single character to start with, use that
+      # as the new delimiter.
+      if (!is.na(delimiter) & !is.null(delimiter)) {
+        if (nchar(delimiter) > 1) {
+          converted_delimiter <- intToUtf8(delimiter)
+          if (is.na(converted_delimiter)) {
+            stop(paste0("Malformed delimiter '", delimiter,"'. Delimiter must be hex value like '0x9' or single string character like ','"))
+          }
+          delimiter <- converted_delimiter
+        }
+        fileDelimiter(delimiter) # Update delimiter with the one we found
+      }
 
       # Upon successful load of the file, change the color of the load file button
       # so it doesn't stand out as much anymore
@@ -181,6 +211,7 @@ loadFileServer <- function(id,
       # Now that we've loaded the file, we can force update the plot
       refilterSubset()
       updatePlot()
+      message(paste0("Delimiter: '", fileDelimiter(), "'"))
     })
 
     # Reactively update the appearance of the loadfile button
@@ -195,5 +226,7 @@ loadFileServer <- function(id,
         shiny::updateActionButton(session, "loadFileButton",icon = icon("spinner"))
       }
     })
+
+    return(list(fileDelimiter = fileDelimiter))
   })
 }

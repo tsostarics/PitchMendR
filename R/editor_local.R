@@ -862,15 +862,14 @@ openEditor <- function(
 
     observe({
       if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
-        all_files <- list.files(input$inputDirInput)
-        infiles <- list.files(input$inputDirInput)
-        hasOutput <- infiles %in% list.files(input$outputDirInput)
-
-        paste0(all_files, c("*", "")[hasOutput+1])
+        input_filepaths <- list.files(input$inputDirInput, include.dirs = FALSE)
+        input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp$", input_filepaths,ignore.case = TRUE)]
+        input_filenames <- basename(input_filepaths)
+        hasOutput <- input_filenames %in% list.files(input$outputDirInput, include.dirs = FALSE)
 
         shiny::updateSelectizeInput(session,
                                     inputId = "fileSelectBox",
-                                    choices = paste0(all_files, c("*", "")[hasOutput+1]))
+                                    choices = paste0(input_filepaths, c("*", "")[hasOutput+1]))
       }
     })
 
@@ -1129,7 +1128,8 @@ openEditor <- function(
                              nPlotted,
                              annotations,
                              refilterSubset,
-                             destroyLoadedAudio)
+                             destroyLoadedAudio,
+                             loadFile$fileDelimiter)
 
     octaveShift <- octaveShiftServer('octaveShift',
                                      loadedFile,
@@ -1143,16 +1143,16 @@ openEditor <- function(
                                      reactive(input$pitchRangeInput),
                                      reactive(input$lockButton))
 
-  diagnostics <- diagnosticsServer('diagnostics',
-                                   loadedFile,
-                                   fileHandler,
-                                   transformedColumn,
-                                   reactive(input$xValColumnInput),
-                                   reactive(input$yValColumnInput),
-                                   reactive(input$filenameColumnInput),
-                                   reactive(input$selectionColumnInput),
-                                   refilterSubset,
-                                   updatePlot)
+    diagnostics <- diagnosticsServer('diagnostics',
+                                     loadedFile,
+                                     fileHandler,
+                                     transformedColumn,
+                                     reactive(input$xValColumnInput),
+                                     reactive(input$yValColumnInput),
+                                     reactive(input$filenameColumnInput),
+                                     reactive(input$selectionColumnInput),
+                                     refilterSubset,
+                                     updatePlot)
 
   }
 
