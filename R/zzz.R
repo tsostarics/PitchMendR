@@ -27,7 +27,7 @@ utils::globalVariables(c("F0_of_err",
   shiny::addResourcePath(
     prefix = "img",
     directoryPath = system.file(
-      "www/images",
+      "howtoimages",
       package = "PitchMendR"
     )
   )

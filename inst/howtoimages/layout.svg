@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 289 148.8588">
+  <title>Artboard 1</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <rect x="0.5" y="0.5" width="288" height="147.8588" fill="#fff" stroke="#231f20" stroke-miterlimit="10"/>
+    <rect x="86.83333" y="0.5" width="201.66667" height="147.8588" fill="#fff" stroke="#231f20" stroke-miterlimit="10"/>
+    <rect x="37.33333" y="0.5" width="49.5" height="147.8588" fill="#fff" stroke="#231f20" stroke-miterlimit="10"/>
+    <rect x="86.83333" y="106.83333" width="201.66667" height="41.52547" fill="#fff" stroke="#231f20" stroke-miterlimit="10"/>
+    <rect x="187.66667" y="106.83333" width="100.83333" height="41.52547" fill="#fff" stroke="#231f20" stroke-miterlimit="10"/>
+  </g>
+  <g id="Layer_3" data-name="Layer 3">
+    <text transform="translate(167.12874 64.10053)" font-size="25" fill="#231f20" font-family="ArialMT, Arial">Plot</text>
+    <text transform="translate(221.83024 123.6117)" font-size="13" fill="#231f20" font-family="ArialMT, Arial">Pulse<tspan x="-30.45898" y="15.6001" letter-spacing="-0.03711em">T</tspan><tspan x="-23.00049" y="15.6001">ransformations</tspan></text>
+    <text transform="translate(94.25724 123.61153)" font-size="13" fill="#231f20" font-family="ArialMT, Arial">File Navigation<tspan x="-3.63086" y="15.6001">and</tspan><tspan x="18.05908" y="15.6001" letter-spacing="-0.05518em"> </tspan><tspan x="20.95361" y="15.6001">Annotations</tspan></text>
+    <text transform="translate(50.02116 52.58332)" font-size="14" fill="#231f20" font-family="ArialMT, Arial">Plot<tspan x="-12.06201" y="16.7998">settings</tspan></text>
+    <text transform="translate(2.15901 58.41648)" font-size="14" fill="#231f20" font-family="ArialMT, Arial" letter-spacing="-0.11084em">T<tspan x="7" y="0" letter-spacing="-0.00007em">ools</tspan></text>
+  </g>
+</svg>
