@@ -165,7 +165,8 @@ server <- function(input, output, session) {
               y =  file_db$data[[f]][[input$ycol]],
               type = "scatter",
               mode = "markers",
-              marker = list(color =  ifelse(file_db$data[[f]][['flagged_samples']], "blue", "magenta")),
+              marker = list(color =  ifelse(file_db$data[[f]][['flagged_samples']], "blue", "magenta"),
+                            symbol = ifelse(file_db$data[[f]][['flagged_samples']], 1, 2)),
               name = f,
               visible = FALSE
             )
