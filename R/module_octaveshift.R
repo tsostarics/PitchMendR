@@ -74,11 +74,18 @@ octaveShiftServer <- function(id,
       vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
       plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
 
-      # as.numeric needed to avoid implicit coercion to integer,
-      # which turns the transformation from 0.5 to 0
-      loadedFile$data[, pulse_transform:= as.numeric(pulse_transform)][vals_to_change, pulse_transform := pulse_transform * 0.5]
+      # data.table likes to coerce to integers, but this makes 0.5 get truncated
+      # to 0L, so we need to ensure that the columns are numeric
+      if (typeof(loadedFile$data[1,pulse_transform]) == "integer")
+        data.table::set(loadedFile$data, j= "pulse_transform", value=as.numeric(loadedFile$data[['pulse_transform']]))
+
+      if (typeof(plotSubset$data[1,pulse_transform]) == "integer")
+        data.table::set(plotSubset$data, j= "pulse_transform", value=as.numeric(plotSubset$data[['pulse_transform']]))
+
+
+      loadedFile$data[vals_to_change, pulse_transform := pulse_transform * 0.5]
       loadedFile$data[vals_to_change, c(transformedColumn$name) := get(yValColumnInput()) * pulse_transform]
-      plotSubset$data[, pulse_transform:= as.numeric(pulse_transform)][plot_vals_to_change, pulse_transform := pulse_transform * 0.5]
+      plotSubset$data[plot_vals_to_change, pulse_transform := pulse_transform * 0.5]
       plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(yValColumnInput()) * pulse_transform]
 
       selectedPoints$data <- NULL
@@ -101,7 +108,6 @@ octaveShiftServer <- function(id,
     undoTransformation <- reactive({
       if (is.null(loadedFile$data) || is.null(lastTransformation$pulse_ids))
         return(NULL)
-
       plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
 
       loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
