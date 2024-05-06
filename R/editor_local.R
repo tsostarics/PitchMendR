@@ -1100,7 +1100,8 @@ openEditor <- function(
                     destroyLoadedAudio,
                     audioInfo,
                     nPlotted,
-                    plotSubset)
+                    plotSubset,
+                    reactive(input$plot_brush))
 
     # Note: the input is created from within the window resizer module via
     #       javascript, so it's actually visible from this scope and needs

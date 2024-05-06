@@ -46,7 +46,7 @@ playAudioUI <- function(id) {
 }
 
 playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
-                            audioInfo, nPlotted, plotSubset) {
+                            audioInfo, nPlotted, plotSubset, plot_brush) {
   moduleServer(id, function(input, output, session) {
     ns <- NS(id)
     observe({
@@ -63,6 +63,30 @@ playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
       } else {
         shiny::updateActionButton(session, "playVisibleFile",icon = icon("triangle-exclamation"))
       }
+    })
+
+    get_playback_region <- shiny::reactive({
+      req(currentWave)
+      req(plot_brush)
+      # If no region is selected, play the whole file
+      if (is.null(plot_brush()))
+        return(seq.int(0, length(currentWave$value)))
+
+
+      # TODO: Add these values to be automatically computed whenever a new file is loaded
+      rate <- attr(currentWave$value, "rate")
+      fileLength <- length(currentWave$value) / rate
+
+      # Get the bounds of the region, ensure there are no negative values
+      t <- c(max(c(plot_brush()$xmin,0)), max(c(plot_brush()$xmax, 0)))
+
+      # If the selected region is beyond the length of the file or somehow
+      # only a single sample is selected, just play the whole file
+      if (t[1L] > fileLength || t[1L] == t[2L])
+        return(seq.int(0, length(currentWave$value)))
+
+      seq.int(t[1L]*rate, t[2L]*rate)
+
     })
 
     shiny::observeEvent(input$stopButton, {
@@ -110,11 +134,11 @@ playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
         currentWave$value <- audio::load.wave(file_to_open)
         if (!is.null(currentWave$instance))
           close(currentWave$instance)
-        currentWave$instance <- audio::play(currentWave$value)
+        currentWave$instance <- audio::play(currentWave$value[get_playback_region()])
       } else {
         if (!is.null(currentWave$instance))
           close(currentWave$instance)
-        currentWave$instance <- audio::play(currentWave$value)
+        currentWave$instance <- audio::play(currentWave$value[get_playback_region()])
       }
     })
   })
