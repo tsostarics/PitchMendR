@@ -81,12 +81,7 @@ openEditor <- function(
                                               label= "Show \u25B3s in line",
                                               value = FALSE,
                                               status = "info")),
-      undoTransformUI('octaveshift'),
-      # shiny::actionButton(
-      #   inputId = "undoTransformButton",
-      #   title = "Click to undo last doubling/halving transform",
-      #   label = "Undo Transform"
-      # ),
+      undoTransformUI('octaveShift'),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         title = "Click to check off currently plotted files",
@@ -121,105 +116,105 @@ openEditor <- function(
       }
     "))
       ),
-    title = "Editor",
-    shiny::fluidRow(
-      bslib::layout_column_wrap(
-        width= NULL,
-        height = NULL,
-        heights_equal = "row",
-        style = htmltools::css(grid_template_columns = "275px 9fr"),
-        # tags$head(
-        #  tags$style(HTML("
-        #    #pitchRangeInput-label.control-label {
-        #      width: 100px;
-        #    }
-        #    "
-        #  ))
-        # ),
-        bslib::card( height = "88vh",
-                     title = "Plot Settings",
-                     loadFile_workingFileOutput('loadFile'),
-                     # shiny::textOutput(outputId = "workingFileOutput"),
-                     shiny::uiOutput(outputId = "pitchRangeUI"),
-                     tags$span(title = "Drag to change size of points",
-                               shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
-                     tags$span(title = "Drag to change transparency of points",
-                               shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
-                                                  step = 0.05,ticks = FALSE)),
-                     tags$span(title = "Enter regular expression to plot matching files",
-                               shiny::textInput(
-                                 inputId = "filterRegex",
-                                 label = "Plot files matching regex",
-                                 value = "."
-                               )),
-                     shiny::actionButton(
-                       inputId = "plotMatchesButton",
-                       title = "Click to plot files that match regex",
-                       label = "Plot Matches"
-                     ),
-                     shiny::textOutput(outputId = "nFilesPlotted"),
-                     shiny::actionButton(
-                       inputId = "goToBrushButton",
-                       title = "Click to plot selected files",
-                       label = "Plot Brushed Files"
-                     ),
-                     shiny::verbatimTextOutput(outputId = "brushedFileNames"),
-                     # width = '10vw'
-        ),
-        bslib::card(
-          shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot",
-                                                      click = "plot_click",
-                                                      brush = "plot_brush",
-                                                      height = "70%"),
-                                    options = list(containment = "parent",
-                                                   save = TRUE)),
-          fill = TRUE,
-          height="88vh",
-          width = '80vw',
-          # shiny::fluidRow(#style = "height:20vh;width:90vw",
-          # Adjust the gap space between the buttons
-          tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
-          bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
-                                bslib::card(fill = TRUE,
-                                            fileNavUI("fileNav"),
-                                            annotationUI("annotations")
-                                ),
-                                bslib::card(fill = TRUE,
-                                            shiny::fluidRow(
-                                              shiny::actionButton(inputId = "toggleButton",
-                                                                  label = "Toggle Pulses",
-                                                                  title = "Click to toggle currently selected points",
-                                                                  style = "margin-left:1%;margin-right:1%",
-                                                                  width = "98%")),
-                                            shiny::fluidRow(
-                                              shiny::actionButton(width = "48%",
-                                                                  inputId = "keepButton",
-                                                                  label = "Keep",
-                                                                  title = "Click to keep selected points",
-                                                                  style = "margin:1%;margin-top:0%;margin-bottom:0"),
-                                              shiny::actionButton(width = "48%",
-                                                                  inputId = "removeButton",
-                                                                  label = "Remove",
-                                                                  title = "Click to remove selected points",
-                                                                  style = "margin: 1%;margin-top:0%;margin-bottom:0")),
-                                            octaveShiftUI('octaveShift')
-                                            # shiny::fluidRow(
-                                            #   shiny::actionButton(width = "48%",
-                                            #                       inputId = "halfButton",
-                                            #                       label = "Halve Pulses",
-                                            #                       title = "Click to halve point y-values",
-                                            #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"),
-                                            #   shiny::actionButton(width = "48%",
-                                            #                       inputId = "doubleButton",
-                                            #                       label = "Double Pulses",
-                                            #                       title = "Click to double point y-values",
-                                            #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"))
-                                )
+      title = "Editor",
+      shiny::fluidRow(
+        bslib::layout_column_wrap(
+          width= NULL,
+          height = NULL,
+          heights_equal = "row",
+          style = htmltools::css(grid_template_columns = "275px 9fr"),
+          # tags$head(
+          #  tags$style(HTML("
+          #    #pitchRangeInput-label.control-label {
+          #      width: 100px;
+          #    }
+          #    "
+          #  ))
+          # ),
+          bslib::card( height = "88vh",
+                       title = "Plot Settings",
+                       loadFile_workingFileOutput('loadFile'),
+                       # shiny::textOutput(outputId = "workingFileOutput"),
+                       shiny::uiOutput(outputId = "pitchRangeUI"),
+                       tags$span(title = "Drag to change size of points",
+                                 shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
+                       tags$span(title = "Drag to change transparency of points",
+                                 shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
+                                                    step = 0.05,ticks = FALSE)),
+                       tags$span(title = "Enter regular expression to plot matching files",
+                                 shiny::textInput(
+                                   inputId = "filterRegex",
+                                   label = "Plot files matching regex",
+                                   value = "."
+                                 )),
+                       shiny::actionButton(
+                         inputId = "plotMatchesButton",
+                         title = "Click to plot files that match regex",
+                         label = "Plot Matches"
+                       ),
+                       shiny::textOutput(outputId = "nFilesPlotted"),
+                       shiny::actionButton(
+                         inputId = "goToBrushButton",
+                         title = "Click to plot selected files",
+                         label = "Plot Brushed Files"
+                       ),
+                       shiny::verbatimTextOutput(outputId = "brushedFileNames"),
+                       # width = '10vw'
+          ),
+          bslib::card(
+            shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot",
+                                                        click = "plot_click",
+                                                        brush = "plot_brush",
+                                                        height = "70%"),
+                                      options = list(containment = "parent",
+                                                     save = TRUE)),
+            fill = TRUE,
+            height="88vh",
+            width = '80vw',
+            # shiny::fluidRow(#style = "height:20vh;width:90vw",
+            # Adjust the gap space between the buttons
+            tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
+            bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
+                                  bslib::card(fill = TRUE,
+                                              fileNavUI("fileNav"),
+                                              annotationUI("annotations")
+                                  ),
+                                  bslib::card(fill = TRUE,
+                                              shiny::fluidRow(
+                                                shiny::actionButton(inputId = "toggleButton",
+                                                                    label = "Toggle Pulses",
+                                                                    title = "Click to toggle currently selected points",
+                                                                    style = "margin-left:1%;margin-right:1%",
+                                                                    width = "98%")),
+                                              shiny::fluidRow(
+                                                shiny::actionButton(width = "48%",
+                                                                    inputId = "keepButton",
+                                                                    label = "Keep",
+                                                                    title = "Click to keep selected points",
+                                                                    style = "margin:1%;margin-top:0%;margin-bottom:0"),
+                                                shiny::actionButton(width = "48%",
+                                                                    inputId = "removeButton",
+                                                                    label = "Remove",
+                                                                    title = "Click to remove selected points",
+                                                                    style = "margin: 1%;margin-top:0%;margin-bottom:0")),
+                                              octaveShiftUI('octaveShift')
+                                              # shiny::fluidRow(
+                                              #   shiny::actionButton(width = "48%",
+                                              #                       inputId = "halfButton",
+                                              #                       label = "Halve Pulses",
+                                              #                       title = "Click to halve point y-values",
+                                              #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"),
+                                              #   shiny::actionButton(width = "48%",
+                                              #                       inputId = "doubleButton",
+                                              #                       label = "Double Pulses",
+                                              #                       title = "Click to double point y-values",
+                                              #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"))
+                                  )
+            )
+            # )
           )
-          # )
         )
       )
-    )
     ),
     bslib::nav_panel(
       title = "Settings",
@@ -392,20 +387,20 @@ openEditor <- function(
                               "If the column `F0_semitones` already exists, it will be used to identify errors.
                     If not, this column will be added by computing semitones from the speaker's median pitch.
                     Check the settings tab for the column names used for the time, pitch, and filename values.",
-                    "",
-                    "The column `flagged_samples` will be added if it doesn't exist.
+                              "",
+                              "The column `flagged_samples` will be added if it doesn't exist.
                     Once the column is added, or if it already exists, the button will turn green.
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
                             )
                           ),
-                    shiny::actionButton(
-                      inputId = "flagSamplesButton",
-                      title = "Click to flag potential errors in loaded dataset",
-                      icon = icon('flag'),
-                      width = "100%",
-                      label = "Flag Samples"
-                    )
-                    # )
+                          shiny::actionButton(
+                            inputId = "flagSamplesButton",
+                            title = "Click to flag potential errors in loaded dataset",
+                            icon = icon('flag'),
+                            width = "100%",
+                            label = "Flag Samples"
+                          )
+                          # )
             )
           )
         )
@@ -499,79 +494,109 @@ openEditor <- function(
       nPlotted$is_one <- nPlotted$n == 1
     }
 
+    plot_colorColumn <- reactive({
+      if(is.null(input$useFlaggedColumnToggle))
+        return(NULL)
+      req(input$selectionColumnInput)
+      req(input$colorCodeColumnInput)
+      req(loadedFile)
+      colorColumn <- input$selectionColumnInput
+      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(loadedFile$data))
+        colorColumn <- input$colorCodeColumnInput
+
+      colorColumn
+    })
+
+
+    plot_yval <- reactive({
+      if(is.null(input$hideToggleInput))
+        return(NULL)
+
+      req(input$yValColumnInput)
+      req(transformedColumn$name)
+
+      message('what')
+      if (input$hideToggleInput)
+        return(input$yValColumnInput)
+
+      return(transformedColumn$name)
+    })
+
+
+    # Reactive to keep track of how the
+    plot_colorCodePoints <- reactive({
+      if(is.null(input$useFlaggedColumnToggle))
+        return(NULL)
+      req(input$colorCodeColumnInput)
+      req(loadedFile)
+      req(plotSettings)
+
+      color_values <-  plotSettings$setColors[2:3]
+
+      if ((!input$useFlaggedColumnToggle || is.logical(loadedFile$data[[input$colorCodeColumnInput]]))) {
+        # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
+        if (input$useFlaggedColumnToggle)
+          color_values <- c(color_values[2], color_values[1])
+        return(list(ggplot2::scale_color_manual(values = color_values)))
+      }
+      NULL
+    })
+
+    # Reactive for the color coding and plot theme, which should not change
+    # very frequently.
+    plot_addStyling <- reactive({
+      req(input$pitchRangeInput)
+      req(plotSettings)
+      list(
+        plot_colorCodePoints(),
+        ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)),
+        ggplot2::scale_y_continuous(limits = input$pitchRangeInput),
+        ggplot2::theme_bw(base_size = 16),
+        plotSettings$themeColors
+      )
+
+    })
+
+
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
       plotFlag$value
       if (is.null(loadedFile$data))
         return(NULL)
 
+      message('start')
+
       # These will update when the user changes the color manually with the
       # color pickers or if the theme is changed.
-      color_values <-  plotSettings$setColors[2:3]
       lineColor <- plotSettings$setColors[1]
 
-      yval <- transformedColumn$name
-      if (input$hideToggleInput)
-        yval <- input$yValColumnInput
-
-      # Set up the main aesthetics for the plot
-      p <-
-        ggplot2::ggplot(plotSubset$data,
-                        ggplot2::aes(x = !!sym(input$xValColumnInput),
-                                     y = !!sym(yval),
-                                     group = !!sym(input$filenameColumnInput)))
-
-      # Add the line if the user wants it
+      plot_line <- NULL
       if (plotSettings$showLine) {
-        # If the user wants the line to go through the removed points,
-        # then we don't need to subset the data to only the retained pulses
         if (input$useRemovedPointsToggleInput) {
-          p <- p +
-            ggplot2::geom_line(data =plotSubset$data, color = lineColor)
+          plot_line <- list(ggplot2::geom_line(data =plotSubset$data, color = lineColor))
         } else {
-          # use remove points toggle is off
-          p <- p +
-            ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],], color = lineColor)
+          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],],
+                                               color = lineColor))
         }
       }
 
-      colorColumn <- input$selectionColumnInput
-      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(plotSubset$data))
-        colorColumn <- input$colorCodeColumnInput
-
-      p <- p +
-        ggplot2::geom_point(aes(color = !!sym(colorColumn),
+      # Set up the main aesthetics for the plot
+      ggplot2::ggplot(plotSubset$data,
+                      ggplot2::aes(x = !!sym(input$xValColumnInput),
+                                   y = !!sym(plot_yval()),
+                                   group = !!sym(input$filenameColumnInput)))+
+        plot_line +
+        ggplot2::geom_point(aes(color = !!sym(plot_colorColumn()),
                                 shape = !!sym(input$selectionColumnInput)),
                             size = input$sizeSlider,
-                            alpha = input$alphaSlider)
-
-
-
-
-      # Color code logical values
-      if ((!input$useFlaggedColumnToggle || is.logical(plotSubset$data[[input$colorCodeColumnInput]]))) {
-        # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-        if (input$useFlaggedColumnToggle)
-          color_values <- c(color_values[2], color_values[1])
-        p <- p +
-          ggplot2::scale_color_manual(values = color_values)
-      }
-
-      # Finish setting some of the theme options
-      p <- p +
-        ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)) +
-        ggplot2::scale_y_continuous(limits = input$pitchRangeInput) +
-        ggplot2::theme_bw(base_size = 16) +
-        plotSettings$themeColors +
+                            alpha = input$alphaSlider) +
+        plot_addStyling() +
         # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
         ggplot2::labs(x = input$xValColumnInput,
                       y = input$yValColumnInput,
                       title = ifelse(nPlotted$is_one,
                                      fileHandler$filenames[fileHandler$isPlotted],
                                      "Multiple Files"))
-
-
-      p
     })
 
     togglePulses <- reactive({
@@ -823,7 +848,6 @@ openEditor <- function(
       new_values <- loadedFile$data[['pulse_transform']] * loadedFile$data[[input$yValColumnInput]]
       loadedFile$data[, (transformedColumn$name) := new_values]
       refilterSubset()
-      # plotSubset$data[, (transformedColumn$name) := pulse_transform * get(input$yValColumnInput)]
     })
 
     shiny::observeEvent(input$yValColumnInputButton, {
