@@ -242,7 +242,7 @@ openEditor <- function(
                                                 shinyWidgets::awesomeCheckbox(
                                                   inputId = "skipCheckedFilesToggle",
                                                   label = "Skip checked files on file navigation",
-                                                  value = TRUE,
+                                                  value = FALSE,
                                                   status = "info"
                                                 )),
                                       tags$span(title = "Toggle to show annotation buttons in editor pane",
