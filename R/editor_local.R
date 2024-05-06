@@ -25,13 +25,6 @@ openEditor <- function(
     textgrid_directory = "./audio",
     praat_path = "./Praat.exe",
     ...) {
-  # Keyboard shortcuts run in the RStudio viewer will also execute in RStudio,
-  # so we'll try to open a new file to avoid cases where keybindings modify
-  # an active file.
-  # try({
-  #   rstudioapi::documentNew("")
-  #   messsage("Opening new file to avoid keyboard shortcut conflicts")
-  #   })
   ui <- bslib::page_navbar(
 
     id = "navbar",
@@ -198,17 +191,6 @@ openEditor <- function(
                                                                     title = "Click to remove selected points",
                                                                     style = "margin: 1%;margin-top:0%;margin-bottom:0")),
                                               octaveShiftUI('octaveShift')
-                                              # shiny::fluidRow(
-                                              #   shiny::actionButton(width = "48%",
-                                              #                       inputId = "halfButton",
-                                              #                       label = "Halve Pulses",
-                                              #                       title = "Click to halve point y-values",
-                                              #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"),
-                                              #   shiny::actionButton(width = "48%",
-                                              #                       inputId = "doubleButton",
-                                              #                       label = "Double Pulses",
-                                              #                       title = "Click to double point y-values",
-                                              #                       style = "margin: 1%;margin-top:0%;margin-bottom:0"))
                                   )
             )
             # )
