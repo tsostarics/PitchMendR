@@ -60,9 +60,8 @@ octaveShiftServer <- function(id,
         shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
                                               value = c(current_pitch_range[1L],
                                                         new_pitch_max))
-      } else { # Otherwise the plot will render twice if the pitch range changes
-        updatePlot()
       }
+      updatePlot()
 
     })
 
@@ -99,9 +98,8 @@ octaveShiftServer <- function(id,
         shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
                                               value = c(new_pitch_min,
                                                         current_pitch_range[2L]))
-      } else{
-        updatePlot()
       }
+      updatePlot()
     })
 
 

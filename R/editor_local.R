@@ -537,8 +537,8 @@ openEditor <- function(
       req(plotSettings)
       list(
         plot_colorCodePoints(),
+        ggplot2::coord_cartesian(ylim = input$pitchRangeInput),
         ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)),
-        ggplot2::scale_y_continuous(limits = input$pitchRangeInput),
         ggplot2::theme_bw(base_size = 16),
         plotSettings$themeColors
       )
