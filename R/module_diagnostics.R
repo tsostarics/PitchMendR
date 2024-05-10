@@ -22,6 +22,8 @@ diagnosticsUI <- function(id) {
         shiny::verbatimTextOutput(outputId = ns("changeInVarianceOutput")),
         "Total proportion of files that have been mended:",
         shiny::verbatimTextOutput(outputId = ns("nEditedFilesText")),
+        "These files have notes or tags, click a row to immediately go to that file:",
+        div(DT::dataTableOutput(ns("taggedFilesTable"))),
         "These files have received no edits:",
         shiny::verbatimTextOutput(outputId = ns("uneditedFilesText"))
       )
@@ -31,6 +33,7 @@ diagnosticsUI <- function(id) {
 
 diagnosticsServer <- function(id,
                               loadedFile,
+                              parent_session,
                               fileHandler,
                               transformedColumn,
                               xValColumnInput,
@@ -39,9 +42,10 @@ diagnosticsServer <- function(id,
                               selectionColumnInput,
                               refilterSubset,
                               updatePlot
-                              ) {
+) {
   moduleServer(id, function(input, output, session) {
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
+    file_table <- shiny::reactiveValues(data = NULL)
 
     # Refresh the diagnostics pane when the user clicks the refresh button
     shiny::observeEvent(input$refreshProgressButton,{
@@ -58,11 +62,12 @@ diagnosticsServer <- function(id,
         paste0(round(sum(!filtered_data[[selectionColumnInput()]]) / nrow(filtered_data)*100, 2), "%")
       })
 
-      output$nEditedFilesText <- shiny::renderText({
-        n_files <- length(fileHandler$filenames)
-        n_edited <- n_files - length(uneditedFiles$filenames)
-        paste0(n_edited, " / ", n_files)
-      })
+      output$nEditedFilesText <-
+        shiny::renderText({
+          n_files <- length(fileHandler$filenames)
+          n_edited <- n_files - length(uneditedFiles$filenames)
+          paste0(n_edited, " / ", n_files)
+        })
 
       output$changeInVarianceOutput <- shiny::renderText({
         samplerate <- median(diff(loadedFile$data[[xValColumnInput()]][1:100]))
@@ -93,6 +98,30 @@ diagnosticsServer <- function(id,
         paste(uneditedFiles$filenames, collapse = "\n")
       })
 
+
+      file_table$data <-
+        loadedFile$data |>
+        dplyr::summarize(.by = c(filenameColumnInput(), tags, notes)) |>
+        dplyr::filter((!is.na(notes) & notes != "") | (!is.na(tags) & tags != "")) |>
+        dplyr::arrange(filenameColumnInput())
+
+      output$taggedFilesTable <-
+        DT::renderDT({
+          DT::datatable(file_table$data) |>
+            DT::formatStyle(columns = c(filenameColumnInput(), 'tags', 'notes'), cursor = "pointer")
+        },
+        selection = list(mode = "single", target = "row"))
+
+      proxy <- DT::dataTableProxy('taggedFilesTable')
+
+      observeEvent(input$taggedFilesTable_row_last_clicked, {
+        # browser()
+        fileHandler$isPlotted <- fileHandler$filenames %in% file_table$data[input$taggedFilesTable_row_last_clicked,][[filenameColumnInput()]]
+        refilterSubset()
+        updatePlot()
+        DT::selectRows(proxy,selected = NULL)
+        shiny::updateNavbarPage(parent_session, inputId = "navbar", selected = "Editor")
+      })
     })
 
     # When the user clicks the plot unedited files button, plot only the files

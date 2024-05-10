@@ -10,6 +10,8 @@ openEditor(
   audio_directory = "./audio",
   textgrid_directory = "./audio",
   praat_path = "./Praat.exe",
+  yvar = "f0",
+  xvar = "t_ms",
   ...
 )
 }
@@ -26,6 +28,12 @@ praat}
 
 \item{praat_path}{For Windows, the path to a Praat executable. For linux and
 mac, this should just be Praat assuming it's available as a terminal command.}
+
+\item{yvar}{Y variable to use, should exist in the file to be loaded. Default
+is \code{'f0'}.}
+
+\item{xvar}{X variable touse, should exist in the file to be loaded. Default
+is \code{'t_ms'}.}
 
 \item{...}{not used}
 }

@@ -15,6 +15,7 @@ Imports:
     colourpicker,
     data.table,
     dplyr,
+    DT,
     ggplot2,
     glue,
     htmltools,

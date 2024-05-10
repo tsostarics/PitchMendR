@@ -196,7 +196,7 @@ openEditor <- function(
                                 height = "100%"),
               options = list(containment = "parent",
                              save = TRUE)),
-            uiOutput("brushToolTip",inline = TRUE),
+            shiny::uiOutput("brushToolTip",inline = TRUE),
 
             fill = TRUE,
             height="88vh",
@@ -748,8 +748,8 @@ openEditor <- function(
       left_style <- paste0("position:absolute; left:", left_px,"px; top:", top_px, "px;", "text-align:right;", const_style)
       right_style <- paste0("position:absolute; left:", right_px,"px; top:", top_px, "px;margin-left:15px;", const_style)
 
-      list(shiny::wellPanel(style = left_style, p(HTML(paste0("<b>", xmin, "</b><br/>")))),
-           shiny::wellPanel(style = right_style, p(HTML(paste0("<b>", xmax, "</b><br/>")))))
+      list(shiny::wellPanel(style = left_style,  shiny::p(HTML(paste0("<b>", xmin, "</b><br/>")))),
+           shiny::wellPanel(style = right_style, shiny::p(HTML(paste0("<b>", xmax, "</b><br/>")))))
 
     })
 
@@ -1285,6 +1285,7 @@ openEditor <- function(
 
     diagnostics <- diagnosticsServer('diagnostics',
                                      loadedFile,
+                                     parent_session = session,
                                      fileHandler,
                                      transformedColumn,
                                      reactive(input$xValColumnInput),
