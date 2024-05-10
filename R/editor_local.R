@@ -33,14 +33,15 @@ openEditor <- function(
     collapsible = TRUE,
     theme = bslib::bs_theme(version = 5),
     sidebar = bslib::sidebar(
+      gap = ".75rem",
+      title = tags$header("Tools", class = "sidebar-title", style = "margin-bottom: .25rem; padding-bottom: .5rem"),
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
       use_keyboardcss(),
       singleton(
         htmltools::includeCSS(
           system.file("cssfiles/button_animation.css", package = "PitchMendR")
-        )
-      ),
+        )),
       windowResizeUI("windowListener"),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
@@ -57,7 +58,6 @@ openEditor <- function(
                                       "v",
                                       "p")
       ),
-      title = "Tools",
       tags$span(title = "Click to show/hide contour lines",
                 shinyWidgets::awesomeCheckbox(
                   inputId = "showLineButton",
@@ -105,6 +105,9 @@ openEditor <- function(
       background-color:#f8f8f8;
       }
       .form-group {
+        margin-bottom: 6px;
+      }
+      .compressed-sidebar-title {
         margin-bottom: 8px;
       }
     "))
