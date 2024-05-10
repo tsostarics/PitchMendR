@@ -578,11 +578,19 @@ openEditor <- function(
         }
       }
 
+      # If we hide the points, we run into an issue where there are no longer
+      # any variables mapped to a varying aesthetic, which makes the legend
+      # disappear. Rather than somehow computing the space that the legend
+      # normally takes up and adjusting the plot margin accordingly to leave
+      # a placeholder space, I'm just going to plot an invisible point from the
+      # data, which will create the legend, then make all the legend colors
+      # invisible (see hide_legend_if_needed()) so that it takes up the space
+      # but doesn't show any information.
       plot_points <-
         list(
-          ggplot2::geom_point(data = plotSubset$data[1:2,],
-                              aes(color = !!sym(plot_colorColumn()),
-                                  shape = !!sym(input$selectionColumnInput)),
+          ggplot2::geom_point(data = plotSubset$data[1,],
+                              # Using shape so the scale_shape_manual doesn't throw a warning
+                              aes(shape = !!sym(input$selectionColumnInput)),
                               alpha = 0))
 
       if (!input$hidePointsButton){
