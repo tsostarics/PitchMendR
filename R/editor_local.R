@@ -702,6 +702,7 @@ openEditor <- function(
     })
 
     loadFile <- loadFileServer("loadFile",
+                               parent_session = session,
                                loadedFile,
                                reactive(input$fileSelectBox),
                                reactive(input$inputDirInput),

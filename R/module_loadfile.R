@@ -18,6 +18,7 @@ loadFile_workingFileOutput <- function(id) {
 
 
 loadFileServer <- function(id,
+                           parent_session,
                            loadedFile,
                            fileSelectBox,
                            inputDirInput,
@@ -101,9 +102,9 @@ loadFileServer <- function(id,
       shinyjs::addClass("checkVisibleFilesButton", class = "animbutton")
 
       # Given the loaded file, set the dropdown box options with the column names
-      set_selectize_choices(session, "filenameColumnInput", loadedFile, filenameColumnInput())()
-      set_selectize_choices(session, "xValColumnInput", loadedFile, xValColumnInput())()
-      set_selectize_choices(session, "yValColumnInput", loadedFile, yValColumnInput())()
+      set_selectize_choices(parent_session, "filenameColumnInput", loadedFile, filenameColumnInput())()
+      set_selectize_choices(parent_session, "xValColumnInput", loadedFile, xValColumnInput())()
+      set_selectize_choices(parent_session, "yValColumnInput", loadedFile, yValColumnInput())()
 
 
       # If the file doesn't contain the specified columns, return null and move
