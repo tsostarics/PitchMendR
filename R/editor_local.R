@@ -11,6 +11,10 @@
 #' praat
 #' @param praat_path For Windows, the path to a Praat executable. For linux and
 #' mac, this should just be Praat assuming it's available as a terminal command.
+#' @param yvar Y variable to use, should exist in the file to be loaded. Default
+#' is `'f0'`.
+#' @param xvar X variable touse, should exist in the file to be loaded. Default
+#' is `'t_ms'`.
 #'
 #' @return Nothing
 #' @export
@@ -24,6 +28,8 @@ openEditor <- function(
     audio_directory = "./audio",
     textgrid_directory = "./audio",
     praat_path = "./Praat.exe",
+    yvar = "f0",
+    xvar = "t_ms",
     ...) {
   ui <- bslib::page_navbar(
 
@@ -245,15 +251,15 @@ openEditor <- function(
                                       tags$span(title = "Select column that identifies the x-axis for the plot",
                                                 shiny::selectizeInput("xValColumnInput",
                                                                       label ="X-value column name",
-                                                                      choices = "t_ms",
-                                                                      selected = "t_ms",
+                                                                      choices = xvar,
+                                                                      selected = xvar,
                                                                       multiple = FALSE,
                                                                       width = "100%")),
                                       tags$span(title = "Select column that identifies the y-axis for the plot",
                                                 shiny::selectizeInput("yValColumnInput",
                                                                       label ="Y-value column name",
-                                                                      choices = "f0",
-                                                                      selected = "f0",
+                                                                      choices = yvar,
+                                                                      selected = yvar,
                                                                       multiple = FALSE,
                                                                       width = "100%")),
                                       submitTextInput("selectionColumnInput",
@@ -471,6 +477,15 @@ openEditor <- function(
 
     horiz_bounds <- shiny::reactiveValues(xlim = NULL,
                                           full = NULL)
+
+    # Change the horizontal bounds whenever we change the x variable to use
+    observeEvent(input$xValColumnInput, {
+      if(is.null(plotSubset$data))
+        return(NULL)
+
+      horiz_bounds$full <- suppressWarnings(range(plotSubset$data[[input$xValColumnInput]]))
+      horiz_bounds$xlim <- horiz_bounds$full
+    })
 
     observeEvent(input$xZoomInButton, {
       if(is.null(plotSubset$data))
