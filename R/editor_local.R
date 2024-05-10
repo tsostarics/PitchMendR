@@ -60,8 +60,14 @@ openEditor <- function(
       ),
       tags$span(title = "Click to show/hide contour lines",
                 shinyWidgets::awesomeCheckbox(
-                  inputId = "showLineButton",
+                  inputId = "hideLineButton",
                   label = "Hide contour line",
+                  value = FALSE,
+                  status = "info")),
+      tags$span(title = "Click to show/hide points",
+                shinyWidgets::awesomeCheckbox(
+                  inputId = "hidePointsButton",
+                  label = "Hide points",
                   value = FALSE,
                   status = "info")),
       tags$span(title = "Toggle to hide doubling/halving transforms",
@@ -105,7 +111,7 @@ openEditor <- function(
       background-color:#f8f8f8;
       }
       .form-group {
-        margin-bottom: 6px;
+        margin-bottom: 0px;
       }
       .compressed-sidebar-title {
         margin-bottom: 8px;
@@ -132,11 +138,7 @@ openEditor <- function(
                        loadFile_workingFileOutput('loadFile'),
                        # shiny::textOutput(outputId = "workingFileOutput"),
                        shiny::uiOutput(outputId = "pitchRangeUI"),
-                       tags$span(title = "Drag to change size of points",
-                                 shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 3)),
-                       tags$span(title = "Drag to change transparency of points",
-                                 shiny::sliderInput("alphaSlider", "Transparency", min = 0, max = 1, value = 1,
-                                                    step = 0.05,ticks = FALSE)),
+
                        tags$span(title = "Enter regular expression to plot matching files",
                                  shiny::textInput(
                                    inputId = "filterRegex",
@@ -282,7 +284,7 @@ openEditor <- function(
                                     bslib::card(
                                       class = "h-100",
                                       title = "Color Settings",
-                                      "Override default color settings below:",
+                                      "Override plot aesthetics below:",
                                       colorUI("colors"),
                                       tags$span(title = "Toggle to use column in dataset for color coding",
                                                 shinyWidgets::materialSwitch(
@@ -291,6 +293,8 @@ openEditor <- function(
                                                   value = FALSE,
                                                   inline = TRUE,
                                                   status = "info")),
+                                      tags$span(title = "Drag to change size of points",
+                                                shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 2)),
                                       # Tabset panel to hide/show color code
                                       # column input based on whether the
                                       # useFlaggedColumnToggle is set to TRUE.
@@ -500,7 +504,6 @@ openEditor <- function(
       req(input$yValColumnInput)
       req(transformedColumn$name)
 
-      message('what')
       if (input$hideToggleInput)
         return(input$yValColumnInput)
 
@@ -542,6 +545,16 @@ openEditor <- function(
 
     })
 
+    hide_legend_if_needed <- reactive({
+      if (input$hidePointsButton)
+        return(list(ggplot2::theme(legend.key = element_rect(fill = "#ffffff00"),
+                                   legend.text = element_text(color = "#ffffff00"),
+                                   legend.title = element_text(color = "#ffffff00"),
+                                   legend.background = element_rect(fill = "#ffffff00"))))
+
+      NULL
+    })
+
 
     output$pulsePlot <- shiny::renderPlot({
       message('Rerendering')
@@ -549,7 +562,6 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
 
-      message('start')
 
       # These will update when the user changes the color manually with the
       # color pickers or if the theme is changed.
@@ -558,11 +570,26 @@ openEditor <- function(
       plot_line <- NULL
       if (plotSettings$showLine) {
         if (input$useRemovedPointsToggleInput) {
-          plot_line <- list(ggplot2::geom_line(data =plotSubset$data, color = lineColor))
+          plot_line <- list(ggplot2::geom_line(data =plotSubset$data,
+                                               show.legend = input$hidePointsButton,
+                                               color = lineColor))
         } else {
           plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],],
                                                color = lineColor))
         }
+      }
+
+      plot_points <-
+        list(
+          ggplot2::geom_point(data = plotSubset$data[1:2,],
+                              aes(color = !!sym(plot_colorColumn()),
+                                  shape = !!sym(input$selectionColumnInput)),
+                              alpha = 0))
+
+      if (!input$hidePointsButton){
+        plot_points <- ggplot2::geom_point(aes(color = !!sym(plot_colorColumn()),
+                                               shape = !!sym(input$selectionColumnInput)),
+                                           size = input$sizeSlider)
       }
 
       # Set up the main aesthetics for the plot
@@ -571,11 +598,9 @@ openEditor <- function(
                                    y = !!sym(plot_yval()),
                                    group = !!sym(input$filenameColumnInput)))+
         plot_line +
-        ggplot2::geom_point(aes(color = !!sym(plot_colorColumn()),
-                                shape = !!sym(input$selectionColumnInput)),
-                            size = input$sizeSlider,
-                            alpha = input$alphaSlider) +
+        plot_points +
         plot_addStyling() +
+        hide_legend_if_needed() +
         # If a single file is shown, use that file as the title, otherwise use "Multiple Files"
         ggplot2::labs(x = input$xValColumnInput,
                       y = input$yValColumnInput,
@@ -725,11 +750,11 @@ openEditor <- function(
 
 
     toggleShowLine <- reactive({
-      shinyWidgets::updateAwesomeCheckbox(session, "showLineButton", value = !input$showLineButton)
+      shinyWidgets::updateAwesomeCheckbox(session, "hideLineButton", value = !input$hideLineButton)
     })
 
     # Toggle whether the line should be shown or not
-    shiny::observeEvent(input$showLineButton, {
+    shiny::observeEvent(input$hideLineButton, {
       if (is.null(loadedFile$data))
         return(NULL)
       plotSettings$showLine <- !plotSettings$showLine
