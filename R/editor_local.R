@@ -139,22 +139,27 @@ openEditor <- function(
                        # shiny::textOutput(outputId = "workingFileOutput"),
                        shiny::uiOutput(outputId = "pitchRangeUI"),
                        tags$span(title = "Horizontal zoom in/out", "Timespan Controls"),
-                       tags$span(style = "display:inline-block;text-align:center;",
+                       tags$span(style = "display:inline-flex;flex-direction: row; justify-content: space-between;",
                                  shiny::actionButton(inputId = "xZoomAllButton",
                                                      label = "ALL",
-                                                     style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;float:left;",
+                                                     style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;",
                                                      title = "Zoom out to show entire contour(s)",
-                                                     width= "30%"),
+                                                     width= "22%"),
                                  shiny::actionButton(inputId = "xZoomInButton",
                                                      label = "IN",
                                                      style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;",
                                                      title = "Zoom in",
-                                                     width= "30%"),
+                                                     width= "22%"),
                                  shiny::actionButton(inputId = "xZoomOutButton",
                                                      label = "OUT",
-                                                     style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;float:right;",
+                                                     style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;",
                                                      title = "Zoom out",
-                                                     width= "30%")),
+                                                     width= "22%"),
+                                 shiny::actionButton(inputId = "xZoomSelButton",
+                                                     label = "SEL",
+                                                     style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;",
+                                                     title = "Zoom to selection",
+                                                     width= "22%")),
                        tags$span(title = "Enter regular expression to plot matching files",
                                  shiny::textInput(
                                    inputId = "filterRegex",
@@ -481,6 +486,13 @@ openEditor <- function(
         return(horiz_bounds$xlim)
 
       horiz_bounds$xlim <- horiz_bounds$full
+    })
+
+    observeEvent(input$xZoomSelButton, {
+      if(is.null(plotSubset$data) | is.null(input$plot_brush))
+        return(horiz_bounds$xlim)
+
+      horiz_bounds$xlim <- c(input$plot_brush$xmin, input$plot_brush$xmax)
     })
 
     observeEvent(input$keys, {
