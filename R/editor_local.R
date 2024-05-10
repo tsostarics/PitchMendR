@@ -571,7 +571,6 @@ openEditor <- function(
       if (plotSettings$showLine) {
         if (input$useRemovedPointsToggleInput) {
           plot_line <- list(ggplot2::geom_line(data =plotSubset$data,
-                                               show.legend = input$hidePointsButton,
                                                color = lineColor))
         } else {
           plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],],
