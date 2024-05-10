@@ -475,7 +475,7 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
 
-      message("Filtering")
+      # message("Filtering")
 
       plotted_indices <- getIndices()
       plotSubset$data <<- loadedFile$data[plotted_indices,]
@@ -620,7 +620,6 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
-      print(input$pitchRangeInput)
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
         plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
@@ -647,7 +646,7 @@ openEditor <- function(
     })
 
     shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = FALSE, {
-      message("flag toggle")
+      # message("flag toggle")
       if (input$useFlaggedColumnToggle){
         shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
       } else {
@@ -871,7 +870,7 @@ openEditor <- function(
     shiny::observeEvent(input$yValColumnInputButton, {
       if (is.null(loadedFile$data))
         return(NULL)
-      message(input$yValColumnInput)
+      # message(input$yValColumnInput)
       changeTransformedColumn()
 
       updatePlot()
