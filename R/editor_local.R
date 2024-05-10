@@ -181,12 +181,17 @@ openEditor <- function(
                        # width = '10vw'
           ),
           bslib::card(
-            shinyjqui::jqui_resizable(shiny::plotOutput(outputId = "pulsePlot",
-                                                        click = "plot_click",
-                                                        brush = "plot_brush",
-                                                        height = "70%"),
-                                      options = list(containment = "parent",
-                                                     save = TRUE)),
+            shinyjqui::jqui_resizable(
+
+
+              shiny::plotOutput(outputId = "pulsePlot",
+                                click = "plot_click",
+                                brush = "plot_brush",
+                                height = "100%"),
+              options = list(containment = "parent",
+                             save = TRUE)),
+            uiOutput("brushToolTip",inline = TRUE),
+
             fill = TRUE,
             height="88vh",
             width = '80vw',
@@ -533,7 +538,7 @@ openEditor <- function(
       plotSubset$data <<- loadedFile$data[plotted_indices,]
       nPlotted$n <- sum(fileHandler$isPlotted)
       nPlotted$is_one <- nPlotted$n == 1
-      horiz_bounds$full <<- range(plotSubset$data[[input$xValColumnInput]])
+      horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[[input$xValColumnInput]]))
       horiz_bounds$xlim <<- horiz_bounds$full
     }
 
@@ -710,11 +715,34 @@ openEditor <- function(
       updatePlot()
     })
 
+    output$brushToolTip <- shiny::renderUI( {
+      if (is.null(loadedFile$data) | is.null(input$plot_brush))
+        return(NULL)
+      # browser()
+
+      brush <- input$plot_brush
+      xmin <- round(brush$xmin, 2)
+      xmax <- round(brush$xmax, 2)
+
+      left_px <- brush$coords_css$xmin - 20 #+ brush$range$left
+      right_px <- brush$coords_css$xmax + 2#+ brush$range$left
+      top_px <- brush$coords_css$ymin
+
+      const_style <- ";padding:2px;border:none;background-color:var(--bs-card-bg);opacity:.85;"
+
+      left_style <- paste0("position:absolute; left:", left_px,"px; top:", top_px, "px;", "text-align:right;", const_style)
+      right_style <- paste0("position:absolute; left:", right_px,"px; top:", top_px, "px;margin-left:15px;", const_style)
+
+      list(shiny::wellPanel(style = left_style, p(HTML(paste0("<b>", xmin, "</b><br/>")))),
+           shiny::wellPanel(style = right_style, p(HTML(paste0("<b>", xmax, "</b><br/>")))))
+
+    })
 
     # Toggle point on click
     shiny::observeEvent(input$plot_click,ignoreInit = TRUE, {
       if (is.null(loadedFile$data))
         return(NULL)
+
       clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
                                         input$plot_click,
                                         xvar = input$xValColumnInput,

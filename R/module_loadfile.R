@@ -37,7 +37,6 @@ loadFileServer <- function(id,
                            updatePlot) {
   moduleServer(id, function(input, output, session) {
     fileDelimiter <- shiny::reactiveVal(value=",")
-
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
       # Don't run if no file is selected
