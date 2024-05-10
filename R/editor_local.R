@@ -140,17 +140,17 @@ openEditor <- function(
                        shiny::uiOutput(outputId = "pitchRangeUI"),
                        tags$span(title = "Horizontal zoom in/out", "Timespan Controls"),
                        tags$span(style = "display:inline-block;text-align:center;",
-                                 shiny::actionButton(inputId = "xZoomAll",
+                                 shiny::actionButton(inputId = "xZoomAllButton",
                                                      label = "ALL",
                                                      style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;float:left;",
                                                      title = "Zoom out to show entire contour(s)",
                                                      width= "30%"),
-                                 shiny::actionButton(inputId = "xZoomIn",
+                                 shiny::actionButton(inputId = "xZoomInButton",
                                                      label = "IN",
                                                      style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;",
                                                      title = "Zoom in",
                                                      width= "30%"),
-                                 shiny::actionButton(inputId = "xZoomOut",
+                                 shiny::actionButton(inputId = "xZoomOutButton",
                                                      label = "OUT",
                                                      style = "padding-left: 0px;padding-right:0px;padding-top:4px;padding-bottom:4px;float:right;",
                                                      title = "Zoom out",
@@ -459,6 +459,29 @@ openEditor <- function(
         "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)")
       )
 
+    horiz_bounds <- shiny::reactiveValues(xlim = NULL,
+                                          full = NULL)
+
+    observeEvent(input$xZoomInButton, {
+      if(is.null(plotSubset$data))
+        return(horiz_bounds$xlim)
+
+      horiz_bounds$xlim <- zoom_by(horiz_bounds$xlim[1L], horiz_bounds$xlim[2L], factor = 0.5)
+    })
+
+    observeEvent(input$xZoomOutButton, {
+      if(is.null(plotSubset$data))
+        return(horiz_bounds$xlim)
+
+      horiz_bounds$xlim <- zoom_by(horiz_bounds$xlim[1L], horiz_bounds$xlim[2L], factor = 2)
+    })
+
+    observeEvent(input$xZoomAllButton, {
+      if(is.null(plotSubset$data))
+        return(horiz_bounds$xlim)
+
+      horiz_bounds$xlim <- horiz_bounds$full
+    })
 
     observeEvent(input$keys, {
       # Key bindings only apply on the editor page
@@ -482,6 +505,7 @@ openEditor <- function(
 
     })
 
+
     plotSubset <- reactiveValues(data = NULL)
     getIndices <- reactive({
       unlist(fileHandler$indices[fileHandler$isPlotted], recursive = FALSE, use.names = FALSE)
@@ -497,6 +521,8 @@ openEditor <- function(
       plotSubset$data <<- loadedFile$data[plotted_indices,]
       nPlotted$n <- sum(fileHandler$isPlotted)
       nPlotted$is_one <- nPlotted$n == 1
+      horiz_bounds$full <<- range(plotSubset$data[[input$xValColumnInput]])
+      horiz_bounds$xlim <<- horiz_bounds$full
     }
 
     plot_colorColumn <- reactive({
@@ -553,7 +579,8 @@ openEditor <- function(
       req(plotSettings)
       list(
         plot_colorCodePoints(),
-        ggplot2::coord_cartesian(ylim = input$pitchRangeInput),
+        ggplot2::coord_cartesian(ylim = input$pitchRangeInput,
+                                 xlim = horiz_bounds$xlim),
         ggplot2::scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 2)),
         ggplot2::theme_bw(base_size = 16),
         plotSettings$themeColors
