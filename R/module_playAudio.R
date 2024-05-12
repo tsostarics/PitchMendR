@@ -97,7 +97,7 @@ playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
       audio::rewind.audioInstance(currentWave$instance)
     })
 
-    shiny::observeEvent(input$playVisibleFile, {
+    playAudio <- reactive({
       # This button is only active if we have data loaded, we've set the audio
       # directory information, and we're only looking at one file
       if (is.null(loadedFile$data) || !nPlotted$is_one || is.null(audioInfo$audioDirectory) || is.null(audioInfo$glueString))
@@ -141,5 +141,13 @@ playAudioServer <- function(id, loadedFile, currentWave, destroyLoadedAudio,
         currentWave$instance <- audio::play(currentWave$value[get_playback_region()])
       }
     })
+
+    shiny::observeEvent(input$playVisibleFile, {
+      playAudio()
+    })
+
+    return(list(playAudio = playAudio))
+
   })
+
 }

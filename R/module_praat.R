@@ -111,121 +111,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
     # in the editor will be sent to Praat
     shiny::observeEvent(input$sendToPraatButton, {
       message("Send to Praat Pressed")
-      if (is.null(loadedFile$data) | navbarInput() != "Editor")
-        return(NULL)
-
-      saveData()
-
-      if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
-        # Use the columns of the loaded data and the provided glue string to
-        # send the files currently displayed in the editor to Praat
-        files_to_open <- unique(glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                                     input$fileNameGlue))
-        audio_paths <- file.path(input$audioDirInput, files_to_open)
-        audio_paths <- audio_paths[file.exists(audio_paths)]
-        tg_paths <- c(NULL)
-        if (!is.null(input$textgridDirInput)){
-          tg_paths <- file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open))
-          tg_paths <- tg_paths[file.exists(tg_paths)]
-        }
-
-
-        if (length(audio_paths) == 0){
-          message("No files found")
-          return(NULL)
-        }
-
-
-        # Set up a temporary script that will read in all the files
-        temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
-
-        # Handle the pitch range options
-        pitch_range <- pitchRangeInput()
-        # Can't set the pitch floor at 0
-        if (!where_not_zero(pitch_range[1L]))
-          ptich_range[1L] <- 40
-
-        pitch_range <- paste(pitch_range, collapse = ", ")
-
-        # Get the selected points, if any
-        time_range_values <- unlist(brushedArea()[c('xmin', 'xmax')])
-        select_time_lines <- ""
-        if (!is.null(time_range_values)) {
-          time_range_values <- paste(time_range_values, collapse = ", ")
-          select_time_lines <- paste0("Select: ", time_range_values)
-        }
-        # Ensure we have an editor even if we don't open any TextGrids
-        tg_lines <- c(
-          "if obj <> undefined",
-          "editorName$ = selected$()",
-          "fileOpened = 1",
-          'View & Edit',
-          "endif"
-        )
-
-        if (length(tg_paths) > 0) {
-          tg_lines <- c(
-            paste0('tgObj = nocheck Read from file: "', tg_paths[1], '"'),
-            "if tgObj <> undefined",
-            "editorName$ = selected$()",
-            "if obj <> undefined",
-            'plusObject: obj',
-            "endif",
-            "fileOpened = 1",
-            'View & Edit',
-            "endif"
-          )
-        }
-
-        script_lines <- c(
-          paste0('obj = nocheck Read from file: "', audio_paths[1], '"'),
-          "fileOpened = 0",
-          tg_lines,
-          "if fileOpened = 1",
-          "editor: editorName$",
-          paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
-          select_time_lines,
-          "endeditor",
-          "endif"
-        )
-
-        # If we're loading more than one file, then we don't want to load the
-        # first file twice. If we're only loading one file, then we don't need
-        # to read anything more.
-        read_audio_lines <- ""
-        if (length(audio_paths) > 1) {
-          read_audio_lines <-
-            paste0('nocheck Read from file: \"', audio_paths[-1], '"')
-        }
-
-        read_tg_lines <- ""
-        if (length(tg_paths) > 1) {
-          read_tg_lines <-
-            paste0('nocheck Read from file: \"', tg_paths[-1], '"')
-        }
-
-        # Usually true if the directories are set up correctly, but we check
-        # just to be absolutely certain to avoid indexing errors. This allows
-        # corresponding audio and textgrid files to be opened one after the
-        # other. I.e., opens files in the object pane in the order on the left.
-        #                           as opposed to:
-        #         Sound file1                      Sound file1
-        #         TextGrid file1                   Sound file2
-        #         Sound file2                      TextGrid file1
-        #         TextGrid file 2                  TextGrid file 2
-
-        if (length(read_audio_lines) == length(read_tg_lines)){
-          read_file_lines <- unlist(lapply(seq_along(read_audio_lines),
-                                    \(i) c(read_audio_lines[i],
-                                           read_tg_lines[i])))
-        } else {
-          read_file_lines <- c(read_audio_lines, read_tg_lines)
-        }
-
-        # Run a self-deleting script that will open all the files in Praat
-        run_temp_script(c(script_lines,read_file_lines), input$pathToPraat)
-
-      }
+      sendToPraat()()
     }
     )
 
@@ -264,8 +150,129 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
       }
     })
 
+    sendToPraat <- reactive({
+      function(praatPath = input$pathToPraat) {
+        if (is.null(loadedFile$data) | navbarInput() != "Editor")
+          return(NULL)
+
+        saveData()
+
+        if (!is.null(fileHandler$isPlotted) & !is.null(input$audioDirInput) & !is.null(input$fileNameGlue)) {
+          # Use the columns of the loaded data and the provided glue string to
+          # send the files currently displayed in the editor to Praat
+          files_to_open <- unique(glue::glue_data_safe(loadedFile$data[loadedFile$data[[filenameColumnInput()]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+                                                       input$fileNameGlue))
+          audio_paths <- file.path(input$audioDirInput, files_to_open)
+          audio_paths <- audio_paths[file.exists(audio_paths)]
+          tg_paths <- c(NULL)
+          if (!is.null(input$textgridDirInput)){
+            tg_paths <- file.path(input$textgridDirInput, gsub(".wav$", ".TextGrid", files_to_open))
+            tg_paths <- tg_paths[file.exists(tg_paths)]
+          }
+
+
+          if (length(audio_paths) == 0){
+            message("No files found")
+            return(NULL)
+          }
+
+
+          # Set up a temporary script that will read in all the files
+          temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
+
+          # Handle the pitch range options
+          pitch_range <- pitchRangeInput()
+          # Can't set the pitch floor at 0
+          if (!where_not_zero(pitch_range[1L]))
+            ptich_range[1L] <- 40
+
+          pitch_range <- paste(pitch_range, collapse = ", ")
+
+          # Get the selected points, if any
+          time_range_values <- unlist(brushedArea()[c('xmin', 'xmax')])
+          select_time_lines <- ""
+          if (!is.null(time_range_values)) {
+            time_range_values <- paste(time_range_values, collapse = ", ")
+            select_time_lines <- paste0("Select: ", time_range_values)
+          }
+          # Ensure we have an editor even if we don't open any TextGrids
+          tg_lines <- c(
+            "if obj <> undefined",
+            "editorName$ = selected$()",
+            "fileOpened = 1",
+            'View & Edit',
+            "endif"
+          )
+
+          if (length(tg_paths) > 0) {
+            tg_lines <- c(
+              paste0('tgObj = nocheck Read from file: "', tg_paths[1], '"'),
+              "if tgObj <> undefined",
+              "editorName$ = selected$()",
+              "if obj <> undefined",
+              'plusObject: obj',
+              "endif",
+              "fileOpened = 1",
+              'View & Edit',
+              "endif"
+            )
+          }
+
+          script_lines <- c(
+            paste0('obj = nocheck Read from file: "', audio_paths[1], '"'),
+            "fileOpened = 0",
+            tg_lines,
+            "if fileOpened = 1",
+            "editor: editorName$",
+            paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
+            select_time_lines,
+            "endeditor",
+            "endif"
+          )
+
+          # If we're loading more than one file, then we don't want to load the
+          # first file twice. If we're only loading one file, then we don't need
+          # to read anything more.
+          read_audio_lines <- ""
+          if (length(audio_paths) > 1) {
+            read_audio_lines <-
+              paste0('nocheck Read from file: \"', audio_paths[-1], '"')
+          }
+
+          read_tg_lines <- ""
+          if (length(tg_paths) > 1) {
+            read_tg_lines <-
+              paste0('nocheck Read from file: \"', tg_paths[-1], '"')
+          }
+
+          # Usually true if the directories are set up correctly, but we check
+          # just to be absolutely certain to avoid indexing errors. This allows
+          # corresponding audio and textgrid files to be opened one after the
+          # other. I.e., opens files in the object pane in the order on the left.
+          #                           as opposed to:
+          #         Sound file1                      Sound file1
+          #         TextGrid file1                   Sound file2
+          #         Sound file2                      TextGrid file1
+          #         TextGrid file 2                  TextGrid file 2
+
+          if (length(read_audio_lines) == length(read_tg_lines)){
+            read_file_lines <- unlist(lapply(seq_along(read_audio_lines),
+                                             \(i) c(read_audio_lines[i],
+                                                    read_tg_lines[i])))
+          } else {
+            read_file_lines <- c(read_audio_lines, read_tg_lines)
+          }
+
+          # Run a self-deleting script that will open all the files in Praat
+          run_temp_script(c(script_lines,read_file_lines), input$pathToPraat)
+
+        }
+      }
+    })
+
     return(list(audioDirectory= reactive(input$audioDirInput),
                 glueString= reactive(input$fileNameGlue),
-                closePraatFiles = closePraatFiles))
+                closePraatFiles = closePraatFiles,
+                sendToPraat = sendToPraat))
   })
 }

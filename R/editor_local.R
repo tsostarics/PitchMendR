@@ -62,7 +62,9 @@ openEditor <- function(
                                       "ctrl+z",
                                       "command+z",
                                       "v",
-                                      "p")
+                                      "p",
+                                      "o",
+                                      "j")
       ),
       tags$span(title = "Click to show/hide contour lines",
                 shinyWidgets::awesomeCheckbox(
@@ -86,6 +88,8 @@ openEditor <- function(
                                               label= "Show \u25B3s in line",
                                               value = FALSE,
                                               status = "info")),
+      shiny::actionButton("clearSelectButton",
+                          "Clear Selection"),
       undoTransformUI('octaveShift'),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
@@ -472,16 +476,21 @@ openEditor <- function(
         "v" = keyBindAction(plotMatches,              "[V] pressed (Plot Matches)"),
         "ctrl+z" = keyBindAction(octaveShift$undoTransformation,    "[Ctrl+Z] Pressed (Undo Transform)"),
         "command+z" = keyBindAction(octaveShift$undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
-        "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)")
+        "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"),
+        "o" = keyBindAction(audioInfo$sendToPraat(), "[O] Pressed (Send to Praat)"),
+        "j" = keyBindAction(audioServer$playAudio, "[J] Pressed (Play Audio Selection)")
       )
 
     observeEvent(input$keys, {
       # Key bindings only apply on the editor page
       if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
         return(NULL)
-
       # Call the appropriate reactive from the keybindings we set
       boundKeys[[input$keys]]()
+    })
+
+    observeEvent(input$clearSelectButton, {
+      session$resetBrush('plot_brush')
     })
 
 
@@ -1165,6 +1174,8 @@ openEditor <- function(
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
                        inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
                        inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
+                       inline_kbd_button('o', " - {KEY}: Open in Praat"),
+                       inlike_kbd_button('j', " - {KEY}: Play current audio file/selection"),
                        inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
@@ -1232,7 +1243,7 @@ openEditor <- function(
                   reactive(input$navbar),
                   reactive(input$plot_brush))
 
-    playAudioServer("playAudio",
+    audioServer <- playAudioServer("playAudio",
                     loadedFile,
                     currentWave,
                     destroyLoadedAudio,
