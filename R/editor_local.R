@@ -1175,7 +1175,7 @@ openEditor <- function(
                        inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
                        inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
                        inline_kbd_button('o', " - {KEY}: Open in Praat"),
-                       inlike_kbd_button('j', " - {KEY}: Play current audio file/selection"),
+                       inline_kbd_button('j', " - {KEY}: Play current audio file/selection"),
                        inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
