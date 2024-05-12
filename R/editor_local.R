@@ -475,8 +475,20 @@ openEditor <- function(
         "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)")
       )
 
-    horiz_bounds <- shiny::reactiveValues(xlim = NULL,
-                                          full = NULL)
+    observeEvent(input$keys, {
+      # Key bindings only apply on the editor page
+      if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
+        return(NULL)
+
+      # Call the appropriate reactive from the keybindings we set
+      boundKeys[[input$keys]]()
+    })
+
+
+    ########################################################
+    # Handle the x-axis zooming functionality
+
+    horiz_bounds <- shiny::reactiveValues(xlim = NULL, full = NULL)
 
     # Change the horizontal bounds whenever we change the x variable to use
     observeEvent(input$xValColumnInput, {
@@ -514,16 +526,7 @@ openEditor <- function(
 
       horiz_bounds$xlim <- c(input$plot_brush$xmin, input$plot_brush$xmax)
     })
-
-    observeEvent(input$keys, {
-      # Key bindings only apply on the editor page
-      if (input$navbar != "Editor" | (!is.null(input$useKeysToggle) && !input$useKeysToggle))
-        return(NULL)
-
-      # Call the appropriate reactive from the keybindings we set
-      boundKeys[[input$keys]]()
-    })
-
+    ########################################################
 
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
@@ -585,7 +588,7 @@ openEditor <- function(
     })
 
 
-    # Reactive to keep track of how the
+    # Reactive to keep track of the current point color coding
     plot_colorCodePoints <- reactive({
       if(is.null(input$useFlaggedColumnToggle))
         return(NULL)
@@ -620,12 +623,16 @@ openEditor <- function(
 
     })
 
+    # If the points are hidden, then a dummy set of invisible points are going
+    # to be plotted instead so that the legend still exists. But, we make all
+    # of the legend aesthetics transparent. This is done to ensure the plot
+    # height doesn't change when the points disappear.
     hide_legend_if_needed <- reactive({
       if (input$hidePointsButton)
-        return(list(ggplot2::theme(legend.key = element_rect(fill = "#ffffff00"),
-                                   legend.text = element_text(color = "#ffffff00"),
-                                   legend.title = element_text(color = "#ffffff00"),
-                                   legend.background = element_rect(fill = "#ffffff00"))))
+        return(list(ggplot2::theme(legend.key        = element_rect(fill  = "#ffffff00"),
+                                   legend.text       = element_text(color = "#ffffff00"),
+                                   legend.title      = element_text(color = "#ffffff00"),
+                                   legend.background = element_rect(fill  = "#ffffff00"))))
 
       NULL
     })
@@ -730,22 +737,23 @@ openEditor <- function(
       updatePlot()
     })
 
+    # Renders a tool tip for the horizontal bounds of the selection on top of
+    # the plot based on the coordinates from plot_brush
     output$brushToolTip <- shiny::renderUI( {
       if (is.null(loadedFile$data) | is.null(input$plot_brush))
         return(NULL)
-      # browser()
 
       brush <- input$plot_brush
       xmin <- round(brush$xmin, 2)
       xmax <- round(brush$xmax, 2)
 
-      left_px <- brush$coords_css$xmin - 20 #+ brush$range$left
-      right_px <- brush$coords_css$xmax + 2#+ brush$range$left
-      top_px <- brush$coords_css$ymin
+      left_px  <- brush$coords_css$xmin - 20
+      right_px <- brush$coords_css$xmax + 2
+      top_px   <- brush$coords_css$ymin
 
       const_style <- ";padding:2px;border:none;background-color:var(--bs-card-bg);opacity:.85;"
 
-      left_style <- paste0("position:absolute; left:", left_px,"px; top:", top_px, "px;", "text-align:right;", const_style)
+      left_style  <- paste0("position:absolute; left:", left_px, "px; top:", top_px, "px;text-align:right;", const_style)
       right_style <- paste0("position:absolute; left:", right_px,"px; top:", top_px, "px;margin-left:15px;", const_style)
 
       list(shiny::wellPanel(style = left_style,  shiny::p(HTML(paste0("<b>", xmin, "</b><br/>")))),
@@ -948,10 +956,7 @@ openEditor <- function(
     })
 
 
-    plotSubsetFlag <- shiny::reactiveValues(value = FALSE)
-
     updatePlot <- shiny::reactive({
-      # shiny::observe("keepFalseColor")
       plotFlag$value <- !plotFlag$value
     })
 
@@ -1269,7 +1274,8 @@ openEditor <- function(
                              annotations,
                              refilterSubset,
                              destroyLoadedAudio,
-                             loadFile$fileDelimiter)
+                             loadFile$fileDelimiter,
+                             plotFlag)
 
     octaveShift <- octaveShiftServer('octaveShift',
                                      loadedFile,

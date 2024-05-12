@@ -34,19 +34,19 @@ fileNavServer <- function(id,
                           annotations,
                           refilterSubset,
                           destroyLoadedAudio,
-                          fileDelimiter) {
+                          fileDelimiter,
+                          plotFlag) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     # When the user clicks the save button, save the data to the output directory
     saveIcon <- reactiveValues(value = "floppy-disk")
-    # observe({
-    #   shiny::updateActionButton(session, "saveButton", icon = icon(saveIcon$value))
-    # })
+
+    # Placeholder so we can create one-off event listeners
+    saveObserver <- NULL
 
     saveData <- function(){
       if (is.null(loadedFile$data))
         return(NULL)
-
       annotations$mergeAnnotations()
       path <- file.path(outputDirInput(), clean_file(fileSelectBox()))
 
@@ -70,8 +70,15 @@ fileNavServer <- function(id,
           return(NULL)
         }
         message(paste0("Wrote data to ", path))
-        # saveIcon$value <- "floppy-disk"
-        shiny::updateActionButton(session, "saveButton", icon = icon("floppy-disk"))
+        shiny::updateActionButton(session, "saveButton", icon = icon("check"))
+
+        # Create an observer that waits until the dataset is modified (denoted
+        # by a change in plotFlag$value due to in-place data.table modifications).
+        # Upon modification, the save button icon changes back to a floppy disk
+        # to denote that there are unsaved changes
+        saveObserver <<- shiny::observeEvent((plotFlag$value), {
+          shiny::updateActionButton(session, "saveButton", icon = icon("floppy-disk"))
+        }, once = TRUE, ignoreInit = TRUE)
 
       }
 
@@ -105,8 +112,6 @@ fileNavServer <- function(id,
       # Get the minimum index of the files that are currently plotted,
       # if we're already at the first file, wrap around to the last file
       current_min <- min(which(fileHandler$isPlotted))
-      # if (current_min == 1)
-      #   current_min <- length(fileHandler$filenames) + 1
 
       #$ Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
