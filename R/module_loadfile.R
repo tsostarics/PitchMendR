@@ -105,10 +105,11 @@ loadFileServer <- function(id,
       set_selectize_choices(parent_session, "xValColumnInput", loadedFile, xValColumnInput())()
       set_selectize_choices(parent_session, "yValColumnInput", loadedFile, yValColumnInput())()
 
+      loaded_colnames <- colnames(loadedFile$data)
 
       # If the file doesn't contain the specified columns, return null and move
       # to the settings page
-      if (!all(c(filenameColumnInput(), xValColumnInput(), yValColumnInput()) %in% colnames(loadedFile$data))) {
+      if (!all(c(filenameColumnInput(), xValColumnInput(), yValColumnInput()) %in% loaded_colnames)) {
         message("File doesn't contain the specified columns")
         loadedFile$data <- NULL
         shiny::updateNavbarPage(session, "navbar", "Settings")
@@ -118,15 +119,14 @@ loadFileServer <- function(id,
       # Arrange the measurement points for each file in order just in case
       # they aren't already
       data.table::setorderv(loadedFile$data, cols = c(filenameColumnInput(), xValColumnInput()))
-
-      if (!file.exists(outFile))
+      if (!file.exists(outFile) | !selectionColumnInput() %in% loaded_colnames)
         loadedFile$data[, (selectionColumnInput()) := where_not_zero(get(yValColumnInput()))]
 
       # Add pulse id if it doesn't already exist
-      if (!"pulse_id" %in% colnames(loadedFile$data))
+      if (!"pulse_id" %in% loaded_colnames)
         loadedFile$data[, pulse_id := .I]
 
-      if (!"pulse_transform" %in% colnames(loadedFile$data)){
+      if (!"pulse_transform" %in% loaded_colnames){
         loadedFile$data[, pulse_transform := 1.0]
       }
 
@@ -144,7 +144,7 @@ loadFileServer <- function(id,
       # Add the file_checked column if it doesn't exist. If it does,
       # then validate that the column has no missing values and update
       # the fileHandler with which files have already been checked.
-      if (!"file_checked" %in% colnames(loadedFile$data)) {
+      if (!"file_checked" %in% loaded_colnames) {
         loadedFile$data[, file_checked := FALSE]
         fileHandler$fileChecked <- rep(FALSE, length(fileHandler$filenames))
       } else {
@@ -164,7 +164,7 @@ loadFileServer <- function(id,
       # to reset the flag samples button. If flagged_samples already exists,
       # then set the button to success and use that column for the color coding,
       # otherwise remove the success class and reset the color coding column
-      if ("flagged_samples" %in% colnames(loadedFile$data)) {
+      if ("flagged_samples" %in% loaded_colnames) {
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
         shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
@@ -179,7 +179,7 @@ loadFileServer <- function(id,
       # already exist. Otherwise update the fileHandler's badges with what's
       # in the loaded file dataframe.
       if (useBadgesToggle()) {
-        if (!"tags" %in% colnames(loadedFile$data)) {
+        if (!"tags" %in% loaded_colnames) {
           loadedFile$data[, tags := NA_character_]
           fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
           names(fileHandler$badges) <- fileHandler$filenames

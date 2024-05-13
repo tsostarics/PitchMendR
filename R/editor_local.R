@@ -493,6 +493,15 @@ openEditor <- function(
       session$resetBrush('plot_brush')
     })
 
+    selectionColumn <- shiny::reactiveVal()
+    observeEvent(input$selectionColumnInputButton, {
+      selectionColumn(isolate(input$selectionColumnInput))
+
+      if (!is.null(loadedFile$data) && !selectionColumn() %in% colnames(loadedFile$data)) {
+          loadedFile$data[, (selectionColumn()) := where_not_zero(get(input$yValColumnInput))]
+          refilterSubset()
+      }
+    })
 
     ########################################################
     # Handle the x-axis zooming functionality
@@ -572,10 +581,10 @@ openEditor <- function(
     plot_colorColumn <- reactive({
       if(is.null(input$useFlaggedColumnToggle))
         return(NULL)
-      req(input$selectionColumnInput)
+      req(selectionColumn())
       req(input$colorCodeColumnInput)
       req(loadedFile)
-      colorColumn <- input$selectionColumnInput
+      colorColumn <- selectionColumn()
       if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(loadedFile$data))
         colorColumn <- input$colorCodeColumnInput
 
@@ -648,7 +657,7 @@ openEditor <- function(
 
 
     output$pulsePlot <- shiny::renderPlot({
-      message('Rerendering')
+      # message('Rerendering')
       plotFlag$value
       if (is.null(loadedFile$data))
         return(NULL)
@@ -664,7 +673,8 @@ openEditor <- function(
           plot_line <- list(ggplot2::geom_line(data =plotSubset$data,
                                                color = lineColor))
         } else {
-          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[input$selectionColumnInput]],],
+          # browser()
+          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[selectionColumn()]],],
                                                color = lineColor))
         }
       }
@@ -681,12 +691,12 @@ openEditor <- function(
         list(
           ggplot2::geom_point(data = plotSubset$data[1,],
                               # Using shape so the scale_shape_manual doesn't throw a warning
-                              aes(shape = !!sym(input$selectionColumnInput)),
+                              aes(shape = !!sym(selectionColumn())),
                               alpha = 0))
 
       if (!input$hidePointsButton){
         plot_points <- ggplot2::geom_point(aes(color = !!sym(plot_colorColumn()),
-                                               shape = !!sym(input$selectionColumnInput)),
+                                               shape = !!sym(selectionColumn())),
                                            size = input$sizeSlider)
       }
 
@@ -714,8 +724,8 @@ openEditor <- function(
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
         plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
-        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
+        loadedFile$data[vals_to_change, c(selectionColumn()) := !get(selectionColumn())]
+        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := !get(selectionColumn())]
         selectedPoints$data <- NULL
         updatePlot()
       }
@@ -784,9 +794,9 @@ openEditor <- function(
 
       if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
         first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        loadedFile$data[first_id, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
+        loadedFile$data[first_id, c(selectionColumn()) := !get(selectionColumn())]
         plot_vals_to_change <- plotSubset$data$pulse_id == first_id
-        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := !get(input$selectionColumnInput)]
+        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := !get(selectionColumn())]
         clickedPoint <- NULL
         updatePlot()
       }
@@ -800,8 +810,8 @@ openEditor <- function(
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
         plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, c(input$selectionColumnInput) := TRUE]
-        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := TRUE]
+        loadedFile$data[vals_to_change, c(selectionColumn()) := TRUE]
+        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := TRUE]
         selectedPoints$data <- NULL
 
         updatePlot()
@@ -817,8 +827,8 @@ openEditor <- function(
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
         plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, c(input$selectionColumnInput) := FALSE]
-        plotSubset$data[plot_vals_to_change, c(input$selectionColumnInput) := FALSE]
+        loadedFile$data[vals_to_change, c(selectionColumn()) := FALSE]
+        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := FALSE]
 
         selectedPoints$data <- NULL
 
@@ -859,7 +869,7 @@ openEditor <- function(
                                reactive(input$filenameColumnInput),
                                reactive(input$xValColumnInput),
                                reactive(input$yValColumnInput),
-                               reactive(input$selectionColumnInput),
+                               selectionColumn,
                                reactive(input$colorCodeColumnInput),
                                reactive(input$useBadgesToggle),
                                reactive(input$useNotesToggle),
@@ -972,7 +982,6 @@ openEditor <- function(
     changeTransformedColumn <- shiny::reactive({
       if (is.null(loadedFile$data))
         return(NULL)
-      # browser()
       transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
       new_values <- loadedFile$data[['pulse_transform']] * loadedFile$data[[input$yValColumnInput]]
       loadedFile$data[, (transformedColumn$name) := new_values]
@@ -1308,7 +1317,7 @@ openEditor <- function(
                                      reactive(input$xValColumnInput),
                                      reactive(input$yValColumnInput),
                                      reactive(input$filenameColumnInput),
-                                     reactive(input$selectionColumnInput),
+                                     selectionColumn,
                                      refilterSubset,
                                      updatePlot)
 
