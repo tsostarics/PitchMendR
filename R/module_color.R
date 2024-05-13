@@ -148,7 +148,6 @@ colorServer <- function(id,
     })
 
     shiny::observeEvent(dark_mode_in(), {
-      message("theme")
       # updateLoadFileColors()
       set_theme_colors()
     })
