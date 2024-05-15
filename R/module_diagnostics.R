@@ -42,7 +42,8 @@ diagnosticsServer <- function(id,
                               selectionColumnInput,
                               refilterSubset,
                               updatePlot,
-                              saveData
+                              saveData,
+                              destroyLoadedAudio
 ) {
   moduleServer(id, function(input, output, session) {
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
@@ -129,6 +130,7 @@ diagnosticsServer <- function(id,
         DT::selectRows(proxy,selected = NULL)
         # DT::clearSearch(proxy)
         shiny::updateNavbarPage(parent_session, inputId = "navbar", selected = "Editor")
+        destroyLoadedAudio()
       })
     })
 

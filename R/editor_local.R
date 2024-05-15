@@ -1417,7 +1417,8 @@ openEditor <- function(
                                      selectionColumn,
                                      refilterSubset,
                                      updatePlot,
-                                     filenav$saveData)
+                                     filenav$saveData,
+                                     destroyLoadedAudio)
     ########################################################
     # Other
     ########################################################
