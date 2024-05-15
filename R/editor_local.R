@@ -473,6 +473,8 @@ openEditor <- function(
     # Temporary button to clear the selection, see issue #46
     observeEvent(input$clearSelectButton, {
       session$resetBrush('plot_brush')
+      shinyjs::runjs('document.getElementById("pulsePlot_brush").remove()')
+
     })
 
     ########################################################
@@ -813,7 +815,7 @@ openEditor <- function(
       plotFlag$value # Needed to update whenever the data.table updates in place
       if (is.null(loadedFile$data))
         return(NULL)
-
+# browser()
 
       # These will update when the user changes the color manually with the
       # color pickers or if the theme is changed.
@@ -972,6 +974,7 @@ openEditor <- function(
     shiny::observeEvent(input$plot_click,ignoreInit = TRUE, {
       if (is.null(loadedFile$data))
         return(NULL)
+
 
       clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
                                         input$plot_click,
