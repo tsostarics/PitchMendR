@@ -41,7 +41,8 @@ diagnosticsServer <- function(id,
                               filenameColumnInput,
                               selectionColumnInput,
                               refilterSubset,
-                              updatePlot
+                              updatePlot,
+                              saveData
 ) {
   moduleServer(id, function(input, output, session) {
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
@@ -51,6 +52,8 @@ diagnosticsServer <- function(id,
     shiny::observeEvent(input$refreshProgressButton,{
       if (is.null(loadedFile$data))
         return(NULL)
+
+      saveData()
       # browser()
       filtered_data <- loadedFile$data[where_not_zero(get(yValColumnInput())),]
 
@@ -105,21 +108,26 @@ diagnosticsServer <- function(id,
         dplyr::filter((!is.na(notes) & notes != "") | (!is.na(tags) & tags != "")) |>
         dplyr::arrange(filenameColumnInput())
 
+      # browser()
       output$taggedFilesTable <-
         DT::renderDT({
-          DT::datatable(file_table$data) |>
+          DT::datatable(file_table$data,
+                        selection = list(mode = "single", target = "row")) |>
             DT::formatStyle(columns = c(filenameColumnInput(), 'tags', 'notes'), cursor = "pointer")
-        },
-        selection = list(mode = "single", target = "row"))
+        })
 
       proxy <- DT::dataTableProxy('taggedFilesTable')
 
-      observeEvent(input$taggedFilesTable_row_last_clicked, {
+      observeEvent(input$taggedFilesTable_rows_selected, {
         # browser()
-        fileHandler$isPlotted <- fileHandler$filenames %in% file_table$data[input$taggedFilesTable_row_last_clicked,][[filenameColumnInput()]]
+        if (is.null(input$taggedFilesTable_rows_selected))
+          return(NULL)
+
+        fileHandler$isPlotted <- fileHandler$filenames %in% file_table$data[input$taggedFilesTable_rows_selected,][[filenameColumnInput()]]
         refilterSubset()
         updatePlot()
         DT::selectRows(proxy,selected = NULL)
+        # DT::clearSearch(proxy)
         shiny::updateNavbarPage(parent_session, inputId = "navbar", selected = "Editor")
       })
     })

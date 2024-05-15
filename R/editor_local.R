@@ -90,6 +90,7 @@ openEditor <- function(
                                               status = "info")),
       shiny::actionButton("clearSelectButton",
                           "Clear Selection"),
+      # profvis::profvis_ui("profileUI"),
       undoTransformUI('octaveShift'),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
@@ -510,6 +511,8 @@ openEditor <- function(
       # Call the appropriate reactive from the keybindings we set
       boundKeys[[input$keys]]()
     })
+
+    # callModule(profvis::profvis_server, "profileUI")
 
     # Modal to display the implemented keybindings
     shinyjs::onclick(id = "keysQuestion", {
@@ -1405,7 +1408,8 @@ openEditor <- function(
                                      reactive(input$filenameColumnInput),
                                      selectionColumn,
                                      refilterSubset,
-                                     updatePlot)
+                                     updatePlot,
+                                     filenav$saveData)
     ########################################################
     # Other
     ########################################################
