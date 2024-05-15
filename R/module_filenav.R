@@ -145,12 +145,10 @@ fileNavServer <- function(id,
       if (saveOptionButton()) {
         saveData()
       }
-
       refilterSubset()
       annotations$updateBadges()
       annotations$updateNotes()
       destroyLoadedAudio()
-
     })
 
     goToNextFile <- reactive({

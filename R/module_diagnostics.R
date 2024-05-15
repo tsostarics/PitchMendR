@@ -43,7 +43,8 @@ diagnosticsServer <- function(id,
                               refilterSubset,
                               updatePlot,
                               saveData,
-                              destroyLoadedAudio
+                              destroyLoadedAudio,
+                              annotations
 ) {
   moduleServer(id, function(input, output, session) {
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
@@ -102,7 +103,6 @@ diagnosticsServer <- function(id,
         paste(uneditedFiles$filenames, collapse = "\n")
       })
 
-
       file_table$data <-
         loadedFile$data |>
         dplyr::summarize(.by = c(filenameColumnInput(), tags, notes)) |>
@@ -130,6 +130,8 @@ diagnosticsServer <- function(id,
         DT::selectRows(proxy,selected = NULL)
         # DT::clearSearch(proxy)
         shiny::updateNavbarPage(parent_session, inputId = "navbar", selected = "Editor")
+        annotations$updateBadges()
+        annotations$updateNotes()
         destroyLoadedAudio()
       })
     })
