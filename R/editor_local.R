@@ -89,7 +89,8 @@ openEditor <- function(
                                               value = FALSE,
                                               status = "info")),
       shiny::actionButton("clearSelectButton",
-                          "Clear Selection"),
+                          title = "Click to remove selection boxes that won't go away!",
+                          label = "Clear Selection"),
       # profvis::profvis_ui("profileUI"),
       undoTransformUI('octaveShift'),
       shiny::actionButton(
@@ -473,7 +474,11 @@ openEditor <- function(
     # Temporary button to clear the selection, see issue #46
     observeEvent(input$clearSelectButton, {
       session$resetBrush('plot_brush')
-      shinyjs::runjs('document.getElementById("pulsePlot_brush").remove()')
+      shinyjs::runjs('
+                     while (document.getElementById("pulsePlot_brush") != null) {
+                     document.getElementById("pulsePlot_brush").remove()
+                     }
+                     ')
 
     })
 
