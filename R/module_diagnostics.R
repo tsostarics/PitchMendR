@@ -109,7 +109,6 @@ diagnosticsServer <- function(id,
         dplyr::filter((!is.na(notes) & notes != "") | (!is.na(tags) & tags != "")) |>
         dplyr::arrange(filenameColumnInput())
 
-      # browser()
       output$taggedFilesTable <-
         DT::renderDT({
           DT::datatable(file_table$data,
