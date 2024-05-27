@@ -420,15 +420,7 @@ openEditor <- function(
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
                             )
                           ),
-                          flagSamplesButton_UI("loadFile"),
-                          # shiny::actionButton(
-                          #   inputId = "flagSamplesButton",
-                          #   title = "Click to flag potential errors in loaded dataset",
-                          #   icon = icon('flag'),
-                          #   width = "100%",
-                          #   label = "Flag Samples"
-                          # )
-                          # )
+                          flagSamplesButton_UI("loadFile")
             )
           )
         )
