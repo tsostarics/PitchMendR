@@ -44,10 +44,10 @@ openEditor <- function(
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
       use_keyboardcss(),
-      singleton(
-        htmltools::includeCSS(
-          system.file("cssfiles/button_animation.css", package = "PitchMendR")
-        )),
+      # singleton(
+      #   htmltools::includeCSS(
+      #     system.file("cssfiles/button_animation.css", package = "PitchMendR")
+      #   )),
       windowResizeUI("windowListener"),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
@@ -189,8 +189,7 @@ openEditor <- function(
                          title = "Click to plot selected files",
                          label = "Plot Brushed Files"
                        ),
-                       shiny::verbatimTextOutput(outputId = "brushedFileNames"),
-                       # width = '10vw'
+                       shiny::verbatimTextOutput(outputId = "brushedFileNames")
           ),
           bslib::card(
             shinyjqui::jqui_resizable(
@@ -199,7 +198,7 @@ openEditor <- function(
               shiny::plotOutput(outputId = "pulsePlot",
                                 click = "plot_click",
                                 brush = "plot_brush",
-                                height = "100%"),
+                                height = "70%"),
               options = list(containment = "parent",
                              save = TRUE)),
             shiny::uiOutput("brushToolTip",inline = TRUE),
@@ -1264,9 +1263,9 @@ openEditor <- function(
                            "showStopButton",asis = TRUE)
 
       currentWave$instance <<- NULL
-      currentWave$value <<- NULL
-      currentWave$path <<- NULL
-      currentWave$exists <<- NULL
+      currentWave$value    <<- NULL
+      currentWave$path     <<- NULL
+      currentWave$exists   <<- NULL
     }
 
     ########################################################
