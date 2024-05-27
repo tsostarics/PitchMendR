@@ -232,14 +232,13 @@ loadFileServer <- function(id,
       message("Flag Samples Pressed")
       if (is.null(loadedFile$data))
         return(NULL)
-
       shinyjs::addClass("flagSamplesButton", class = "btn-warning")
 
       flagged_values <-
         flag_potential_errors(loadedFile$data,
-                              .unique_file = input$filenameColumnInput,
-                              .hz = input$yValColumnInput,
-                              .time = input$xValColumnInput,
+                              .unique_file = filenameColumnInput(),
+                              .hz = yValColumnInput(),
+                              .time = xValColumnInput(),
                               .samplerate = NA,
                               .speaker = "Speaker", # change this later
                               .as_vec = TRUE)
