@@ -32,7 +32,9 @@ flag_potential_errors(
 
 \item{.add_semitones}{Add semitones to F0}
 
-\item{.speaker}{Column name containing Speaker ID}
+\item{.speaker}{Column name containing speaker IDs. Set to NA to compute
+semitones from the mean of each individual file. Set to NULL to use the
+entire dataset to compute the mean.}
 
 \item{rise_threshold}{Rise threshold to use for errors}
 

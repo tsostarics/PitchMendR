@@ -240,7 +240,7 @@ loadFileServer <- function(id,
                               .hz = yValColumnInput(),
                               .time = xValColumnInput(),
                               .samplerate = NA,
-                              .speaker = "Speaker", # change this later
+                              .speaker = NULL,
                               .as_vec = TRUE)
 
       loadedFile$data[, ("flagged_samples") := flagged_values]
