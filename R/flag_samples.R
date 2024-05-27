@@ -58,7 +58,7 @@ flag_potential_errors <- function(data,
 
   if (.ignore_0s) {
     requireNamespace("data.table", quietly = TRUE)
-
+# browser()
     # We need a unique id to use; the load file button will add this for us
     # but just in case it's not there we need to have it available
     if (!"pulse_id" %in% colnames(data))
@@ -76,7 +76,7 @@ flag_potential_errors <- function(data,
 
     if (!"TRUE" %in% names(data_split))
       stop("No non-zero values found")
-
+# browser()
     updated_df <-
       data_split[["TRUE"]] |>
       annotate_errors(.unique_file = .unique_file,
