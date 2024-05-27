@@ -34,7 +34,10 @@ openEditor <- function(
   ui <- bslib::page_navbar(
 
     id = "navbar",
-    title = "PitchMendR",
+    title = tags$span("PitchMendR", tags$a(href = "https://github.com/tsostarics/PitchMendR",
+                                           target = "_blank",
+                                           style = 'font-size:x-large;padding:0px;color:grey',
+                                           icon("github"))),
     selected = "Setup",
     collapsible = TRUE,
     theme = bslib::bs_theme(version = 5),
@@ -430,7 +433,8 @@ openEditor <- function(
       shiny::column(width = 7,
                     howto_UI("howto", TRUE)
       )
-    ))
+    )
+    )
 
 
   server <- function(input, output, session) {

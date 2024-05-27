@@ -22,7 +22,10 @@ demoEditor <- function(...) {
   ui <- bslib::page_navbar(
 
     id = "navbar",
-    title = "PitchMendR",
+    title = tags$span("PitchMendR", tags$a(href = "https://github.com/tsostarics/PitchMendR",
+                                           target = "_blank",
+                                           style = 'font-size:x-large;padding:0px;color:grey',
+                                           icon("github"))),
     selected = "Setup",
     collapsible = TRUE,
     theme = bslib::bs_theme(version = 5),
@@ -1315,7 +1318,6 @@ demoEditor <- function(...) {
       # to reset flag samples button
 
       if ("flagged_samples" %in% colnames(loadedFile$data)) {
-        browser()
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
         shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
         shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
