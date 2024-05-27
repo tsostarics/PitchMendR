@@ -1284,39 +1284,6 @@ openEditor <- function(
     # Setup functionality
     ########################################################
 
-    # # When the user clicks the Flag Samples button, all files in the loaded
-    # # dataset will be checked for potential errors. These are added to the
-    # # flagged_samples column. So the user can can tell that the process worked,
-    # # the button will change color and the icon will change to a checkmark.
-    # shiny::observeEvent(input$flagSamplesButton, {
-    #   message("Flag Samples Pressed")
-    #   if (is.null(loadedFile$data))
-    #     return(NULL)
-    #
-    #   shinyjs::addClass("flagSamplesButton", class = "btn-warning")
-    #
-    #   flagged_values <-
-    #     flag_potential_errors(loadedFile$data,
-    #                           .unique_file = input$filenameColumnInput,
-    #                           .hz = input$yValColumnInput,
-    #                           .time = input$xValColumnInput,
-    #                           .samplerate = NA,
-    #                           .speaker = "Speaker", # change this later
-    #                           .as_vec = TRUE)
-    #
-    #   loadedFile$data[, ("flagged_samples") := flagged_values]
-    #
-    #   if (!data.table::is.data.table(loadedFile$data))
-    #     loadedFile$data <- data.table(loadedFile$data)
-    #
-    #   shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
-    #   shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
-    #   shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-    #   shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-    #   set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-    #   refilterSubset()
-    #
-    # })
 
     ########################################################
     # Other sub modules
