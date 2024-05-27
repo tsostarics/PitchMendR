@@ -29,6 +29,7 @@
 #' For example, if you want to ignore pulses that are greater than 1 sample rate
 #' away, leave as 1. If you want to ignore intervals of 80ms and the sampling
 #' rate is 10ms, set to 8.
+#' @param .verbose Logical, default FALSE, whether to print messages
 #'
 #' @return Dataframe with potential errors coded in the `flagged_samples` column
 #' @export
@@ -49,11 +50,12 @@ flag_potential_errors <- function(data,
                                   fall_threshold = 1.7142857143,
                                   .as_vec = FALSE,
                                   .ignore_0s = TRUE,
-                                  .window_size = 8) {
+                                  .window_size = 8,
+                                  .verbose = FALSE) {
   # Ensure that the f0 column is numeric in case missing values are
   # encoded as --undefined-- from Praat output
   data[[.hz]] <- as.numeric(data[[.hz]]) # Coerces non-numeric strings to NA!
-  datalist <- .convert_time_to_ms(data, .time, .samplerate)
+  datalist <- .convert_time_to_ms(data, .time, .samplerate, .verbose = .verbose)
   trans_time_column <- paste0(.time, "___trans")
 
   data[[trans_time_column]] <- datalist[['time']]
@@ -149,10 +151,11 @@ flag_potential_errors <- function(data,
 #' so for a 10ms sampling rate with times in ms, this should be 10; if it's
 #' recorded in seconds, this should be 0.01
 #' @param only_samplerate Whether to return only the sampling rate, default FALSE
+#' @param .verbose Logical, default FALSE, whether to print messages
 #'
 #' @return A list containing the transformed time and the sampling
 #' rate in milliseconds
-.convert_time_to_ms <- function(data, .time, .samplerate, only_samplerate = FALSE) {
+.convert_time_to_ms <- function(data, .time, .samplerate, only_samplerate = FALSE, .verbose=FALSE) {
   # If the sampling rate is not specified, we need to try and calculate
   # it ourselves
   if (is.na(.samplerate))
@@ -166,7 +169,8 @@ flag_potential_errors <- function(data,
     example_value <- data[[.time]][1]
     transformed_time <- transformed_time * 1000
     .samplerate <-  .samplerate * 1000
-    message("Converting `", .time,  "` to milliseconds",
+    if(.verbose)
+      message("Converting `", .time,  "` to milliseconds",
             " (", example_value, "s->", example_value*1000, "ms)")
   }
 
@@ -238,16 +242,16 @@ annotate_errors <- function(data,
       stop("F0_semitones column not found. Please add column or set .add_semitones to TRUE or NA.")
   }
 
-
+# browser()
   if (.add_semitones) {
     if (!is.null(.speaker)){
       if (is.na(.speaker)){
         warning("No speaker column provided. Will calculate semitones from mean of individual files.")
-        data <- dplyr::group_by(dplyr::across(dplyr::all_of(.unique_file)))
+        data <- dplyr::group_by(data, dplyr::across(dplyr::all_of(.unique_file)))
       } else if (!.speaker %in% colnames(data)) {
         stop(".speaker not found in data")
       }  else {
-        data <- dplyr::group_by(dplyr::across(dplyr::all_of(.speaker)))
+        data <- dplyr::group_by(data, dplyr::across(dplyr::all_of(.speaker)))
       }
     }
     data <-

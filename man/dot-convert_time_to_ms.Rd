@@ -4,7 +4,13 @@
 \alias{.convert_time_to_ms}
 \title{Convert seconds (probably) to milliseconds}
 \usage{
-.convert_time_to_ms(data, .time, .samplerate, only_samplerate = FALSE)
+.convert_time_to_ms(
+  data,
+  .time,
+  .samplerate,
+  only_samplerate = FALSE,
+  .verbose = FALSE
+)
 }
 \arguments{
 \item{data}{Dataframe}
@@ -16,6 +22,8 @@ so for a 10ms sampling rate with times in ms, this should be 10; if it's
 recorded in seconds, this should be 0.01}
 
 \item{only_samplerate}{Whether to return only the sampling rate, default FALSE}
+
+\item{.verbose}{Logical, default FALSE, whether to print messages}
 }
 \value{
 A list containing the transformed time and the sampling

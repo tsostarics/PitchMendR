@@ -16,7 +16,8 @@ flag_potential_errors(
   fall_threshold = 1.7142857143,
   .as_vec = FALSE,
   .ignore_0s = TRUE,
-  .window_size = 8
+  .window_size = 8,
+  .verbose = FALSE
 )
 }
 \arguments{
@@ -55,6 +56,8 @@ starting value of 0.}
 For example, if you want to ignore pulses that are greater than 1 sample rate
 away, leave as 1. If you want to ignore intervals of 80ms and the sampling
 rate is 10ms, set to 8.}
+
+\item{.verbose}{Logical, default FALSE, whether to print messages}
 }
 \value{
 Dataframe with potential errors coded in the \code{flagged_samples} column
