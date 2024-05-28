@@ -130,7 +130,7 @@ loadFileServer <- function(id,
       # Arrange the measurement points for each file in order just in case
       # they aren't already
       data.table::setorderv(loadedFile$data, cols = c(filenameColumnInput(), xValColumnInput()))
-      if (!file.exists(outFile) | !selectionColumnInput() %in% loaded_colnames)
+      if (!selectionColumnInput() %in% loaded_colnames)
         loadedFile$data[, (selectionColumnInput()) := where_not_zero(get(yValColumnInput()))]
 
       # Forcefully add pulse id, overwrites in instances where the

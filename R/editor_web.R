@@ -1278,7 +1278,6 @@ demoEditor <- function(...) {
 
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))
 
-      # if (!file.exists(outFile))
       loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]
 
       # if (!"pulse_id" %in% colnames(loadedFile$data))
@@ -1420,7 +1419,6 @@ demoEditor <- function(...) {
 
       data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
 
-      # if (!file.exists(outFile))
       if (!input$selectionColumnInput %in% colnames(loadedFile$data))
         loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]  # Use := operator from data.table package
 
