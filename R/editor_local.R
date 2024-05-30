@@ -96,14 +96,14 @@ openEditor <- function(
                           label = "Clear Selection"),
       # profvis::profvis_ui("profileUI"),
       undoTransformUI('octaveShift'),
+      praatUI_button("praatIO"),
+      playAudioUI("playAudio"),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         title = "Click to check off currently plotted files",
         icon = shiny::icon('check'),
         label = "off visible"
       ),
-      praatUI_button("praatIO"),
-      playAudioUI("playAudio"),
       tags$span(title = "Select a file that has not been checked yet",
                 shiny::uiOutput(outputId = "uneditedFileSelectUI")),
       tags$span(title = "Select a file that has already been checked",
