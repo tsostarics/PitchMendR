@@ -11,6 +11,17 @@ loadFileUI <- function(id) {
   )
 }
 
+flagSamplesButton_UI <- function(id) {
+  ns <- NS(id)
+  shiny::actionButton(
+    inputId = ns("flagSamplesButton"),
+    title = "Click to flag potential errors in loaded dataset",
+    icon = icon('flag'),
+    width = "100%",
+    label = "Flag Samples"
+  )
+}
+
 loadFile_workingFileOutput <- function(id) {
   ns <- NS(id)
   shiny::textOutput(outputId = ns("workingFileOutput"))
@@ -119,12 +130,12 @@ loadFileServer <- function(id,
       # Arrange the measurement points for each file in order just in case
       # they aren't already
       data.table::setorderv(loadedFile$data, cols = c(filenameColumnInput(), xValColumnInput()))
-      if (!file.exists(outFile) | !selectionColumnInput() %in% loaded_colnames)
+      if (!selectionColumnInput() %in% loaded_colnames)
         loadedFile$data[, (selectionColumnInput()) := where_not_zero(get(yValColumnInput()))]
 
-      # Add pulse id if it doesn't already exist
-      if (!"pulse_id" %in% loaded_colnames)
-        loadedFile$data[, pulse_id := .I]
+      # Forcefully add pulse id, overwrites in instances where the
+      # ordering gets messed up
+      loadedFile$data[, pulse_id := .I]
 
       if (!"pulse_transform" %in% loaded_colnames){
         loadedFile$data[, pulse_transform := 1.0]
@@ -159,7 +170,6 @@ loadFileServer <- function(id,
       output$workingFileOutput <- shiny::renderText({
         paste0("Working File:\n", clean_file(fileSelectBox()))
       })
-
       # If we've loaded another file in the same session then we need
       # to reset the flag samples button. If flagged_samples already exists,
       # then set the button to success and use that column for the color coding,
@@ -167,8 +177,8 @@ loadFileServer <- function(id,
       if ("flagged_samples" %in% loaded_colnames) {
         shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
         shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
+        shinyWidgets::updateMaterialSwitch(parent_session, "useFlaggedColumnToggle", value = TRUE)
+        set_selectize_choices(parent_session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       } else {
         shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success") # Will remove if it exists, otherwise takes no effect
         shiny::updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
@@ -212,6 +222,39 @@ loadFileServer <- function(id,
       refilterSubset()
       updatePlot()
       message(paste0("Delimiter: '", fileDelimiter(), "'"))
+    })
+
+    # When the user clicks the Flag Samples button, all files in the loaded
+    # dataset will be checked for potential errors. These are added to the
+    # flagged_samples column. So the user can can tell that the process worked,
+    # the button will change color and the icon will change to a checkmark.
+    shiny::observeEvent(input$flagSamplesButton, {
+      message("Flag Samples Pressed")
+      if (is.null(loadedFile$data))
+        return(NULL)
+      shinyjs::addClass("flagSamplesButton", class = "btn-warning")
+
+      flagged_values <-
+        flag_potential_errors(loadedFile$data,
+                              .unique_file = filenameColumnInput(),
+                              .hz = yValColumnInput(),
+                              .time = xValColumnInput(),
+                              .samplerate = NA,
+                              .speaker = NULL,
+                              .as_vec = TRUE)
+
+      loadedFile$data[, ("flagged_samples") := flagged_values]
+
+      if (!data.table::is.data.table(loadedFile$data))
+        loadedFile$data <- data.table(loadedFile$data)
+
+      shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
+      shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
+      shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
+      shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
+      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
+      refilterSubset()
+
     })
 
     # Reactively update the appearance of the loadfile button

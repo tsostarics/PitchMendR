@@ -43,8 +43,15 @@ web_fileNavServer <- function(id,
       loadedFile$data[, file_checked := fileHandler$fileChecked[loadedFile$data[[filenameColumnInput()]]]]
       loadedFile$data
     })
-
+# browser()
     # Merge annotations and download annotated file when download is clicked
+
+    saveData <- function(){
+      if (is.null(loadedFile$data))
+        return(NULL)
+      annotations$mergeAnnotations()
+    }
+
     output$saveButton <- shiny::downloadHandler(
       filename = function() {
         # browser()
@@ -155,7 +162,8 @@ web_fileNavServer <- function(id,
     })
 
     return(list("goToNextFile" = goToNextFile,
-                "goToPreviousFile" = goToPreviousFile))
+                "goToPreviousFile" = goToPreviousFile,
+                "saveData" = saveData))
   }
 
   )

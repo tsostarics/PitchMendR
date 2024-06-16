@@ -42,7 +42,9 @@ diagnosticsServer <- function(id,
                               selectionColumnInput,
                               refilterSubset,
                               updatePlot,
-                              saveData
+                              saveData,
+                              destroyLoadedAudio,
+                              annotations
 ) {
   moduleServer(id, function(input, output, session) {
     uneditedFiles <- shiny::reactiveValues(filenames = NULL)
@@ -101,14 +103,12 @@ diagnosticsServer <- function(id,
         paste(uneditedFiles$filenames, collapse = "\n")
       })
 
-
       file_table$data <-
         loadedFile$data |>
         dplyr::summarize(.by = c(filenameColumnInput(), tags, notes)) |>
         dplyr::filter((!is.na(notes) & notes != "") | (!is.na(tags) & tags != "")) |>
         dplyr::arrange(filenameColumnInput())
 
-      # browser()
       output$taggedFilesTable <-
         DT::renderDT({
           DT::datatable(file_table$data,
@@ -129,6 +129,9 @@ diagnosticsServer <- function(id,
         DT::selectRows(proxy,selected = NULL)
         # DT::clearSearch(proxy)
         shiny::updateNavbarPage(parent_session, inputId = "navbar", selected = "Editor")
+        annotations$updateBadges()
+        annotations$updateNotes()
+        destroyLoadedAudio()
       })
     })
 

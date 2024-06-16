@@ -11,7 +11,9 @@
 #' @param .time Column name containing timepoint
 #' @param .samplerate Sample rate in milliseconds (usually 10ms)
 #' @param .add_semitones Add semitones to F0
-#' @param .speaker Column name containing Speaker ID
+#' @param .speaker Column name containing speaker IDs. Set to NA to compute
+#' semitones from the mean of each individual file. Set to NULL to use the
+#' entire dataset to compute the mean.
 #' @param rise_threshold Rise threshold to use for errors
 #' @param fall_threshold Fall threshold to use for errors
 #' @param .as_vec Whether just the results should be returned as a logical vector
@@ -27,6 +29,7 @@
 #' For example, if you want to ignore pulses that are greater than 1 sample rate
 #' away, leave as 1. If you want to ignore intervals of 80ms and the sampling
 #' rate is 10ms, set to 8.
+#' @param .verbose Logical, default FALSE, whether to print messages
 #'
 #' @return Dataframe with potential errors coded in the `flagged_samples` column
 #' @export
@@ -47,18 +50,19 @@ flag_potential_errors <- function(data,
                                   fall_threshold = 1.7142857143,
                                   .as_vec = FALSE,
                                   .ignore_0s = TRUE,
-                                  .window_size = 8) {
+                                  .window_size = 8,
+                                  .verbose = FALSE) {
   # Ensure that the f0 column is numeric in case missing values are
   # encoded as --undefined-- from Praat output
   data[[.hz]] <- as.numeric(data[[.hz]]) # Coerces non-numeric strings to NA!
-  datalist <- .convert_time_to_ms(data, .time, .samplerate)
+  datalist <- .convert_time_to_ms(data, .time, .samplerate, .verbose = .verbose)
   trans_time_column <- paste0(.time, "___trans")
 
   data[[trans_time_column]] <- datalist[['time']]
 
   if (.ignore_0s) {
     requireNamespace("data.table", quietly = TRUE)
-
+# browser()
     # We need a unique id to use; the load file button will add this for us
     # but just in case it's not there we need to have it available
     if (!"pulse_id" %in% colnames(data))
@@ -147,10 +151,11 @@ flag_potential_errors <- function(data,
 #' so for a 10ms sampling rate with times in ms, this should be 10; if it's
 #' recorded in seconds, this should be 0.01
 #' @param only_samplerate Whether to return only the sampling rate, default FALSE
+#' @param .verbose Logical, default FALSE, whether to print messages
 #'
 #' @return A list containing the transformed time and the sampling
 #' rate in milliseconds
-.convert_time_to_ms <- function(data, .time, .samplerate, only_samplerate = FALSE) {
+.convert_time_to_ms <- function(data, .time, .samplerate, only_samplerate = FALSE, .verbose=FALSE) {
   # If the sampling rate is not specified, we need to try and calculate
   # it ourselves
   if (is.na(.samplerate))
@@ -164,7 +169,8 @@ flag_potential_errors <- function(data,
     example_value <- data[[.time]][1]
     transformed_time <- transformed_time * 1000
     .samplerate <-  .samplerate * 1000
-    message("Converting `", .time,  "` to milliseconds",
+    if(.verbose)
+      message("Converting `", .time,  "` to milliseconds",
             " (", example_value, "s->", example_value*1000, "ms)")
   }
 
@@ -198,7 +204,9 @@ flag_potential_errors <- function(data,
 #' @param rise_threshold Rise threshold to use for errors
 #' @param fall_threshold Fall threshold to use for errors
 #' @param .unique_file Column name containing unique file IDs
-#' @param .speaker Column name containing speaker IDs
+#' @param .speaker Column name containing speaker IDs. Set to NA to compute
+#' semitones from the mean of each individual file. Set to NULL to use the
+#' entire dataset to compute the mean.
 #' @param .window_size Numeric multiplier of the sample rate to ignore pulses.
 #' For example, if you want to ignore pulses that are greater than 1 sample rate
 #' away, leave as 1. If you want to ignore intervals of 80ms and the sampling
@@ -217,7 +225,7 @@ annotate_errors <- function(data,
                             .time = 'timepoint',
                             .samplerate = NA,
                             .add_semitones = NA,
-                            .speaker = NA,
+                            .speaker = NULL,
                             rise_threshold = 1.2631578947,
                             fall_threshold = 1.7142857143,
                             .window_size = 1) {
@@ -234,15 +242,20 @@ annotate_errors <- function(data,
       stop("F0_semitones column not found. Please add column or set .add_semitones to TRUE or NA.")
   }
 
-
+# browser()
   if (.add_semitones) {
-    if (is.na(.speaker)){
-      warning("No speaker column provided. Will calculate semitones from mean of individual files.")
-      .speaker <- .unique_file
+    if (!is.null(.speaker)){
+      if (is.na(.speaker)){
+        warning("No speaker column provided. Will calculate semitones from mean of individual files.")
+        data <- dplyr::group_by(data, dplyr::across(dplyr::all_of(.unique_file)))
+      } else if (!.speaker %in% colnames(data)) {
+        stop(".speaker not found in data")
+      }  else {
+        data <- dplyr::group_by(data, dplyr::across(dplyr::all_of(.speaker)))
+      }
     }
     data <-
       data |>
-      dplyr::group_by(dplyr::across(dplyr::all_of(.speaker))) |>
       dplyr::mutate(F0_semitones = hz_to_semitones(.data[[.hz]], .semitones_from = mean(.data[[.hz]], na.rm=TRUE)))
   }
 

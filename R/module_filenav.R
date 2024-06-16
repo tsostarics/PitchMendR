@@ -38,8 +38,6 @@ fileNavServer <- function(id,
                           plotFlag) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    # When the user clicks the save button, save the data to the output directory
-    saveIcon <- reactiveValues(value = "floppy-disk")
 
     # Placeholder so we can create one-off event listeners
     saveObserver <- NULL
@@ -64,7 +62,6 @@ fileNavServer <- function(id,
 
         if (!is.null(write_status)) {
           message(write_status$message)
-          # saveIcon$value <- "triangle-exclamation"
           shiny::updateActionButton(session, "saveButton", icon = icon("triangle-exclamation"))
 
           return(NULL)
@@ -76,7 +73,9 @@ fileNavServer <- function(id,
         # by a change in plotFlag$value due to in-place data.table modifications).
         # Upon modification, the save button icon changes back to a floppy disk
         # to denote that there are unsaved changes
-        saveObserver <<- shiny::observeEvent((plotFlag$value), {
+        saveObserver <<- shiny::observeEvent(list(plotFlag$value,
+                                                  fileHandler$notes,
+                                                  fileHandler$badges), {
           shiny::updateActionButton(session, "saveButton", icon = icon("floppy-disk"))
         }, once = TRUE, ignoreInit = TRUE)
 
@@ -99,7 +98,7 @@ fileNavServer <- function(id,
 
       if (!dir.exists(outputDirInput())){
         message("Output directory doesnt exist")
-        saveIcon$value <- "triangle-exclamation"
+        shiny::updateActionButton(session, "saveButton", icon = icon("triangle-exclamation"))
         return(NULL)
       }
 
@@ -145,12 +144,10 @@ fileNavServer <- function(id,
       if (saveOptionButton()) {
         saveData()
       }
-
       refilterSubset()
       annotations$updateBadges()
       annotations$updateNotes()
       destroyLoadedAudio()
-
     })
 
     goToNextFile <- reactive({

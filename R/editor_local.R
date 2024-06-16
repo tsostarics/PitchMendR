@@ -34,7 +34,10 @@ openEditor <- function(
   ui <- bslib::page_navbar(
 
     id = "navbar",
-    title = "PitchMendR",
+    title = tags$span("PitchMendR", tags$a(href = "https://github.com/tsostarics/PitchMendR",
+                                           target = "_blank",
+                                           style = 'font-size:x-large;padding:0px;color:grey',
+                                           icon("github"))),
     selected = "Setup",
     collapsible = TRUE,
     theme = bslib::bs_theme(version = 5),
@@ -44,10 +47,10 @@ openEditor <- function(
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
       use_keyboardcss(),
-      singleton(
-        htmltools::includeCSS(
-          system.file("cssfiles/button_animation.css", package = "PitchMendR")
-        )),
+      # singleton(
+      #   htmltools::includeCSS(
+      #     system.file("cssfiles/button_animation.css", package = "PitchMendR")
+      #   )),
       windowResizeUI("windowListener"),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
@@ -89,17 +92,18 @@ openEditor <- function(
                                               value = FALSE,
                                               status = "info")),
       shiny::actionButton("clearSelectButton",
-                          "Clear Selection"),
+                          title = "Click to remove selection boxes that won't go away!",
+                          label = "Clear Selection"),
       # profvis::profvis_ui("profileUI"),
       undoTransformUI('octaveShift'),
+      praatUI_button("praatIO"),
+      playAudioUI("playAudio"),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         title = "Click to check off currently plotted files",
         icon = shiny::icon('check'),
         label = "off visible"
       ),
-      praatUI_button("praatIO"),
-      playAudioUI("playAudio"),
       tags$span(title = "Select a file that has not been checked yet",
                 shiny::uiOutput(outputId = "uneditedFileSelectUI")),
       tags$span(title = "Select a file that has already been checked",
@@ -188,8 +192,7 @@ openEditor <- function(
                          title = "Click to plot selected files",
                          label = "Plot Brushed Files"
                        ),
-                       shiny::verbatimTextOutput(outputId = "brushedFileNames"),
-                       # width = '10vw'
+                       shiny::verbatimTextOutput(outputId = "brushedFileNames")
           ),
           bslib::card(
             shinyjqui::jqui_resizable(
@@ -198,7 +201,7 @@ openEditor <- function(
               shiny::plotOutput(outputId = "pulsePlot",
                                 click = "plot_click",
                                 brush = "plot_brush",
-                                height = "100%"),
+                                height = "70%"),
               options = list(containment = "parent",
                              save = TRUE)),
             shiny::uiOutput("brushToolTip",inline = TRUE),
@@ -419,14 +422,7 @@ openEditor <- function(
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
                             )
                           ),
-                          shiny::actionButton(
-                            inputId = "flagSamplesButton",
-                            title = "Click to flag potential errors in loaded dataset",
-                            icon = icon('flag'),
-                            width = "100%",
-                            label = "Flag Samples"
-                          )
-                          # )
+                          flagSamplesButton_UI("loadFile")
             )
           )
         )
@@ -437,7 +433,8 @@ openEditor <- function(
       shiny::column(width = 7,
                     howto_UI("howto", TRUE)
       )
-    ))
+    )
+    )
 
 
   server <- function(input, output, session) {
@@ -473,6 +470,12 @@ openEditor <- function(
     # Temporary button to clear the selection, see issue #46
     observeEvent(input$clearSelectButton, {
       session$resetBrush('plot_brush')
+      shinyjs::runjs('
+                     while (document.getElementById("pulsePlot_brush") != null) {
+                     document.getElementById("pulsePlot_brush").remove()
+                     }
+                     ')
+
     })
 
     ########################################################
@@ -665,10 +668,14 @@ openEditor <- function(
         return(NULL)
 
       # message("Filtering")
-
       # Look up which files are currently plotted & find them in loadedFile$data
       plotted_indices <- getIndices()
-      plotSubset$data <<- loadedFile$data[plotted_indices,]
+      if (is.null(plotted_indices))
+        return(NULL)
+
+      plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(get(input$yValColumnInput)),]
+
+      # loadedFile$data[plotted_indices,]
 
       # Update our count of how many files are plotted
       nPlotted$n <- sum(fileHandler$isPlotted)
@@ -813,7 +820,6 @@ openEditor <- function(
       plotFlag$value # Needed to update whenever the data.table updates in place
       if (is.null(loadedFile$data))
         return(NULL)
-
 
       # These will update when the user changes the color manually with the
       # color pickers or if the theme is changed.
@@ -973,6 +979,7 @@ openEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
 
+
       clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
                                         input$plot_click,
                                         xvar = input$xValColumnInput,
@@ -1113,7 +1120,7 @@ openEditor <- function(
     observe({
       if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
         input_filepaths <- list.files(input$inputDirInput, include.dirs = FALSE)
-        input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp$", input_filepaths,ignore.case = TRUE)]
+        input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp|wav|zip|msi$", input_filepaths,ignore.case = TRUE)]
         input_filenames <- basename(input_filepaths)
         hasOutput <- input_filenames %in% list.files(input$outputDirInput, include.dirs = FALSE)
 
@@ -1260,9 +1267,9 @@ openEditor <- function(
                            "showStopButton",asis = TRUE)
 
       currentWave$instance <<- NULL
-      currentWave$value <<- NULL
-      currentWave$path <<- NULL
-      currentWave$exists <<- NULL
+      currentWave$value    <<- NULL
+      currentWave$path     <<- NULL
+      currentWave$exists   <<- NULL
     }
 
     ########################################################
@@ -1272,39 +1279,6 @@ openEditor <- function(
     # Setup functionality
     ########################################################
 
-    # When the user clicks the Flag Samples button, all files in the loaded
-    # dataset will be checked for potential errors. These are added to the
-    # flagged_samples column. So the user can can tell that the process worked,
-    # the button will change color and the icon will change to a checkmark.
-    shiny::observeEvent(input$flagSamplesButton, {
-      message("Flag Samples Pressed")
-      if (is.null(loadedFile$data))
-        return(NULL)
-
-      shinyjs::addClass("flagSamplesButton", class = "btn-warning")
-
-      flagged_values <-
-        flag_potential_errors(loadedFile$data,
-                              .unique_file = input$filenameColumnInput,
-                              .hz = input$yValColumnInput,
-                              .time = input$xValColumnInput,
-                              .samplerate = NA,
-                              .speaker = "Speaker", # change this later
-                              .as_vec = TRUE)
-
-      loadedFile$data[, ("flagged_samples") := flagged_values]
-
-      if (!data.table::is.data.table(loadedFile$data))
-        loadedFile$data <- data.table(loadedFile$data)
-
-      shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
-      shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
-      shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-      shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-      refilterSubset()
-
-    })
 
     ########################################################
     # Other sub modules
@@ -1409,7 +1383,9 @@ openEditor <- function(
                                      selectionColumn,
                                      refilterSubset,
                                      updatePlot,
-                                     filenav$saveData)
+                                     filenav$saveData,
+                                     destroyLoadedAudio,
+                                     annotations)
     ########################################################
     # Other
     ########################################################

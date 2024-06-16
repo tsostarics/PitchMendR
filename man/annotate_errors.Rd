@@ -11,7 +11,7 @@ annotate_errors(
   .time = "timepoint",
   .samplerate = NA,
   .add_semitones = NA,
-  .speaker = NA,
+  .speaker = NULL,
   rise_threshold = 1.2631578947,
   fall_threshold = 1.7142857143,
   .window_size = 1
@@ -37,7 +37,9 @@ will always be transformed to semitones, overwriting values in \code{F0_semitone
 if it exists. If \code{.add_semitones} is FALSE, the Hz values will not be
 transformed to semitones, even if \code{F0_semitones} is present in the dataframe.}
 
-\item{.speaker}{Column name containing speaker IDs}
+\item{.speaker}{Column name containing speaker IDs. Set to NA to compute
+semitones from the mean of each individual file. Set to NULL to use the
+entire dataset to compute the mean.}
 
 \item{rise_threshold}{Rise threshold to use for errors}
 
