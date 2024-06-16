@@ -704,7 +704,7 @@ openEditor <- function(
       plotSettings$showLine <- !plotSettings$showLine
     })
 
-    shiny::observeEvent(input$colorCodeColumnInput,ignoreInit = TRUE, {
+    shiny::observeEvent(input$colorCodeColumnInput,ignoreInit = FALSE, {
       if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput) | is.null(input$useFlaggedColumnToggle))
         return(NULL)
 
