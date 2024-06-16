@@ -232,7 +232,6 @@ loadFileServer <- function(id,
       message("Flag Samples Pressed")
       if (is.null(loadedFile$data))
         return(NULL)
-      # browser()
 
       shinyjs::addClass("flagSamplesButton", class = "btn-warning")
 
