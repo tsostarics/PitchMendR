@@ -232,6 +232,7 @@ loadFileServer <- function(id,
       message("Flag Samples Pressed")
       if (is.null(loadedFile$data))
         return(NULL)
+
       shinyjs::addClass("flagSamplesButton", class = "btn-warning")
 
       flagged_values <-
@@ -251,8 +252,8 @@ loadFileServer <- function(id,
       shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
       shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
       shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-      shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
+      shinyWidgets::updateMaterialSwitch(parent_session, "useFlaggedColumnToggle", value = TRUE)
+      set_selectize_choices(parent_session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
       refilterSubset()
 
     })

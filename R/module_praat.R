@@ -34,6 +34,7 @@ praatUI_input <- function(id,
                                          value = "{Speaker}_{Filename}.wav",
                                          width = "100%",
                                        )),
+                             shiny::verbatimTextOutput(ns("gluePathExample")),
                              tags$span(title = "Enter path to directory containing audio files",
                                        shiny::textInput(
                                          inputId = ns("audioDirInput"),
@@ -106,6 +107,27 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
       closePraatFiles()()
     })
 
+    glueExample <- reactive({
+      if (is.null(loadedFile$data) || is.null(input$fileNameGlue) || is.null(input$audioDirInput))
+        return(NULL)
+
+      example_file <- glue::glue_data_safe(loadedFile$data[1,], input$fileNameGlue)
+      example_exists <- file.exists(file.path(input$audioDirInput, example_file))
+      output_text <- paste0("Example file:\n", example_file)
+      if (example_exists) {
+        output_text <- paste0(output_text, "\nFile found!")
+      } else {
+        output_text <- paste0(output_text, "\nFile not found in audio directory!")
+      }
+
+      output_text
+
+    })
+
+    shiny::observeEvent(debounce(input$fileNameGlue, 200),{
+
+      output$gluePathExample <- shiny::renderText(glueExample())
+    })
 
     # When the user clicks the Send to Praat button, all files currently displayed
     # in the editor will be sent to Praat
