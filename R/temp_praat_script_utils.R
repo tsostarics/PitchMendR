@@ -16,7 +16,9 @@
 run_temp_script <- function(lines, praat_path = "./Praat.exe") {
   temp_script <- tempfile(tmpdir = getwd(), fileext = ".praat")
 
-  writeLines(c(lines, paste0('deleteFile: "', temp_script, '"')),
+  writeLines(c(lines,
+               paste0('deleteFile: "', temp_script, '"')
+               ),
              temp_script)
 
   systemcall <- paste0(praat_path,

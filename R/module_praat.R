@@ -223,8 +223,18 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
             "fileOpened = 0",
             tg_lines,
             "if fileOpened = 1",
+            'versionPraat$ = left$(praatVersion$, (rindex(praatVersion$, ".")-1));',
+            "versionPraat = 'versionPraat$'",
+            # In newer versions of praat, the pitch settings command is a bit
+            # different. If the older styled command is run after removing an
+            # object, then praat will crash. This avoids the issue, but needs
+            # to be fixed in Praat itself.
             "editor: editorName$",
+            "if versionPraat < 6.4",
             paste0("Pitch settings: ", pitch_range, ', "Hertz", "autocorrelation", "automatic"'),
+            "else",
+            paste0("Pitch settings: ", pitch_range, ', "Hertz", "filtered autocorrelation", "automatic", 0.0, 0.0'),
+            "endif",
             select_time_lines,
             "endeditor",
             "endif"
