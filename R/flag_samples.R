@@ -352,7 +352,7 @@ code_threshold_error <- function(f0_st,
   stopifnot(n_points == length(f0_err))
 
   f0_st_diff <- (f0_st - f0_err)
-  is_rise <-diff(f0_st) > 0 # (c(f0_st[-1],0) - f0_st) > 0
+  is_rise <-diff(f0_st) > 0
 
   fall_threshold <- fall_threshold * 1.5
   rise_threshold <- rise_threshold * 1.5
@@ -427,7 +427,9 @@ code_initial_errors <- function(f0_semitones,
 #' @return Numeric vector
 propagate_f0_of_err <- function(F0_of_err) {
   prev_value <- F0_of_err[1]
-  for (i in seq_along(F0_of_err)) {
+  i <- 1L
+  n <- length(F0_of_err)
+  while (i <= n) {
     cur_value <- F0_of_err[i]
     if (cur_value == 0) {
       F0_of_err[i] <- prev_value
@@ -436,6 +438,7 @@ propagate_f0_of_err <- function(F0_of_err) {
     }
 
     prev_value <- F0_of_err[i]
+    i <- i + 1L
   }
 
   F0_of_err
@@ -458,7 +461,9 @@ propagate_while_true <- function(carryover_err, is_threshold_err) {
   new_vals[1] <- carryover_err[1]
   prev_carryover_err <- carryover_err[1]
 
-  for (i in seq_along(carryover_err)) {
+  i <- 1L
+  n <- length(carryover_err)
+  while (i <= n) {
     should_propogate <- (is_threshold_err[i] & prev_carryover_err)
 
     if (!is.na(should_propogate) & should_propogate){
@@ -467,6 +472,8 @@ propagate_while_true <- function(carryover_err, is_threshold_err) {
       new_vals[i] <- carryover_err[i]
       prev_carryover_err <- carryover_err[i]
     }
+
+    i <- i + 1L
   }
 
   new_vals[length(carryover_err)] <-  carryover_err[length(carryover_err)]
