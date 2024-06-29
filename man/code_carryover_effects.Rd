@@ -10,7 +10,7 @@ code_carryover_effects(
   .hz = "hz",
   .time = "timepoint",
   rise_threshold = 1.2631578947,
-  fall_threshold = 1.7142857143
+  fall_threshold = -1.7142857143
 )
 }
 \arguments{

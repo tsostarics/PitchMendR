@@ -47,7 +47,7 @@ flag_potential_errors <- function(data,
                                   .add_semitones = NA,
                                   .speaker = NA,
                                   rise_threshold = 1.2631578947,
-                                  fall_threshold = 1.7142857143,
+                                  fall_threshold = -1.7142857143,
                                   .as_vec = FALSE,
                                   .ignore_0s = TRUE,
                                   .window_size = 8,
@@ -227,7 +227,7 @@ annotate_errors <- function(data,
                             .add_semitones = NA,
                             .speaker = NULL,
                             rise_threshold = 1.2631578947,
-                            fall_threshold = 1.7142857143,
+                            fall_threshold = -1.7142857143,
                             .window_size = 1) {
 
 
@@ -268,7 +268,7 @@ annotate_errors <- function(data,
                                 samplerate = .samplerate,
                                 windowsize = .window_size,
                                 rise_threshold,
-                                -fall_threshold),
+                                fall_threshold),
       F0_of_err = F0_semitones *  c(0, err[-length(err)])
     )
 }
@@ -315,27 +315,64 @@ code_carryover_effects <- function(data_annotated,
                                    .hz = "hz",
                                    .time = 'timepoint',
                                    rise_threshold = 1.2631578947,
-                                   fall_threshold = 1.7142857143) {
+                                   fall_threshold = -1.7142857143) {
   data_annotated <-
     data_annotated |>
-    dplyr::group_by(dplyr::across(dplyr::all_of(.unique_file))) |>
-    dplyr::mutate(F0_of_err=propagate_f0_of_err(F0_of_err))
-
-  data_annotated <-
-    dplyr::mutate(data_annotated,
-                  next_F0_st = dplyr::lead(F0_semitones),
-                  f0_st_diff = abs(F0_semitones - F0_of_err),
-                  is_rise_error = (next_F0_st > F0_semitones & f0_st_diff < (rise_threshold * 1.5)),
-                  is_fall_error = (next_F0_st < F0_semitones & f0_st_diff < (fall_threshold * 1.5)),
-                  is_threshold_error = is_rise_error | is_fall_error,
-                  flagged_samples = propagate_while_true(err, is_threshold_error)) |>
-    dplyr::select(-next_F0_st,
-                  -f0_st_diff,
-                  -is_rise_error,
-                  -is_fall_error,
-                  -is_threshold_error,
+    dplyr::mutate(F0_of_err = propagate_f0_of_err(F0_of_err),
+                  is_threshold_error = code_threshold_error(F0_semitones,
+                                                            F0_of_err,
+                                                            rise_threshold,
+                                                            fall_threshold),
+                  flagged_samples = propagate_while_true(err,
+                                                         is_threshold_error)) |>
+    dplyr::select(-is_threshold_error,
                   -F0_of_err,
                   -err)
+
+  data_annotated
+}
+
+#' Code carryover threshold errors
+#'
+#' Helper to code whether a sample is within the tolerance range for
+#' carryover errors.
+#'
+#' @param f0_st F0 in semitones
+#' @param f0_err F0 of flagged errors
+#' @param rise_threshold Positive rise threshold
+#' @param fall_threshold Negative fall threshold
+#'
+#' @return Logical vector for threshold errors
+#' @export
+code_threshold_error <- function(f0_st,
+                                 f0_err,
+                                 rise_threshold =  1.2631578947,
+                                 fall_threshold = -1.7142857143) {
+  n_points <- length(f0_st)
+  stopifnot(n_points == length(f0_err))
+
+  f0_st_diff <- (f0_st - f0_err)
+  is_rise <-diff(f0_st) > 0 # (c(f0_st[-1],0) - f0_st) > 0
+
+  fall_threshold <- fall_threshold * 1.5
+  rise_threshold <- rise_threshold * 1.5
+
+  is_threshold_error <-
+    vapply(seq_len(n_points-1L),
+           \(i) {
+
+             # if rise within rise threshold or fall within fall threshold
+             if (is_rise[i])
+               return(f0_st_diff[i] < rise_threshold)
+
+             f0_st_diff[i] > fall_threshold
+
+           },
+           logical(1))
+
+  is_threshold_error[n_points] <- FALSE
+
+  is_threshold_error
 }
 
 #' Code initial threshold errors
@@ -357,17 +394,22 @@ code_initial_errors <- function(f0_semitones,
                                 rise_threshold = 1.2631578947,
                                 fall_threshold = -1.7142857143) {
   n <- length(time)
-  is_error <- rep(FALSE, n)
 
   scaled_window <- samplerate * windowsize
 
-  for (i in seq_len(n-1)) {
-    diff <- f0_semitones[i+1] - f0_semitones[i]
-    time_diff <-  time[i+1] - time[i]
+  sample_diffs <- diff(f0_semitones)
+  time_diffs <- diff(time)
 
-    passes_threshold <- (diff > rise_threshold) || (diff < fall_threshold)
-    is_error[i] <- (time_diff <= scaled_window) && passes_threshold
-  }
+  is_error <- vapply(seq_len(n-1L),
+                     \(i) {
+                       passes_threshold <-
+                         (sample_diffs[i] > rise_threshold) ||
+                         (sample_diffs[i] < fall_threshold)
+                       passes_threshold && (time_diffs[i] <= scaled_window)
+                     }, logical(1))
+
+
+  is_error[n] <- FALSE
 
   is_error
 }

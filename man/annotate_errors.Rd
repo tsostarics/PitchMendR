@@ -13,7 +13,7 @@ annotate_errors(
   .add_semitones = NA,
   .speaker = NULL,
   rise_threshold = 1.2631578947,
-  fall_threshold = 1.7142857143,
+  fall_threshold = -1.7142857143,
   .window_size = 1
 )
 }
