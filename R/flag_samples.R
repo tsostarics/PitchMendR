@@ -62,7 +62,7 @@ flag_potential_errors <- function(data,
 
   if (.ignore_0s) {
     requireNamespace("data.table", quietly = TRUE)
-# browser()
+    # browser()
     # We need a unique id to use; the load file button will add this for us
     # but just in case it's not there we need to have it available
     if (!"pulse_id" %in% colnames(data))
@@ -171,7 +171,7 @@ flag_potential_errors <- function(data,
     .samplerate <-  .samplerate * 1000
     if(.verbose)
       message("Converting `", .time,  "` to milliseconds",
-            " (", example_value, "s->", example_value*1000, "ms)")
+              " (", example_value, "s->", example_value*1000, "ms)")
   }
 
   if (only_samplerate)
@@ -242,7 +242,7 @@ annotate_errors <- function(data,
       stop("F0_semitones column not found. Please add column or set .add_semitones to TRUE or NA.")
   }
 
-# browser()
+  # browser()
   if (.add_semitones) {
     if (!is.null(.speaker)){
       if (is.na(.speaker)){
@@ -262,17 +262,15 @@ annotate_errors <- function(data,
   data |>
     dplyr::group_by(dplyr::across(dplyr::all_of(.unique_file))) |>
     dplyr::mutate(
-      lead_F0_semitones= c(F0_semitones[-1L], NA),
-      lead_F0_Hz= c(.data[[.hz]][-1L], NA),
-      diff = lead_F0_semitones-F0_semitones,
-      time_diff = c(.data[[.time]][-1L], NA) - .data[[.time]],
-      ratio_Hz = lead_F0_Hz/.data[[.hz]],
-      err = (!is.na(time_diff)) & (time_diff <= .samplerate * .window_size) & ## this ignore time differences larger than 8*the time step, e.g., over voiceless intervals.
-        (diff>0 & (abs(diff)*time_mutation)>rise_threshold |
-           diff<0 & (abs(diff)*time_mutation)>fall_threshold),
+      err = code_initial_errors(f0_semitones = F0_semitones,
+                                time = .data[[.time]],
+                                time_mutation = time_mutation,
+                                samplerate = .samplerate,
+                                windowsize = .window_size,
+                                rise_threshold,
+                                -fall_threshold),
       F0_of_err = F0_semitones *  c(0, err[-length(err)])
-    ) |>
-    dplyr::select(-lead_F0_semitones, -lead_F0_Hz, -diff, -time_diff, -ratio_Hz)
+    )
 }
 
 #' Code carrryover pitch errors
@@ -321,8 +319,7 @@ code_carryover_effects <- function(data_annotated,
   data_annotated <-
     data_annotated |>
     dplyr::group_by(dplyr::across(dplyr::all_of(.unique_file))) |>
-    dplyr::mutate(carryover_err = c(FALSE, err[-length(err)]),
-                  F0_of_err=propagate_f0_of_err(F0_of_err))
+    dplyr::mutate(F0_of_err=propagate_f0_of_err(F0_of_err))
 
   data_annotated <-
     dplyr::mutate(data_annotated,
@@ -331,9 +328,8 @@ code_carryover_effects <- function(data_annotated,
                   is_rise_error = (next_F0_st > F0_semitones & f0_st_diff < (rise_threshold * 1.5)),
                   is_fall_error = (next_F0_st < F0_semitones & f0_st_diff < (fall_threshold * 1.5)),
                   is_threshold_error = is_rise_error | is_fall_error,
-                  flagged_samples = propagate_while_true(carryover_err, is_threshold_error)) |>
+                  flagged_samples = propagate_while_true(err, is_threshold_error)) |>
     dplyr::select(-next_F0_st,
-                  -carryover_err,
                   -f0_st_diff,
                   -is_rise_error,
                   -is_fall_error,
@@ -341,6 +337,41 @@ code_carryover_effects <- function(data_annotated,
                   -F0_of_err,
                   -err)
 }
+
+#' Code initial threshold errors
+#'
+#' @param f0_semitones Numeric vector
+#' @param time Numeric vector
+#' @param time_mutation Mutation factor
+#' @param samplerate Sampling rate, usually 10
+#' @param windowsize Buffer size
+#' @param rise_threshold Positive rise threshold
+#' @param fall_threshold Negative fall threshold
+#'
+#' @return Logical vector, TRUE if error
+code_initial_errors <- function(f0_semitones,
+                                time,
+                                time_mutation,
+                                samplerate,
+                                windowsize = 8,
+                                rise_threshold = 1.2631578947,
+                                fall_threshold = -1.7142857143) {
+  n <- length(time)
+  is_error <- rep(FALSE, n)
+
+  scaled_window <- samplerate * windowsize
+
+  for (i in seq_len(n-1)) {
+    diff <- f0_semitones[i+1] - f0_semitones[i]
+    time_diff <-  time[i+1] - time[i]
+
+    passes_threshold <- (diff > rise_threshold) || (diff < fall_threshold)
+    is_error[i] <- (time_diff <= scaled_window) && passes_threshold
+  }
+
+  is_error
+}
+
 
 #' Propagate F0 errors rightward
 #'
