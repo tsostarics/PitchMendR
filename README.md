@@ -11,12 +11,13 @@ Sostarics, T., & Cole, J. (2024). *PitchMendR: A Tool for the Diagnosis and Trea
 Bibtex:
 
 ```
-@inproceedings{sostarics2024sp,
-author = {Sostarics, Thomas and Cole, Jennifer},
-year = {2024},
-month = {6},
-title = {{PitchMendR}: A Tool for the Diagnosis and Treatment of {F0} Irregularities},
-booktitle = {Proceedings of Speech Prosody 2024},
+@inproceedings{sostarics24speechprosody,
+  author={Thomas Sostarics and Jennifer Cole},
+  title={{PitchMendR: A Tool for the Diagnosis and Treatment of F0 Irregularities}},
+  year=2024,
+  booktitle={Proc. Speech Prosody 2024},
+  pages={289--293},
+  doi={10.21437/SpeechProsody.2024-59}
 }
 ```
 

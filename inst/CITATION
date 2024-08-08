@@ -1,10 +1,12 @@
 bibentry(
   bibtype = "inproceedings",
-  textVersion = "Sostarics, T., & Cole, J. (2024). PitchMendR: A Tool for the Diagnosis and Treatment of F0 Irregularities. In Proceedings of Speech Prosody 2024.",
+  textVersion = "Sostarics, T., & Cole, J. (2024). PitchMendR: A Tool for the Diagnosis and Treatment of F0 Irregularities. Proc. of Speech Prosody 2024, 289-293. 10.21437/SpeechProsody.2024-59.",
   header = "To cite PitchMendR in publications, please use",
   author = "Thomas Sostarics and Jennifer Cole",
-  title = "PitchMendR: A Tool for the Diagnosis and Treatment of F0 Irregularities",
-  booktitle = "Proceedings of Speech Prosody 2024",
+  title = "{PitchMendR: A Tool for the Diagnosis and Treatment of F0 Irregularities}",
+  booktitle = "Proc. of Speech Prosody 2024",
   year = "2024",
   url = "https://github.com/tsostarics/PitchMendR",
+  doi = "10.21437/SpeechProsody.2024-59",
+  pages = "289--293"
 )
