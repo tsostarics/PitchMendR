@@ -110,7 +110,7 @@ fileNavServer <- function(id,
         return(NULL)
       # Get the minimum index of the files that are currently plotted,
       # if we're already at the first file, wrap around to the last file
-      current_min <- min(which(fileHandler$isPlotted))
+      current_min <- min(which(fileHandler$isPlotted), na.rm = TRUE)
 
       #$ Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
@@ -155,7 +155,7 @@ fileNavServer <- function(id,
         return(NULL)
       # Get the maximum index of the files that are currently plotted,
       # if we're already at the last file, wrap around to the first file
-      current_max <- max(which(fileHandler$isPlotted))
+      current_max <- max(which(fileHandler$isPlotted), na.rm = TRUE)
 
       # Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
