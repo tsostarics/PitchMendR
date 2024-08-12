@@ -53,7 +53,7 @@ octaveShiftServer <- function(id,
       lastTransformation$pulse_ids <- vals_to_change
 
       current_pitch_range <- isolate(pitchRangeInput())
-      max_transform_value <- max(loadedFile$data[[transformedColumn$name]])
+      max_transform_value <- max(loadedFile$data[[transformedColumn$name]], na.rm = TRUE)
       if (lockButton() %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
         new_pitch_max <-
           ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
@@ -91,7 +91,8 @@ octaveShiftServer <- function(id,
       lastTransformation$pulse_ids <- vals_to_change
 
       current_pitch_range <- isolate(pitchRangeInput())
-      min_transform_value <- min(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])])
+      min_transform_value <- min(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])],
+                                 na.rm = TRUE)
       if (lockButton() %% 2 == 0 && current_pitch_range[1L] > min_transform_value){
         new_pitch_min <-
           ceiling(add_semitones(min_transform_value, sign(-min_transform_value)*1L))
