@@ -3,7 +3,6 @@
 ^LICENSE\.md$
 audio/
 Praat.exe
-./demo_data.csv
 www/
 app.R
 rsconnect/
