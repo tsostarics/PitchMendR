@@ -306,17 +306,17 @@ openEditor <- function(
                                                 )),
                                       tags$span(style = "display:inline-block;",
                                                 title = "Toggle to use keyboard shortcuts (click ? for more info)",
-                                                HTML(shinyWidgets::awesomeCheckbox(
-                                                  inputId = "useKeysToggle",
-                                                  label = "Use keyboard shortcuts:",
-                                                  value = TRUE,
-                                                  status = "info"
-                                                ) |> gsub("</label>",
+                                                HTML(gsub("</label>",
                                                           paste0("</label>\n",
                                                                  span(id = "keysQuestion",
                                                                       style = "cursor:pointer;",
                                                                       shiny::icon("circle-question"))),
-                                                          x= NULL))
+                                                          x = shinyWidgets::awesomeCheckbox(
+                                                            inputId = "useKeysToggle",
+                                                            label = "Use keyboard shortcuts:",
+                                                            value = TRUE,
+                                                            status = "info"
+                                                          )))
                                       ),
                                     )
                       ),
