@@ -316,7 +316,7 @@ openEditor <- function(
                                                                  span(id = "keysQuestion",
                                                                       style = "cursor:pointer;",
                                                                       shiny::icon("circle-question"))),
-                                                          x=_))
+                                                          x= NULL))
                                       ),
                                     )
                       ),
