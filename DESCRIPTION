@@ -20,8 +20,11 @@ Imports:
     glue,
     htmltools,
     keys,
+    Rcpp,
     rlang,
     shiny (>= 1.7.4),
     shinyjqui,
     shinyjs,
     shinyWidgets
+LinkingTo: 
+    Rcpp
