@@ -130,11 +130,10 @@ loadSauceFileServer <- function(id,
       # Update the fileHandler with the information from the loaded file
       fileHandler$filenames <- filenames
       fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames)) # upon file load, plot all files
-      # TODO: I believe we're not using this indices logic anymore
-      # fileHandler$indices <-
-      #   lapply(fileHandler$filenames,
-      #          \(fname) which(loadedFile$data[[filenameColumnInput()]] == fname)) |>
-      #   `names<-`(fileHandler$filenames)
+      fileHandler$indices <-
+        lapply(fileHandler$filenames,
+               \(fname) which(loadedFile$data[["file"]] == fname)) |>
+        `names<-`(fileHandler$filenames)
 
       # Add the file_checked column if it doesn't exist. If it does,
       # then validate that the column has no missing values and update
@@ -170,6 +169,8 @@ loadSauceFileServer <- function(id,
       #   set_selectize_choices(session, "colorCodeColumnInput", loadedFile, colorCodeColumnInput())()
       # }
 
+      loadedFile$data[["flagged_samples"]] <- FALSE
+
       # If we're using annotation badges, then add the tags column if it doesn't
       # already exist. Otherwise update the fileHandler's badges with what's
       # in the loaded file dataframe.
@@ -204,6 +205,7 @@ loadSauceFileServer <- function(id,
       # }
 
       # Now that we've loaded the file, we can force update the plot
+      # browser()
       refilterSubset()
       updatePlot()
       message("File loading complete")

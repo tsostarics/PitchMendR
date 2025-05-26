@@ -577,11 +577,12 @@ openSauceEditor <- function(
 
 
     # Change the horizontal bounds whenever we change the x variable to use
-    observeEvent(input$xValColumnInput, {
+    # TODO: Remove this
+    observeEvent(input_fakeX,{ #input$xValColumnInput, {
       if(is.null(plotSubset$data))
         return(NULL)
 
-      horiz_bounds$full <- suppressWarnings(range(plotSubset$data[[input$xValColumnInput]]))
+      horiz_bounds$full <- suppressWarnings(range(plotSubset$data[["t"]]))
       horiz_bounds$xlim <- horiz_bounds$full
     })
 
@@ -664,8 +665,8 @@ openSauceEditor <- function(
 
       shiny::brushedPoints(plotSubset$data,
                            input$plot_brush,
-                           xvar = input$xValColumnInput,
-                           yvar = yval)
+                           xvar = "t",
+                           yvar = "f0")
 
     })
 
@@ -686,8 +687,9 @@ openSauceEditor <- function(
       if (is.null(plotted_indices))
         return(NULL)
 
-      plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(get(input$yValColumnInput)),]
+      plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(f0),]
 
+      print(plotSubset$data)
       # browser()
       # print(plotSubset)
       # loadedFile$data[plotted_indices,]
@@ -697,8 +699,9 @@ openSauceEditor <- function(
       nPlotted$is_one <- nPlotted$n == 1
 
       # Update the x-axis for the plot
-      horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[[input$xValColumnInput]]))
+      horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[["t"]]))
       horiz_bounds$xlim <<- horiz_bounds$full
+      # browser()
     }
 
     ########################################################
@@ -755,6 +758,7 @@ openSauceEditor <- function(
     })
 
     # Update the column used for the y-axis values
+    # TODO: Remove this
     plot_yval <- reactive({
       if(is.null(input$hideToggleInput))
         return(NULL)
@@ -840,7 +844,7 @@ openSauceEditor <- function(
       # These will update when the user changes the color manually with the
       # color pickers or if the theme is changed.
       lineColor <- plotSettings$setColors[1]
-
+  # browser()
       plot_line <- NULL
       if (plotSettings$showLine) {
         if (input$useRemovedPointsToggleInput) {
@@ -867,6 +871,8 @@ openSauceEditor <- function(
                                    aes(shape = keep_pulse),
                                    alpha = 0))
       } else {
+        # TODO: make this more robust
+        # ..colorvar <- if ("flagged_samples" %in% colnames(loadedFile$data)) "flagged_samples" else NULL
         plot_points <- ggplot2::geom_point(aes(color = flagged_samples,
                                                shape = keep_pulse),
                                            size = input$sizeSlider)
@@ -881,8 +887,8 @@ openSauceEditor <- function(
         plot_points +
         plot_addStyling() +
         hide_legend_if_needed() +
-        ggplot2::labs(x = input$xValColumnInput,
-                      y = input$yValColumnInput,
+        ggplot2::labs(x = "t",
+                      y = "f0",
                       title = plot_title())
     })
 
@@ -1050,8 +1056,8 @@ openSauceEditor <- function(
       # Check off the displayed file if we're only looking at 1
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        annotations$saveNotes()
-        annotations$saveBadges()
+        # annotations$saveNotes()
+        # annotations$saveBadges()
       }
 
       selected_files <- grepl(input$filterRegex,fileHandler$filenames)
@@ -1061,8 +1067,8 @@ openSauceEditor <- function(
         fileHandler$isPlotted <- selected_files
 
         refilterSubset()
-        annotations$updateBadges()
-        annotations$updateNotes()
+        # annotations$updateBadges()
+        # annotations$updateNotes()
         destroyLoadedAudio()
       }
 
@@ -1081,9 +1087,8 @@ openSauceEditor <- function(
     plotBrushed <- reactive({
       if (is.null(loadedFile$data))
         return(NULL)
-      annotations$saveNotes()
-      annotations$saveBadges()
-
+      # annotations$saveNotes()
+      # annotations$saveBadges()
       selected_files <- fileHandler$filenames %in% filesBrushed$filenames
 
       # any short circuits on the first TRUE value
@@ -1093,8 +1098,8 @@ openSauceEditor <- function(
 
         refilterSubset()
 
-        annotations$updateBadges()
-        annotations$updateNotes()
+        # annotations$updateBadges()
+        # annotations$updateNotes()
         destroyLoadedAudio()
       }
     })
@@ -1137,8 +1142,8 @@ openSauceEditor <- function(
 
     observe({
       if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
-        input_filepaths <- list.files(input$inputDirInput, include.dirs = FALSE)
-        input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp|wav|zip|msi$", input_filepaths,ignore.case = TRUE)]
+        input_filepaths <- list.files(input$inputDirInput, ".Pitch$", include.dirs = FALSE)
+        # input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp|wav|zip|msi$", input_filepaths,ignore.case = TRUE)]
         input_filenames <- basename(input_filepaths)
         hasOutput <- input_filenames %in% list.files(input$outputDirInput, include.dirs = FALSE)
 
@@ -1160,12 +1165,12 @@ openSauceEditor <- function(
                        if (!is.null(input$uneditedFileSelectBox) && !identical(input$uneditedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-                         annotations$saveBadges()
-                         annotations$saveNotes()
+                         # annotations$saveBadges()
+                         # annotations$saveNotes()
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$uneditedFileSelectBox] <- TRUE
-                         annotations$updateBadges()
-                         annotations$updateNotes()
+                         # annotations$updateBadges()
+                         # annotations$updateNotes()
                          refilterSubset()
                          updatePlot()
                          # updatePlotSettingsData()
@@ -1178,12 +1183,12 @@ openSauceEditor <- function(
                        if (!is.null(input$editedFileSelectBox) && !identical(input$editedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-                         annotations$saveBadges()
-                         annotations$saveNotes()
+                         # annotations$saveBadges()
+                         # annotations$saveNotes()
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$editedFileSelectBox] <- TRUE
-                         annotations$updateBadges()
-                         annotations$updateNotes()
+                         # annotations$updateBadges()
+                         # annotations$updateNotes()
                          refilterSubset()
                          updatePlot()
                          # updatePlotSettingsData()
@@ -1302,6 +1307,12 @@ openSauceEditor <- function(
     # Other sub modules
     ########################################################
 
+    # Reactives that return a static value. These don't change for the
+    # sauce editor, but many submodules expect reactives.
+    input_fakeY <- reactive({"f0"})
+    input_fakeX <- reactive({"t"})
+    input_fakeFile <- reactive({"file"})
+
     # Handles file loading and initial setup with loaded data
     loadFile <- loadSauceFileServer("loadSauceFile",
                                parent_session = session,
@@ -1310,9 +1321,9 @@ openSauceEditor <- function(
                                reactive(input$fileSelectBox),
                                reactive(input$inputDirInput),
                                reactive(input$outputDirInput),
-                               reactive(input$filenameColumnInput),
-                               reactive(input$xValColumnInput),
-                               reactive(input$yValColumnInput),
+                               input_fakeFile,
+                               input_fakeX,
+                               input_fakeY,
                                selectionColumn,
                                reactive(input$colorCodeColumnInput),
                                reactive(input$useBadgesToggle),
@@ -1329,7 +1340,7 @@ openSauceEditor <- function(
       praatServer("praatIO",
                   loadedFile,
                   fileHandler,
-                  reactive(input$filenameColumnInput),
+                  input_fakeFile,
                   reactive(input$pitchRangeInput),
                   filenav$saveData,
                   reactive(input$navbar),
@@ -1353,11 +1364,12 @@ openSauceEditor <- function(
                 reactive(input$dark_mode))
 
     # Handles the notes and tags for annotations
+    # TODO: Update module to use a summary output document
     annotations <- annotationServer("annotations",
                                     loadedFile,
                                     fileHandler,
                                     updatePlot,
-                                    reactive(input$filenameColumnInput),
+                                    input_fakeFile,
                                     reactive(input$useNotesToggle),
                                     reactive(input$useBadgesToggle),
                                     nPlotted)
@@ -1370,7 +1382,7 @@ openSauceEditor <- function(
                              reactive(input$skipCheckedFilesToggle),
                              reactive(input$outputDirInput),
                              reactive(input$fileSelectBox),
-                             reactive(input$filenameColumnInput),
+                             input_fakeFile,
                              nPlotted,
                              annotations,
                              refilterSubset,
@@ -1387,7 +1399,7 @@ openSauceEditor <- function(
                                      lastTransformation,
                                      getBrushedPoints,
                                      updatePlot,
-                                     reactive(input$yValColumnInput),
+                                     input_fakeY,
                                      reactive(input$pitchRangeInput),
                                      reactive(input$lockButton))
 
@@ -1397,9 +1409,10 @@ openSauceEditor <- function(
                                      parent_session = session,
                                      fileHandler,
                                      transformedColumn,
-                                     reactive(input$xValColumnInput),
-                                     reactive(input$yValColumnInput),
-                                     reactive(input$filenameColumnInput),
+                                     "t",
+                                     # input_fakeX,
+                                     input_fakeY,
+                                     input_fakeFile,
                                      selectionColumn,
                                      refilterSubset,
                                      updatePlot,
