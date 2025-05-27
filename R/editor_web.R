@@ -1619,7 +1619,8 @@ demoEditor <- function(...) {
                                      updatePlot,
                                      reactive(input$yValColumnInput),
                                      reactive(input$pitchRangeInput),
-                                     reactive(input$lockButton))
+                                     reactive(input$lockButton),
+                                     parent_session = session)
 
     # Handles the Progress pane
     diagnostics <- diagnosticsServer('diagnostics',

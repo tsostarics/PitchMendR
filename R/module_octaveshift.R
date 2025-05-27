@@ -33,7 +33,8 @@ octaveShiftServer <- function(id,
                               updatePlot,
                               yValColumnInput,
                               pitchRangeInput,
-                              lockButton) {
+                              lockButton,
+                              parent_session) {
   moduleServer(id, function(input, output, session) {
 
     doublePulses <- shiny::reactive({
@@ -57,7 +58,7 @@ octaveShiftServer <- function(id,
       if (lockButton() %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
         new_pitch_max <-
           ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
-        shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
+        shinyWidgets::updateNumericRangeInput(session = parent_session, "pitchRangeInput",
                                               value = c(current_pitch_range[1L],
                                                         new_pitch_max))
       }
@@ -96,7 +97,7 @@ octaveShiftServer <- function(id,
       if (lockButton() %% 2 == 0 && current_pitch_range[1L] > min_transform_value){
         new_pitch_min <-
           ceiling(add_semitones(min_transform_value, sign(-min_transform_value)*1L))
-        shinyWidgets::updateNumericRangeInput(session, "pitchRangeInput",
+        shinyWidgets::updateNumericRangeInput(session = parent_session, "pitchRangeInput",
                                               value = c(new_pitch_min,
                                                         current_pitch_range[2L]))
       }
