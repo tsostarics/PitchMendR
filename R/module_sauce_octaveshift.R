@@ -42,16 +42,18 @@ octaveShiftSauceServer <- function(id,
       octave <- rlang::arg_match0(octave, c("halve", "double"))
       selectedPoints$data <- getBrushedPoints()
 
-      # browser()
-
       vals_to_change <- selectedPoints$data$pulse_id # pulse ID for the full dataset == row id
       plot_vals_to_change <- match(selectedPoints$data$pulse_id, plotSubset$data$pulse_id) # ensures correct order
       plot_vals_to_change <- plot_vals_to_change[!is.na(plot_vals_to_change)]
 
+      # TODO: some of this information needs to be retained in lastTransformation
+      #       since it can't just be multiplied by the inverse ratio anymore
       subset_to_change <- loadedFile$data[vals_to_change,]
       n_to_change <- length(vals_to_change)
       new_frame_values <- numeric(n_to_change)
 
+      # TODO: this may need to be changed to a for loop to populate three
+      #       different vectors so they can be saved in lastTransformation
       new_freq_values <-
         vapply(seq_len(n_to_change),
                \(i) {
@@ -74,13 +76,11 @@ octaveShiftSauceServer <- function(id,
 
       selectedPoints$data <- NULL
       lastTransformation$pulse_ids <- vals_to_change
-# browser()
       current_pitch_range <- isolate(pitchRangeInput())
       max_transform_value <- max(new_freq_values, na.rm = TRUE)
       if (lockButton() %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
         new_pitch_max <-
           ceiling(add_semitones(max_transform_value, sign(max_transform_value)*1L))
-        # TODO: this isn't working apparently
         shinyWidgets::updateNumericRangeInput(session = parent_session, "pitchRangeInput",
                                               value = c(current_pitch_range[1L],
                                                         new_pitch_max))
@@ -109,6 +109,8 @@ octaveShiftSauceServer <- function(id,
     })
 
 
+    # TODO: this needs to be completely reworked with lastTransformation
+    #       updated to have more information saved regarding files, frame_ids, etc.
     undoTransformation <- reactive({
       if (is.null(loadedFile$data) || is.null(lastTransformation$pulse_ids))
         return(NULL)
