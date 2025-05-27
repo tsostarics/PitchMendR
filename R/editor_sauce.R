@@ -235,7 +235,7 @@ openSauceEditor <- function(
                                                                     label = "Remove",
                                                                     title = "Click to remove selected points",
                                                                     style = "margin: 1%;margin-top:0%;margin-bottom:0")),
-                                              octaveShiftUI('octaveShift')
+                                              octaveShiftSauceUI('octaveShift')
                                   )
             )
             # )
@@ -1391,7 +1391,7 @@ openSauceEditor <- function(
                              plotFlag)
 
     # Handles the pitch doubling/halving and undo functionality
-    octaveShift <- octaveShiftServer('octaveShift',
+    octaveShift <- octaveShiftSauceServer('octaveShift',
                                      loadedFile,
                                      plotSubset,
                                      transformedColumn,
@@ -1401,7 +1401,9 @@ openSauceEditor <- function(
                                      updatePlot,
                                      input_fakeY,
                                      reactive(input$pitchRangeInput),
-                                     reactive(input$lockButton))
+                                     reactive(input$lockButton),
+                                     rawPitchDB,
+                                     parent_session = session)
 
     # Handles the Progress pane
     diagnostics <- diagnosticsServer('diagnostics',
@@ -1409,8 +1411,7 @@ openSauceEditor <- function(
                                      parent_session = session,
                                      fileHandler,
                                      transformedColumn,
-                                     "t",
-                                     # input_fakeX,
+                                     input_fakeX,
                                      input_fakeY,
                                      input_fakeFile,
                                      selectionColumn,

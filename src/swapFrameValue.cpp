@@ -3,17 +3,13 @@ using namespace Rcpp;
 
 //' @export
 // [[Rcpp::export]]
-List swapFrameValue(List frame, int i, int j) {
+double swapFrameValue(List frame, int i, int j) {
   DoubleVector freqs(frame["frequency"]);
-  DoubleVector strengths(frame["strength"]);
 
-  // double temp = freqs[i];
-  // freqs[i] = freqs[j];
-  // freqs[j] = temp;
-  //
-  // temp = strengths[i];
-  // strengths[i] = strengths[j];
-  // strengths[j] = temp;
+  if (i == j)
+    return freqs[i-1];
+
+  DoubleVector strengths(frame["strength"]);
 
   std::swap(freqs[i-1], freqs[j-1]);
   std::swap(strengths[i-1], strengths[j-1]);
@@ -21,6 +17,6 @@ List swapFrameValue(List frame, int i, int j) {
   frame["frequency"] = freqs;
   frame["strength"] = strengths;
 
-  return frame;
+  return freqs[i-1];
 }
 

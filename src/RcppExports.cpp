@@ -23,7 +23,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // swapFrameValue
-List swapFrameValue(List frame, int i, int j);
+double swapFrameValue(List frame, int i, int j);
 RcppExport SEXP _PitchMendR_swapFrameValue(SEXP frameSEXP, SEXP iSEXP, SEXP jSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
