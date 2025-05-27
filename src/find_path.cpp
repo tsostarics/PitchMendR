@@ -7,7 +7,7 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List find_path2(const Rcpp::List &ptst, const Rcpp::CharacterVector &filename) {
+Rcpp::List find_path(const Rcpp::List &ptst, const Rcpp::CharacterVector &filename) {
   const int nx = static_cast<int>(ptst["nx"]);
 
   LogicalVector is_voiced(nx);

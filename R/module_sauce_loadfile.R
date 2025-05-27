@@ -94,7 +94,7 @@ loadSauceFileServer <- function(id,
         data.table::rbindlist(
           lapply(filenames,
                  \(x) {
-                   find_path2(rawPitchDB$data[[x]], x)
+                   find_path(rawPitchDB$data[[x]], x)
                  })
         )
 

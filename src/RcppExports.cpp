@@ -10,15 +10,15 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// find_path2
-Rcpp::List find_path2(const Rcpp::List& ptst, const Rcpp::CharacterVector& filename);
-RcppExport SEXP _PitchMendR_find_path2(SEXP ptstSEXP, SEXP filenameSEXP) {
+// find_path
+Rcpp::List find_path(const Rcpp::List& ptst, const Rcpp::CharacterVector& filename);
+RcppExport SEXP _PitchMendR_find_path(SEXP ptstSEXP, SEXP filenameSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type ptst(ptstSEXP);
     Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type filename(filenameSEXP);
-    rcpp_result_gen = Rcpp::wrap(find_path2(ptst, filename));
+    rcpp_result_gen = Rcpp::wrap(find_path(ptst, filename));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -37,7 +37,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_PitchMendR_find_path2", (DL_FUNC) &_PitchMendR_find_path2, 2},
+    {"_PitchMendR_find_path", (DL_FUNC) &_PitchMendR_find_path, 2},
     {"_PitchMendR_swapFrameValue", (DL_FUNC) &_PitchMendR_swapFrameValue, 3},
     {NULL, NULL, 0}
 };

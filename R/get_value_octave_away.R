@@ -15,7 +15,8 @@
 #' @param octave String, either "halve" or "double"
 #' @param threshold Threshold value in Hz, default 5 but subject to tuning
 #'
-#' @returns
+#' @returns integer index of the candidate an octave away. If no such
+#' candidate is found, returns 1 (index of the current f0 value).
 get_value_octave_away <- function(frame, octave, threshold = 5) {
   # This is done in get_and_set_freq_values
   # octave <- rlang::arg_match0(octave, c("halve", "double"))
