@@ -150,8 +150,6 @@ openSauceEditor <- function(
           # ),
           bslib::card( height = "88vh",
                        title = "Plot Settings",
-                       # loadSauceFile_workingFileOutput('loadSauceFile'),
-                       # shiny::textOutput(outputId = "workingFileOutput"),
                        shiny::uiOutput(outputId = "pitchRangeUI"),
                        tags$span(title = "Horizontal zoom in/out", "Timespan Controls"),
                        tags$span(style = "display:inline-flex;flex-direction: row; justify-content: space-between;",
@@ -376,36 +374,6 @@ openSauceEditor <- function(
                           class = "h-100",
                           # bslib::card(height = "100%",
                           title = "Directory Settings",
-                          # "Current working directory:",
-                          # shiny::verbatimTextOutput(outputId = "cwd"),
-                          # tags$span(title = "Enter the directory containing spreadsheet to load",
-                          #           shiny::textInput(
-                          #             inputId = "inputDirInput",
-                          #             label =  "Dataset input directory",
-                          #             value = input_directory,
-                          #             width = "100%"
-                          #           )),
-                          # tags$span(title = "Enter the directory to save annotated spreadsheet to",
-                          #           shiny::textInput(
-                          #             inputId = "outputDirInput",
-                          #             label =  "Output directory for annotated datasets",
-                          #             value = output_directory,
-                          #             width = "100%"
-                          #           )),
-                          # tags$span(title = "Select a file to load from the input directory",
-                          #           shiny::selectizeInput(inputId ="fileSelectBox",
-                          #                                 label =  "Files Available (*=not processed yet)",
-                          #                                 multiple = FALSE,
-                          #                                 choices = NULL)),
-                          # tags$span(title = "Use value >1 to load files in parallel.",
-                          #           shiny::numericInput(inputId ="numCoresInput",
-                          #                               label =  paste0("Enter the number of cores (max: ",
-                          #                                               parallel::detectCores()-1L,
-                          #                                               ") to use to load files in parallel."),
-                          #                               value = 1,
-                          #                               min = 1,
-                          #                               max = parallel::detectCores() - 1L,
-                          #                               step = 1L)),
                           loadSauceFileUI('loadSauceFile', input_directory, output_directory),
                           "",
                           tags$span(title = "Click to expand audio options",
@@ -1317,9 +1285,6 @@ openSauceEditor <- function(
                                parent_session = session,
                                loadedFile,
                                rawPitchDB,
-                               # reactive(input$fileSelectBox),
-                               # reactive(input$inputDirInput),
-                               # reactive(input$outputDirInput),
                                input_fakeFile,
                                input_fakeX,
                                input_fakeY,
@@ -1332,7 +1297,6 @@ openSauceEditor <- function(
                                plotSettings,
                                refilterSubset,
                                updatePlot
-                               # reactive(input$numCoresInput)
                                )
 
     # Handles the praat IO
@@ -1381,7 +1345,6 @@ openSauceEditor <- function(
                              reactive(input$saveOptionButton),
                              reactive(input$skipCheckedFilesToggle),
                              reactive(input$outputDirInput),
-                             # reactive(input$fileSelectBox),
                              input_fakeFile,
                              nPlotted,
                              annotations,
