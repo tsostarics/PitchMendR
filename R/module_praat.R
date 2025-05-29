@@ -5,7 +5,7 @@ praatUI_input <- function(id,
   ns <- NS(id)
 
   tagList(
-    singleton(tags$span(style = "dispaly:inline-block",
+    singleton(tags$span(style = "display:inline-block",
                         "The following are only used to send files to Praat or play audio files from the editor.",
                         tags$span(id = ns("praatQuestion"),
                                   style = "cursor:pointer",
