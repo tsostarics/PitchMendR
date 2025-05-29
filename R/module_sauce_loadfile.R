@@ -78,7 +78,10 @@ loadSauceFileServer <- function(id,
 
     inputFiles <- shiny::reactiveValues(paths = NULL,
                                         names = NULL,
-                                        n = NULL)
+                                        n = NULL,
+                                        hasOutput = NULL)
+
+    nfiles_string <- shiny::reactiveVal(NULL)
 
 
     shinyjs::onclick(id = "dirQuestion", {
@@ -99,35 +102,53 @@ loadSauceFileServer <- function(id,
       )
     })
 
-    observe({
+
+    update_inputFiles <- function(input, inputFiles, nfiles_string) {
       if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
         inputFiles$paths <- list.files(input$inputDirInput, ".Pitch$",
                                        include.dirs = FALSE,
                                        full.names = TRUE)
         inputFiles$names <- basename(inputFiles$paths)
         inputFiles$n <- length(inputFiles$paths)
-        hasOutput <- inputFiles$names %in% list.files(input$outputDirInput, include.dirs = FALSE)
+        inputFiles$hasOutput <- inputFiles$names %in% list.files(input$outputDirInput, include.dirs = FALSE)
 
-        output$nfiles <- shiny::renderText({
-          if (input$outputDirInput == input$inputDirInput) {
-            out_str <- "Input & output dirs must be different."
-            shinyjs::addClass(id = "loadFileButton",class = "btn-secondary")
-            shinyjs::disable(id = "loadFileButton")
-            shinyjs::addClass(id = "dirQuestion", class = "highlight-question")
-
-          } else {
-            out_str <- paste0("Input: ", inputFiles$n, ", Output: ", sum(hasOutput))
-            shinyjs::enable(id = "loadFileButton")
-            shinyjs::addClass(id = "loadFileButton",class = "btn-primary")
-            shinyjs::removeClass(id = "dirQuestion", class = "highlight-question")
-          }
-
-          out_str
-        })
+        # Change which to read
+        if (any(inputFiles$hasOutput)) {
+          message(paste0("Found ", sum(inputFiles$hasOutput), " files in output directory."))
+          inputFiles$paths[inputFiles$hasOutput] <-
+            file.path(input$outputDirInput, inputFiles$names[inputFiles$hasOutput])
+        }
 
       }
+
+
+      if (input$outputDirInput == input$inputDirInput) {
+        nfiles_string("Input & output dirs must be different.")
+        shinyjs::addClass(id = "loadFileButton",class = "btn-secondary")
+        shinyjs::removeClass(id = "loadFileButton", class = "btn-primary")
+        shinyjs::disable(id = "loadFileButton")
+        shinyjs::addClass(id = "dirQuestion", class = "highlight-question")
+
+      } else {
+        nfiles_string(paste0("Input: ", inputFiles$n, ", Output: ", sum(inputFiles$hasOutput)))
+        shinyjs::enable(id = "loadFileButton")
+        shinyjs::addClass(id = "loadFileButton",class = "btn-primary")
+        shinyjs::removeClass(id = "loadFileButton", class = "btn-secondary")
+        shinyjs::removeClass(id = "dirQuestion", class = "highlight-question")
+      }
+
+    }
+
+    shiny::observeEvent(input$inputDirInput, {
+      update_inputFiles(input, inputFiles, nfiles_string)
     })
 
+    shiny::observeEvent(input$outputDirInput, {
+      update_inputFiles(input, inputFiles, nfiles_string)
+    },ignoreInit = TRUE)
+
+
+    output$nfiles <- shiny::renderText({nfiles_string()})
 
     # fileDelimiter <- shiny::reactiveVal(value=",")
     shiny::observeEvent(input$loadFileButton, {
