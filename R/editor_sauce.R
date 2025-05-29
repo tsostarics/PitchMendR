@@ -435,7 +435,8 @@ openSauceEditor <- function(
     lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
 
     # Dataset holders
-    rawPitchDB         <- shiny::reactiveValues(data = NULL)
+    rawPitchDB         <- shiny::reactiveValues(data = NULL,
+                                                cdfs = NULL)
     loadedFile         <- shiny::reactiveValues(data = NULL)
     plotSubset         <- shiny::reactiveValues(data = NULL)     # Subset of loadedFile$data for the currently plotted file(s) only
     transformedColumn  <- shiny::reactiveValues(name = NULL)
@@ -657,7 +658,6 @@ openSauceEditor <- function(
         return(NULL)
       plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(f0),]
 
-      print(plotSubset$data)
 
       # Update our count of how many files are plotted
       nPlotted$n <- sum(fileHandler$isPlotted)
@@ -666,7 +666,6 @@ openSauceEditor <- function(
       # Update the x-axis for the plot
       horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[["t"]]))
       horiz_bounds$xlim <<- horiz_bounds$full
-      # browser()
     }
 
     ########################################################
@@ -798,6 +797,41 @@ openSauceEditor <- function(
       "Multiple Files"
     })
 
+    plot_candidates <- reactive({
+      req(nPlotted)
+      req(rawPitchDB)
+
+      if (!nPlotted$is_one)
+        return(NULL)
+
+
+      plotted_file <- fileHandler$filenames[fileHandler$isPlotted]
+      cdf <- rawPitchDB$cdf[[plotted_file]]
+
+      if (is.null(cdf)) {
+        cdf <-
+          rawPitchDB$cdf[[plotted_file]] <-
+          data.table::rbindlist(
+            lapply(seq_len(rawPitchDB$data[[plotted_file]]$nx),
+                   \(i){
+                     f <- rawPitchDB$data[[plotted_file]][["frame"]][[i]]
+                     t <- rawPitchDB$data[[plotted_file]][["t"]][i]
+
+                     data.frame(cand_i   = data.table::frank(f[["strength"]]),
+                                f0       = f[["frequency"]],
+                                t        = t)
+                   })
+          )
+      }
+
+      ggplot2::geom_text(data = cdf,
+                         ggplot2::aes(x = t,
+                                      y = f0,
+                                      label = cand_i),
+                         inherit.aes = FALSE,
+                         color = "gray50")
+    })
+
     # Render the plot
     output$pulsePlot <- shiny::renderPlot({
       # message('Rerendering')
@@ -820,6 +854,8 @@ openSauceEditor <- function(
                                                color = lineColor))
         }
       }
+
+
 
       # If we hide the points, we run into an issue where there are no longer
       # any variables mapped to a varying aesthetic, which makes the legend
@@ -848,6 +884,7 @@ openSauceEditor <- function(
                       ggplot2::aes(x = t,
                                    y = f0,
                                    group = file))+
+        plot_candidates() +
         plot_line +
         plot_points +
         plot_addStyling() +
@@ -917,7 +954,7 @@ openSauceEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
-# browser()
+      # browser()
       # Toggle the color of the selected points
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
@@ -1025,7 +1062,6 @@ openSauceEditor <- function(
     })
 
     plotMatches <- reactive({
-      print(input$filterRegex)
 
       # Check off the displayed file if we're only looking at 1
       if (nPlotted$is_one) {
@@ -1290,22 +1326,22 @@ openSauceEditor <- function(
 
     # Handles file loading and initial setup with loaded data
     loadFile <- loadSauceFileServer("loadSauceFile",
-                               parent_session = session,
-                               loadedFile,
-                               rawPitchDB,
-                               input_fakeFile,
-                               input_fakeX,
-                               input_fakeY,
-                               selectionColumn,
-                               reactive(input$colorCodeColumnInput),
-                               reactive(input$useBadgesToggle),
-                               reactive(input$useNotesToggle),
-                               changeTransformedColumn,
-                               fileHandler,
-                               plotSettings,
-                               refilterSubset,
-                               updatePlot
-                               )
+                                    parent_session = session,
+                                    loadedFile,
+                                    rawPitchDB,
+                                    input_fakeFile,
+                                    input_fakeX,
+                                    input_fakeY,
+                                    selectionColumn,
+                                    reactive(input$colorCodeColumnInput),
+                                    reactive(input$useBadgesToggle),
+                                    reactive(input$useNotesToggle),
+                                    changeTransformedColumn,
+                                    fileHandler,
+                                    plotSettings,
+                                    refilterSubset,
+                                    updatePlot
+    )
 
     # Handles the praat IO
     audioInfo <-
@@ -1348,35 +1384,35 @@ openSauceEditor <- function(
 
     # Handles the file forward/backward and save file functionality
     filenav <- fileNavSauceServer("fileNav",
-                             loadedFile,
-                             rawPitchDB,
-                             fileHandler,
-                             reactive(input$saveOptionButton),
-                             reactive(input$skipCheckedFilesToggle),
-                             loadFile$outputDirInput,
-                             input_fakeFile,
-                             nPlotted,
-                             annotations,
-                             refilterSubset,
-                             destroyLoadedAudio,
-                             "\t", # loadFile$fileDelimiter,
-                             plotFlag)
+                                  loadedFile,
+                                  rawPitchDB,
+                                  fileHandler,
+                                  reactive(input$saveOptionButton),
+                                  reactive(input$skipCheckedFilesToggle),
+                                  loadFile$outputDirInput,
+                                  input_fakeFile,
+                                  nPlotted,
+                                  annotations,
+                                  refilterSubset,
+                                  destroyLoadedAudio,
+                                  "\t", # loadFile$fileDelimiter,
+                                  plotFlag)
 
     # Handles the pitch doubling/halving and undo functionality
     octaveShift <- octaveShiftSauceServer('octaveShift',
-                                     loadedFile,
-                                     plotSubset,
-                                     fileHandler,
-                                     transformedColumn,
-                                     selectedPoints,
-                                     lastTransformation,
-                                     getBrushedPoints,
-                                     updatePlot,
-                                     input_fakeY,
-                                     reactive(input$pitchRangeInput),
-                                     reactive(input$lockButton),
-                                     rawPitchDB,
-                                     parent_session = session)
+                                          loadedFile,
+                                          plotSubset,
+                                          fileHandler,
+                                          transformedColumn,
+                                          selectedPoints,
+                                          lastTransformation,
+                                          getBrushedPoints,
+                                          updatePlot,
+                                          input_fakeY,
+                                          reactive(input$pitchRangeInput),
+                                          reactive(input$lockButton),
+                                          rawPitchDB,
+                                          parent_session = session)
 
     # Handles the Progress pane
     diagnostics <- diagnosticsServer('diagnostics',
