@@ -43,20 +43,10 @@ loadSauceFileUI <- function(id, input_directory, output_directory) {
 
 }
 
-
-# loadSauceFile_workingFileOutput <- function(id) {
-#   ns <- NS(id)
-#   shiny::textOutput(outputId = ns("workingFileOutput"))
-# }
-
-
 loadSauceFileServer <- function(id,
                                 parent_session,
                                 loadedFile,
                                 rawPitchDB,
-                                # fileSelectBox,
-                                # inputDirInput,
-                                # outputDirInput,
                                 filenameColumnInput,
                                 xValColumnInput,
                                 yValColumnInput,
@@ -69,7 +59,6 @@ loadSauceFileServer <- function(id,
                                 plotSettings,
                                 refilterSubset,
                                 updatePlot
-                                # numCoresInput
                                 ) {
   moduleServer(id, function(input, output, session) {
 
