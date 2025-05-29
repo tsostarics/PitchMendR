@@ -429,7 +429,8 @@ openSauceEditor <- function(
                                          fileChecked = NULL,
                                          badges = NULL,
                                          notes = NULL,
-                                         indices = NULL)
+                                         indices = NULL,
+                                         hasChanged = NULL)
     nPlotted           <- shiny::reactiveValues(n = NULL, is_one = NULL)
     lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
 
@@ -654,13 +655,9 @@ openSauceEditor <- function(
       plotted_indices <- getIndices()
       if (is.null(plotted_indices))
         return(NULL)
-
       plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(f0),]
 
       print(plotSubset$data)
-      # browser()
-      # print(plotSubset)
-      # loadedFile$data[plotted_indices,]
 
       # Update our count of how many files are plotted
       nPlotted$n <- sum(fileHandler$isPlotted)
@@ -812,7 +809,7 @@ openSauceEditor <- function(
       # These will update when the user changes the color manually with the
       # color pickers or if the theme is changed.
       lineColor <- plotSettings$setColors[1]
-  # browser()
+
       plot_line <- NULL
       if (plotSettings$showLine) {
         if (input$useRemovedPointsToggleInput) {
@@ -879,6 +876,10 @@ openSauceEditor <- function(
         plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
         loadedFile$data[vals_to_change,      keep_pulse := !keep_pulse]
         plotSubset$data[plot_vals_to_change, keep_pulse := !keep_pulse]
+
+        files_changed <- unique(selectedPoints$data[["file"]])
+        fileHandler$hasChanged[files_changed] <- TRUE
+
         selectedPoints$data <- NULL
         updatePlot()
       }
@@ -902,6 +903,10 @@ openSauceEditor <- function(
         # TODO: If 0 candidate in first position, swap with highest intensity sample
         loadedFile$data[vals_to_change, keep_pulse := TRUE]
         plotSubset$data[plot_vals_to_change, keep_pulse := TRUE]
+
+        files_changed <- unique(selectedPoints$data[["file"]])
+        fileHandler$hasChanged[files_changed] <- TRUE
+
         selectedPoints$data <- NULL
 
         updatePlot()
@@ -912,7 +917,7 @@ openSauceEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
-
+# browser()
       # Toggle the color of the selected points
       if (!is.null(selectedPoints$data)) {
         vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
@@ -920,6 +925,9 @@ openSauceEditor <- function(
         # TODO: Swap first position with 0 candidate
         loadedFile$data[vals_to_change, keep_pulse := FALSE]
         plotSubset$data[plot_vals_to_change, keep_pulse := FALSE]
+
+        files_changed <- unique(selectedPoints$data[["file"]])
+        fileHandler$hasChanged[files_changed] <- TRUE
 
         selectedPoints$data <- NULL
 
@@ -1341,16 +1349,17 @@ openSauceEditor <- function(
     # Handles the file forward/backward and save file functionality
     filenav <- fileNavSauceServer("fileNav",
                              loadedFile,
+                             rawPitchDB,
                              fileHandler,
                              reactive(input$saveOptionButton),
                              reactive(input$skipCheckedFilesToggle),
-                             reactive(input$outputDirInput),
+                             loadFile$outputDirInput,
                              input_fakeFile,
                              nPlotted,
                              annotations,
                              refilterSubset,
                              destroyLoadedAudio,
-                             loadFile$fileDelimiter,
+                             "\t", # loadFile$fileDelimiter,
                              plotFlag)
 
     # Handles the pitch doubling/halving and undo functionality

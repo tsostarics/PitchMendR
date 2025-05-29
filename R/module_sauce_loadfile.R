@@ -69,7 +69,7 @@ loadSauceFileServer <- function(id,
                                 plotSettings,
                                 refilterSubset,
                                 updatePlot
-                                ) {
+) {
   moduleServer(id, function(input, output, session) {
 
     output$cwd <- shiny::renderText({
@@ -77,7 +77,8 @@ loadSauceFileServer <- function(id,
     })
 
     inputFiles <- shiny::reactiveValues(paths = NULL,
-                                        names = NULL)
+                                        names = NULL,
+                                        n = NULL)
 
 
     shinyjs::onclick(id = "dirQuestion", {
@@ -104,6 +105,7 @@ loadSauceFileServer <- function(id,
                                        include.dirs = FALSE,
                                        full.names = TRUE)
         inputFiles$names <- basename(inputFiles$paths)
+        inputFiles$n <- length(inputFiles$paths)
         hasOutput <- inputFiles$names %in% list.files(input$outputDirInput, include.dirs = FALSE)
 
         output$nfiles <- shiny::renderText({
@@ -114,7 +116,7 @@ loadSauceFileServer <- function(id,
             shinyjs::addClass(id = "dirQuestion", class = "highlight-question")
 
           } else {
-            out_str <- paste0("Input: ", length(inputFiles$paths), ", Output: ", sum(hasOutput))
+            out_str <- paste0("Input: ", inputFiles$n, ", Output: ", sum(hasOutput))
             shinyjs::enable(id = "loadFileButton")
             shinyjs::addClass(id = "loadFileButton",class = "btn-primary")
             shinyjs::removeClass(id = "dirQuestion", class = "highlight-question")
@@ -140,6 +142,18 @@ loadSauceFileServer <- function(id,
         message("Input directory doesnt exist")
         return(NULL)
       }
+
+      if (!dir.exists(input$outputDirInput)){
+        created <- dir.create(input$outputDirInput)
+        if (!created) {
+          stop("Output directory doesn't exist & could not be created.")
+        } else {
+          message("Created output directory")
+        }
+        # return(NULL) # doesn't seem right unless creation triggers another check
+      }
+
+
 
 
       message("Loading files")
@@ -187,7 +201,7 @@ loadSauceFileServer <- function(id,
 
       # TODO: HARD CODE COLUMNS HERE, SORTING MIGHT NOT EVEN BE NECESSARY
       # if (!selectionColumnInput() %in% loaded_colnames)
-        loadedFile$data[, keep_pulse := where_not_zero(f0)]
+      loadedFile$data[, keep_pulse := where_not_zero(f0)]
 
       # Forcefully add pulse id, overwrites in instances where the
       # ordering gets messed up
@@ -201,25 +215,30 @@ loadSauceFileServer <- function(id,
       # changeTransformedColumn()
 
       # Update the fileHandler with the information from the loaded file
-      fileHandler$inputFiles$names <- inputFiles$names
-      fileHandler$isPlotted <- rep(TRUE, length(fileHandler$inputFiles$names)) # upon file load, plot all files
+      fileHandler$filenames <- inputFiles$names
+      fileHandler$isPlotted <- rep(TRUE, inputFiles$n) # upon file load, plot all files
+# browser()
       fileHandler$indices <-
-        lapply(fileHandler$inputFiles$names,
-               \(fname) which(loadedFile$data[["file"]] == fname)) |>
-        `names<-`(fileHandler$inputFiles$names)
+        setNames(
+          lapply(fileHandler$filenames,
+                 \(fname) loadedFile$data[file == fname,][["pulse_id"]]),
+          fileHandler$filenames
+        )
+
+      fileHandler$hasChanged <- setNames(rep(FALSE, inputFiles$n), fileHandler$filenames)
 
       # Add the file_checked column if it doesn't exist. If it does,
       # then validate that the column has no missing values and update
       # the fileHandler with which files have already been checked.
       # if (!"file_checked" %in% loaded_colnames) {
       #   loadedFile$data[, file_checked := FALSE]
-        fileHandler$fileChecked <- rep(FALSE, length(fileHandler$inputFiles$names))
+      fileHandler$fileChecked <- setNames(rep(FALSE, inputFiles$n), fileHandler$filenames)
       # } else {
       #   loaded_file_check <- loadedFile$data[, .(file_checked = ifelse(is.na(file_checked[1]), FALSE, file_checked[1])), by = c(filenameColumnInput())]
       #
       #   file_checks <- loaded_file_check$file_checked
       #   names(file_checks) <- loaded_file_check[[filenameColumnInput()]]
-      #   fileHandler$fileChecked <- file_checks[fileHandler$inputFiles$names]
+      #   fileHandler$fileChecked <- file_checks[fileHandler$filenames]
       # }
 
       plotSettings$showLine <- TRUE
@@ -250,14 +269,14 @@ loadSauceFileServer <- function(id,
       # if (useBadgesToggle()) {
       #   if (!"tags" %in% loaded_colnames) {
       #     loadedFile$data[, tags := NA_character_]
-      #     fileHandler$badges <- rep(NA_character_, length(fileHandler$inputFiles$names))
-      #     names(fileHandler$badges) <- fileHandler$inputFiles$names
+      #     fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
+      #     names(fileHandler$badges) <- fileHandler$filenames
       #   } else {
       #     # The tags are held in a column which means that each file has its
       #     # tags listed N times for N rows even though they're the same value.
       #     # So, we only need to take the first one.
       #     fileHandler$badges = loadedFile$data[, .(tags = tags[1]), by = c(filenameColumnInput())][['tags']]
-      #     names(fileHandler$badges) <- fileHandler$inputFiles$names
+      #     names(fileHandler$badges) <- fileHandler$filenames
       #     loadedFile$data[,tags := as.character(tags)]
       #   }
       # }
@@ -268,11 +287,11 @@ loadSauceFileServer <- function(id,
       # if (useNotesToggle()) {
       #   if (!"notes" %in% colnames(loadedFile$data)) {
       #     loadedFile$data[, notes := NA_character_]
-      #     fileHandler$notes <- rep(NA_character_, length(fileHandler$inputFiles$names))
-      #     names(fileHandler$notes) <- fileHandler$inputFiles$names
+      #     fileHandler$notes <- rep(NA_character_, length(fileHandler$filenames))
+      #     names(fileHandler$notes) <- fileHandler$filenames
       #   } else {
       #     fileHandler$notes = loadedFile$data[, .(notes = notes[1]), by = c(filenameColumnInput())][['notes']]
-      #     names(fileHandler$notes) <- fileHandler$inputFiles$names
+      #     names(fileHandler$notes) <- fileHandler$filenames
       #     loadedFile$data[,notes := as.character(notes)]
       #   }
       # }
@@ -332,6 +351,7 @@ loadSauceFileServer <- function(id,
       }
     })
 
-    return(list(fileDelimiter = NA_character_))
+    return(list(outputDirInput = reactive(input$outputDirInput),
+                inputDirInput  = reactive(input$inputDirInput)))
   })
 }

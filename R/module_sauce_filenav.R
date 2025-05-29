@@ -24,6 +24,7 @@ fileNavSauceUI <- function(id) {
 
 fileNavSauceServer <- function(id,
                           loadedFile,
+                          rawPitchDB,
                           fileHandler,
                           saveOptionButton,
                           skipCheckedFilesToggle,
@@ -45,28 +46,31 @@ fileNavSauceServer <- function(id,
     saveData <- function(){
       if (is.null(loadedFile$data))
         return(NULL)
-      annotations$mergeAnnotations()
-      path <- file.path(outputDirInput(), clean_file(fileSelectBox()))
 
-
-      names(fileHandler$fileChecked) <- fileHandler$filenames
-      # Update the file checked column before saving
-      loadedFile$data[, file_checked := fileHandler$fileChecked[loadedFile$data[[filenameColumnInput()]]]]
-      if (!file.exists(path) || file.access(path, mode = 2) == 0) {
+      if (file.access(outputDirInput(), mode = 2) == 0) { # TODO: check this
         shiny::updateActionButton(session, "saveButton", icon = icon("spinner"))
-        write_status <- tryCatch(data.table::fwrite(x = loadedFile$data,
-                                                    file = path,sep = fileDelimiter()),
-                                 error = \(e) {
-                                   e
-                                 })
 
-        if (!is.null(write_status)) {
-          message(write_status$message)
-          shiny::updateActionButton(session, "saveButton", icon = icon("triangle-exclamation"))
+        # Save all of the files that have changed
+        files_to_save <- fileHandler$filenames[fileHandler$hasChanged]
+        filepaths <- file.path(outputDirInput(), files_to_save)
+        write_status <-
+          vapply(seq_along(files_to_save),
+                 \(i) rPraat::pitch.write(rawPitchDB$data[[files_to_save[i]]], filepaths[i]),
+                 1L)
 
-          return(NULL)
-        }
-        message(paste0("Wrote data to ", path))
+        fileHandler$hasChanged[fileHandler$hasChanged][write_status == 0L] <- FALSE
+
+        # TODO: Need some better error handling for failures here
+
+        # if (!is.null(write_status)) {
+        #   message(write_status$message)
+        #   shiny::updateActionButton(session, "saveButton", icon = icon("triangle-exclamation"))
+        #
+        #   return(NULL)
+        # }
+
+        # TODO: Save summary csv file in output directory
+        message(paste0("Saved ", length(write_status), " files"))
         shiny::updateActionButton(session, "saveButton", icon = icon("check"))
 
         # Create an observer that waits until the dataset is modified (denoted
@@ -77,10 +81,13 @@ fileNavSauceServer <- function(id,
                                                   fileHandler$notes,
                                                   fileHandler$badges), {
                                                     shiny::updateActionButton(session, "saveButton", icon = icon("floppy-disk"))
-                                                  }, once = TRUE, ignoreInit = TRUE)
+                                                  },
+                                             once = TRUE,
+                                             ignoreInit = TRUE)
+
+
 
       }
-
     }
     #)
 
@@ -95,7 +102,6 @@ fileNavSauceServer <- function(id,
         annotations$saveNotes()
         annotations$saveBadges()
       }
-
       if (!dir.exists(outputDirInput())){
         message("Output directory doesnt exist")
         shiny::updateActionButton(session, "saveButton", icon = icon("triangle-exclamation"))

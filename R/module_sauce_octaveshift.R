@@ -66,6 +66,9 @@ octaveShiftSauceServer <- function(id,
       loadedFile$data[vals_to_change, f0 := new_freq_values]
       plotSubset$data[plot_vals_to_change, f0 := new_freq_values]
 
+      files_changed <- unique(selectedPoints$data[["file"]])
+      fileHandler$hasChanged[files_changed] <- TRUE
+
       new_freq_values
     }
 
