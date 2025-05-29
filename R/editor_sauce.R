@@ -150,7 +150,7 @@ openSauceEditor <- function(
           # ),
           bslib::card( height = "88vh",
                        title = "Plot Settings",
-                       loadSauceFile_workingFileOutput('loadSauceFile'),
+                       # loadSauceFile_workingFileOutput('loadSauceFile'),
                        # shiny::textOutput(outputId = "workingFileOutput"),
                        shiny::uiOutput(outputId = "pitchRangeUI"),
                        tags$span(title = "Horizontal zoom in/out", "Timespan Controls"),
@@ -214,7 +214,7 @@ openSauceEditor <- function(
             tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
             bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
                                   bslib::card(fill = TRUE,
-                                              fileNavUI("fileNav"),
+                                              fileNavSauceUI("fileNav"),
                                               annotationUI("annotations")
                                   ),
                                   bslib::card(fill = TRUE,
@@ -1375,13 +1375,13 @@ openSauceEditor <- function(
                                     nPlotted)
 
     # Handles the file forward/backward and save file functionality
-    filenav <- fileNavServer("fileNav",
+    filenav <- fileNavSauceServer("fileNav",
                              loadedFile,
                              fileHandler,
                              reactive(input$saveOptionButton),
                              reactive(input$skipCheckedFilesToggle),
                              reactive(input$outputDirInput),
-                             reactive(input$fileSelectBox),
+                             # reactive(input$fileSelectBox),
                              input_fakeFile,
                              nPlotted,
                              annotations,
