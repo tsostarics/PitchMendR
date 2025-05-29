@@ -6,8 +6,8 @@
 #' @description creates a data.table by loading the relevant f0 info from the pitch obj
 #'
 #' @export
-find_path <- function(ptst, filename) {
-    .Call(`_PitchMendR_find_path`, ptst, filename)
+find_path <- function(pitchobj, filename) {
+    .Call(`_PitchMendR_find_path`, pitchobj, filename)
 }
 
 #' @export

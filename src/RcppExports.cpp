@@ -11,14 +11,14 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // find_path
-Rcpp::List find_path(const Rcpp::List& ptst, const Rcpp::CharacterVector& filename);
-RcppExport SEXP _PitchMendR_find_path(SEXP ptstSEXP, SEXP filenameSEXP) {
+Rcpp::List find_path(const Rcpp::List& pitchobj, const Rcpp::CharacterVector& filename);
+RcppExport SEXP _PitchMendR_find_path(SEXP pitchobjSEXP, SEXP filenameSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type ptst(ptstSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type pitchobj(pitchobjSEXP);
     Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type filename(filenameSEXP);
-    rcpp_result_gen = Rcpp::wrap(find_path(ptst, filename));
+    rcpp_result_gen = Rcpp::wrap(find_path(pitchobj, filename));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -7,15 +7,15 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List find_path(const Rcpp::List &ptst, const Rcpp::CharacterVector &filename) {
-  const int nx = static_cast<int>(ptst["nx"]);
+Rcpp::List find_path(const Rcpp::List &pitchobj, const Rcpp::CharacterVector &filename) {
+  const int nx = static_cast<int>(pitchobj["nx"]);
 
   LogicalVector is_voiced(nx);
   NumericVector f0(nx);
   IntegerVector zero_index(nx);  // Using a List to store vectors of indices
   CharacterVector file = rep(filename, nx);
   IntegerVector frame_indices(seq_len(nx));
-  List frames = ptst["frame"];
+  List frames = pitchobj["frame"];
 
 
   for (int i = 0; i < nx; ++i) {
@@ -40,7 +40,7 @@ Rcpp::List find_path(const Rcpp::List &ptst, const Rcpp::CharacterVector &filena
   }
 
   List dt = List::create(Named("f0") = f0,
-                         _["t"] = ptst["t"],
+                         _["t"] = pitchobj["t"],
                          _["is_voiced"] = is_voiced,
                          _["zero_index"] = zero_index,
                          _["file"] = file,
