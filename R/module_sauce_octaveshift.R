@@ -60,7 +60,7 @@ octaveShiftSauceServer <- function(id,
                \(i) {
                  file    <- subset_to_change[[i, "file"]]
                  frame_i <- subset_to_change[[i, "frame_i"]]
-                 frame <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
+                 frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
                  swapFrameValue(frame, 1L, get_value_octave_away(frame, octave))
                }, numeric(1))
 
@@ -70,7 +70,6 @@ octaveShiftSauceServer <- function(id,
       files_changed <- unique(selectedPoints$data[["file"]])
       fileHandler$hasChanged[files_changed] <- TRUE
       selectedPoints$data <- NULL
-message("getset done")
       new_freq_values
     }
 
@@ -96,7 +95,7 @@ message("getset done")
       if (is.null(loadedFile$data))
         return(NULL)
 
-      new_freq_values <- get_and_set_new_freq_values("double")
+      new_freq_values <- get_and_set_new_freq_values("halve")
 
       current_pitch_range <- isolate(pitchRangeInput())
       min_transform_value <- min(new_freq_values[where_not_zero(new_freq_values)],
