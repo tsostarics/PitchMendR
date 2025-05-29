@@ -1366,6 +1366,7 @@ openSauceEditor <- function(
     octaveShift <- octaveShiftSauceServer('octaveShift',
                                      loadedFile,
                                      plotSubset,
+                                     fileHandler,
                                      transformedColumn,
                                      selectedPoints,
                                      lastTransformation,

@@ -26,6 +26,7 @@ octaveShiftSauceUI <- function(id) {
 octaveShiftSauceServer <- function(id,
                               loadedFile,
                               plotSubset,
+                              fileHandler,
                               transformedColumn,
                               selectedPoints,
                               lastTransformation,
@@ -41,7 +42,7 @@ octaveShiftSauceServer <- function(id,
     get_and_set_new_freq_values <- function(octave) {
       octave <- rlang::arg_match0(octave, c("halve", "double"))
       selectedPoints$data <- getBrushedPoints()
-
+# browser()
       vals_to_change <- selectedPoints$data$pulse_id # pulse ID for the full dataset == row id
       plot_vals_to_change <- match(selectedPoints$data$pulse_id, plotSubset$data$pulse_id) # ensures correct order
       plot_vals_to_change <- plot_vals_to_change[!is.na(plot_vals_to_change)]
@@ -68,7 +69,8 @@ octaveShiftSauceServer <- function(id,
 
       files_changed <- unique(selectedPoints$data[["file"]])
       fileHandler$hasChanged[files_changed] <- TRUE
-
+      selectedPoints$data <- NULL
+message("getset done")
       new_freq_values
     }
 
@@ -77,8 +79,6 @@ octaveShiftSauceServer <- function(id,
         return(NULL)
       new_freq_values <- get_and_set_new_freq_values("double")
 
-      selectedPoints$data <- NULL
-      lastTransformation$pulse_ids <- vals_to_change
       current_pitch_range <- isolate(pitchRangeInput())
       max_transform_value <- max(new_freq_values, na.rm = TRUE)
       if (lockButton() %% 2 == 0 && current_pitch_range[2L] < max_transform_value){
