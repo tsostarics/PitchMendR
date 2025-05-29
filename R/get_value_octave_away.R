@@ -13,11 +13,11 @@
 #'
 #' @param frame List from pitch object. E.g., `pitchObj$frame[[i]]`
 #' @param octave String, either "halve" or "double"
-#' @param threshold Threshold value in Hz, default 5 but subject to tuning
+#' @param threshold Threshold value in semitones, default .25 (25 cents) but subject to tuning
 #'
 #' @returns integer index of the candidate an octave away. If no such
 #' candidate is found, returns 1 (index of the current f0 value).
-get_value_octave_away <- function(frame, octave, threshold = 5) {
+get_value_octave_away <- function(frame, octave, threshold = 0.25) {
   # This is done in get_and_set_freq_values
   # octave <- rlang::arg_match0(octave, c("halve", "double"))
   ratio <- switch (octave,
@@ -25,9 +25,12 @@ get_value_octave_away <- function(frame, octave, threshold = 5) {
                    "double" = 2)
   cur_f0 <- frame[["frequency"]][1]
 
+  fmax <- add_semitones(cur_f0 * ratio, threshold)
+  fmin <- add_semitones(cur_f0 * ratio, -threshold)
+
   new_frame_i <-
-    which(frame[["frequency"]] <= (cur_f0 * ratio + threshold) &
-            frame[["frequency"]] >= (cur_f0 * ratio - threshold))[1L]
+    which(frame[["frequency"]] <= fmax &
+            frame[["frequency"]] >= fmin)[1L]
 
   if (is.na(new_frame_i))
     new_frame_i <- 1L
