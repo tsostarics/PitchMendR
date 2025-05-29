@@ -1,14 +1,51 @@
-loadSauceFileUI <- function(id) {
+loadSauceFileUI <- function(id, input_directory, output_directory) {
   ns <- NS(id)
-  shiny::actionButton(
-    inputId = ns("loadFileButton"),
-    title = "Click to load selected file",
-    label = "Load File",
-    class = "btn-warning",
-    icon = icon("spinner"),
-    width = "100%",
-    style = "margin-bottom:8px"
+
+  tagList(
+
+    "Current working directory:",
+    shiny::verbatimTextOutput(outputId = ns("cwd")),
+    tags$span(title = "Enter the directory containing spreadsheet to load",
+              shiny::textInput(
+                inputId = ns("inputDirInput"),
+                label =  "Dataset input directory",
+                value = input_directory,
+                width = "100%"
+              )),
+    tags$span(title = "Enter the directory to save annotated spreadsheet to",
+              shiny::textInput(
+                inputId = ns("outputDirInput"),
+                label =  "Output directory for annotated datasets",
+                value = output_directory,
+                width = "100%"
+              )),
+    "Number of files in input and output directories:",
+    shiny::verbatimTextOutput(outputId = ns("nfiles")),
+    # tags$span(title = "Select a file to load from the input directory",
+    #           shiny::selectizeInput(inputId = ns("fileSelectBox"),
+    #                                 label =  "Files Available (*=not processed yet)",
+    #                                 multiple = FALSE,
+    #                                 choices = NULL)),
+    tags$span(title = "Use value >1 to load files in parallel.",
+              shiny::numericInput(inputId = ns("numCoresInput"),
+                                  label =  paste0("Enter the number of cores (max: ",
+                                                  parallel::detectCores()-1L,
+                                                  ") to use to load files in parallel."),
+                                  value = 1,
+                                  min = 1,
+                                  max = parallel::detectCores() - 1L,
+                                  step = 1L)),
+    shiny::actionButton(
+      inputId = ns("loadFileButton"),
+      title = "Click to load selected file",
+      label = "Load File",
+      class = "btn-warning",
+      icon = icon("spinner"),
+      width = "100%",
+      style = "margin-bottom:8px"
+    )
   )
+
 }
 
 # flagSamplesButton_UI <- function(id) {
@@ -32,9 +69,9 @@ loadSauceFileServer <- function(id,
                                 parent_session,
                                 loadedFile,
                                 rawPitchDB,
-                                fileSelectBox,
-                                inputDirInput,
-                                outputDirInput,
+                                # fileSelectBox,
+                                # inputDirInput,
+                                # outputDirInput,
                                 filenameColumnInput,
                                 xValColumnInput,
                                 yValColumnInput,
@@ -46,22 +83,45 @@ loadSauceFileServer <- function(id,
                                 fileHandler,
                                 plotSettings,
                                 refilterSubset,
-                                updatePlot,
-                                numCoresInput) {
+                                updatePlot
+                                # numCoresInput
+                                ) {
   moduleServer(id, function(input, output, session) {
 
+    output$cwd <- shiny::renderText({
+      message("Rendering cwd")
+      getwd()
+    })
+
+    observe({
+      if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
+        input_filepaths <- list.files(input$inputDirInput, ".Pitch$", include.dirs = FALSE)
+        # input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp|wav|zip|msi$", input_filepaths,ignore.case = TRUE)]
+        input_filenames <- basename(input_filepaths)
+        hasOutput <- input_filenames %in% list.files(input$outputDirInput, include.dirs = FALSE)
+
+        output$nfiles <- shiny::renderText({
+          paste0("Input: ", length(input_filepaths), ", Output: ", sum(hasOutput))
+        })
+
+        #
+        # shiny::updateSelectizeInput(session,
+        #                             inputId = "fileSelectBox",
+        #                             choices = paste0(input_filepaths, c("*", "")[hasOutput+1]))
+      }
+    })
 
 
     # fileDelimiter <- shiny::reactiveVal(value=",")
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
       # Don't run if no file is selected
-      if (is.null(inputDirInput())){
+      if (is.null(input$inputDirInput)){
         return(NULL)
       }
 
       # Don't run if input directory doesn't exist
-      if (!dir.exists(inputDirInput())){
+      if (!dir.exists(input$inputDirInput)){
         message("Input directory doesnt exist")
         return(NULL)
       }
@@ -74,12 +134,12 @@ loadSauceFileServer <- function(id,
       # browser()
       # TODO: Go through files to read and check the output directory to see
       #       if there are any files that have been edited already
-      files_to_read <- list.files(inputDirInput(), pattern = "Pitch$", full.names = TRUE)
+      files_to_read <- list.files(input$inputDirInput, pattern = "Pitch$", full.names = TRUE)
       filenames <- basename(files_to_read)
-      if (numCoresInput() > 1L) {
+      if (input$numCoresInput > 1L) {
         requireNamespace("future")
         requireNamespace("furrr")
-        future::plan("multisession", workers = numCoresInput())
+        future::plan("multisession", workers = input$numCoresInput)
         rawPitchDB$data <- furrr::future_map(files_to_read, pitch.read2)
         names(rawPitchDB$data) <- filenames
         future::plan("sequential")
@@ -248,7 +308,7 @@ loadSauceFileServer <- function(id,
 
     # Reactively update the appearance of the loadfile button
     observe({
-      if (!is.null(fileSelectBox()) && !is.null(inputDirInput())) {
+      if (!is.null(input$inputDirInput)) {
         shinyjs::removeClass("loadFileButton", class = "btn-warning")
         shinyjs::addClass("loadFileButton", class = "btn-primary")
         shiny::updateActionButton(session, "loadFileButton",icon = icon("upload"))
