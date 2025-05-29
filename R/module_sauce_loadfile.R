@@ -2,7 +2,13 @@ loadSauceFileUI <- function(id, input_directory, output_directory) {
   ns <- NS(id)
 
   tagList(
-
+    tags$head(
+      tags$style(HTML("
+                      .highlight-question {
+                      box-shadow: 0px 0px 6px 3px cyan
+                      }
+                      "))
+    ),
     "Current working directory:",
     shiny::verbatimTextOutput(outputId = ns("cwd")),
     tags$span(title = "Enter the directory containing spreadsheet to load",
@@ -19,7 +25,11 @@ loadSauceFileUI <- function(id, input_directory, output_directory) {
                 value = output_directory,
                 width = "100%"
               )),
-    "Number of files in input and output directories:",
+    singleton(tags$span(style = "display:inline-block",
+                        "Number of files in input and output directories:",
+                        tags$span(id = ns("dirQuestion"),
+                                  style = "cursor:pointer",
+                                  shiny::icon("circle-question")))),
     shiny::verbatimTextOutput(outputId = ns("nfiles")),
     tags$span(title = "Use value >1 to load files in parallel.",
               shiny::numericInput(inputId = ns("numCoresInput"),
@@ -63,12 +73,30 @@ loadSauceFileServer <- function(id,
   moduleServer(id, function(input, output, session) {
 
     output$cwd <- shiny::renderText({
-      message("Rendering cwd")
       getwd()
     })
 
     inputFiles <- shiny::reactiveValues(paths = NULL,
                                         names = NULL)
+
+
+    shinyjs::onclick(id = "dirQuestion", {
+      shinyWidgets::show_alert(
+
+        title = "Why can't I overwrite input files?",
+        type = 'info',
+        width = "35em",
+        html = TRUE,
+        text =
+          tags$div(style = css(`text-align` = 'left'),
+                   shiny::markdown(c("PitchMendR is designed to make *non-destructive* changes to files.",
+                                     "If a .Pitch file is modified and then saved, it is not possible to determine what was modified.",
+                                     "This makes reproduceability difficult and makes it hard to keep track of progress across multiple sessions.",
+                                     "",
+                                     "For these reasons, the input and output directories must be different when working with .Pitch files."))
+          )
+      )
+    })
 
     observe({
       if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
@@ -79,7 +107,20 @@ loadSauceFileServer <- function(id,
         hasOutput <- inputFiles$names %in% list.files(input$outputDirInput, include.dirs = FALSE)
 
         output$nfiles <- shiny::renderText({
-          paste0("Input: ", length(inputFiles$paths), ", Output: ", sum(hasOutput))
+          if (input$outputDirInput == input$inputDirInput) {
+            out_str <- "Input & output dirs must be different."
+            shinyjs::addClass(id = "loadFileButton",class = "btn-secondary")
+            shinyjs::disable(id = "loadFileButton")
+            shinyjs::addClass(id = "dirQuestion", class = "highlight-question")
+
+          } else {
+            out_str <- paste0("Input: ", length(inputFiles$paths), ", Output: ", sum(hasOutput))
+            shinyjs::enable(id = "loadFileButton")
+            shinyjs::addClass(id = "loadFileButton",class = "btn-primary")
+            shinyjs::removeClass(id = "dirQuestion", class = "highlight-question")
+          }
+
+          out_str
         })
 
       }
