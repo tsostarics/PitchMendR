@@ -53,9 +53,17 @@ fileNavSauceServer <- function(id,
         # Save all of the files that have changed
         files_to_save <- fileHandler$filenames[fileHandler$hasChanged]
         filepaths <- file.path(outputDirInput(), files_to_save)
+        n_to_save <- length(files_to_save)
+
+        pbar <- Progress$new(session, min = 0, max = n_to_save)
+        pbar$set(value = 0, message = paste0("Saving ", n_to_save, " files..."))
+
         write_status <-
           vapply(seq_along(files_to_save),
-                 \(i) rPraat::pitch.write(rawPitchDB$data[[files_to_save[i]]], filepaths[i]),
+                 \(i) {
+                   pbar$inc(1L)
+                   rPraat::pitch.write(rawPitchDB$data[[files_to_save[i]]], filepaths[i])
+                   },
                  1L)
 
         fileHandler$hasChanged[fileHandler$hasChanged][write_status == 0L] <- FALSE
@@ -70,6 +78,7 @@ fileNavSauceServer <- function(id,
         # }
 
         # TODO: Save summary csv file in output directory
+        pbar$close()
         message(paste0("Saved ", length(write_status), " files"))
         shiny::updateActionButton(session, "saveButton", icon = icon("check"))
 

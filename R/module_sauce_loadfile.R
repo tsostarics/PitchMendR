@@ -40,12 +40,13 @@ loadSauceFileUI <- function(id, input_directory, output_directory) {
                                   min = 1,
                                   max = parallel::detectCores() - 1L,
                                   step = 1L)),
-    shiny::actionButton(
-      inputId = ns("loadFileButton"),
-      title = "Click to load selected file",
+    bslib::input_task_button(
+      id = ns("loadFileButton"),
+      # title = "Click to load selected file",
       label = "Load File",
-      class = "btn-warning",
-      icon = icon("spinner"),
+      label_busy = "Loading...",
+      type = "primary",
+      icon = icon("upload"),
       width = "100%",
       style = "margin-bottom:8px"
     )
@@ -184,6 +185,12 @@ loadSauceFileServer <- function(id,
       # browser()
       # TODO: Go through files to read and check the output directory to see
       #       if there are any files that have been edited already
+      # browser()
+      shinyjs::removeClass("loadFileButton", "btn-primary")
+      shinyjs::addClass("loadFileButton", "btn-warning")
+
+      pbar <- Progress$new(session, min = 0, max = inputFiles$n)
+
       if (input$numCoresInput > 1L) {
         requireNamespace("future")
         requireNamespace("furrr")
@@ -193,10 +200,16 @@ loadSauceFileServer <- function(id,
         future::plan("sequential")
 
       } else {
-        rawPitchDB$data <- lapply(inputFiles$paths, pitch.read2)
+        pbar$set(value = 0, message = paste0("Loading files..."))
+        rawPitchDB$data <-
+          lapply(inputFiles$paths, \(x) {
+            pbar$inc(1L)
+            pitch.read2(x)
+
+          })
+
         names(rawPitchDB$data) <- inputFiles$names
       }
-
 
       loadedFile$data <-
         data.table::rbindlist(
@@ -208,7 +221,9 @@ loadSauceFileServer <- function(id,
 
       # Upon successful load of the file, change the color of the load file button
       # so it doesn't stand out as much anymore
-      shinyjs::removeClass("loadFileButton", "btn-primary")
+      # shinyjs::removeClass("loadFileButton", "btn-primary")
+      shinyjs::removeClass("loadFileButton", "btn-warning")
+      shinyjs::addClass("loadFileButton", "btn-default")
 
       # Add animations to some of the important buttons
       shinyjs::addClass("fileNav-saveButton", class = "animbutton")
@@ -238,7 +253,7 @@ loadSauceFileServer <- function(id,
       # Update the fileHandler with the information from the loaded file
       fileHandler$filenames <- inputFiles$names
       fileHandler$isPlotted <- rep(TRUE, inputFiles$n) # upon file load, plot all files
-# browser()
+      # browser()
       fileHandler$indices <-
         setNames(
           lapply(fileHandler$filenames,
@@ -319,6 +334,7 @@ loadSauceFileServer <- function(id,
 
       # Now that we've loaded the file, we can force update the plot
       # browser()
+      pbar$close()
       refilterSubset()
       updatePlot()
       message("File loading complete")
@@ -360,19 +376,22 @@ loadSauceFileServer <- function(id,
     })
 
     # Reactively update the appearance of the loadfile button
-    observe({
-      if (!is.null(input$inputDirInput)) {
-        shinyjs::removeClass("loadFileButton", class = "btn-warning")
-        shinyjs::addClass("loadFileButton", class = "btn-primary")
-        shiny::updateActionButton(session, "loadFileButton",icon = icon("upload"))
-      } else {
-        shinyjs::removeClass("loadFileButton", class = "btn-primary")
-        shinyjs::addClass("loadFileButton", class = "btn-warning")
-        shiny::updateActionButton(session, "loadFileButton",icon = icon("spinner"))
-      }
-    })
+    # observe({
+    #   # browser()
+    #   message("Observer triggered")
+    #   if (!is.null(input$inputDirInput)) {
+    #     shinyjs::removeClass("loadFileButton", class = "btn-warning")
+    #     shinyjs::addClass("loadFileButton", class = "btn-primary")
+    #     shiny::updateActionButton(session,inputId =  "loadFileButton",icon = icon("upload"))
+    #   } else {
+    #     shinyjs::removeClass("loadFileButton", class = "btn-primary")
+    #     shinyjs::addClass("loadFileButton", class = "btn-warning")
+    #     shiny::updateActionButton(session, inputId= "loadFileButton",icon = shiny::icon("spinner"))
+    #   }
+    # })
 
     return(list(outputDirInput = reactive(input$outputDirInput),
                 inputDirInput  = reactive(input$inputDirInput)))
   })
 }
+
