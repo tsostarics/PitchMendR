@@ -42,7 +42,7 @@ loadSauceFileUI <- function(id, input_directory, output_directory) {
                                   step = 1L)),
     bslib::input_task_button(
       id = ns("loadFileButton"),
-      # title = "Click to load selected file",
+      title = "Click to load Pitch files",
       label = "Load File",
       label_busy = "Loading...",
       type = "primary",
@@ -141,10 +141,12 @@ loadSauceFileServer <- function(id,
     }
 
     shiny::observeEvent(input$inputDirInput, {
+      shinyjs::removeClass("loadFileButton", "btn-success")
       update_inputFiles(input, inputFiles, nfiles_string)
     })
 
     shiny::observeEvent(input$outputDirInput, {
+      shinyjs::removeClass("loadFileButton", "btn-success")
       update_inputFiles(input, inputFiles, nfiles_string)
     },ignoreInit = TRUE)
 
@@ -223,7 +225,7 @@ loadSauceFileServer <- function(id,
       # so it doesn't stand out as much anymore
       # shinyjs::removeClass("loadFileButton", "btn-primary")
       shinyjs::removeClass("loadFileButton", "btn-warning")
-      shinyjs::addClass("loadFileButton", "btn-default")
+      shinyjs::addClass("loadFileButton", "btn-success")
 
       # Add animations to some of the important buttons
       shinyjs::addClass("fileNav-saveButton", class = "animbutton")

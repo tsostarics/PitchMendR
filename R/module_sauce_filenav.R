@@ -7,13 +7,14 @@ fileNavSauceUI <- function(id) {
                         label = "<",
                         style = "margin:1%;margin-top:0%;margin-bottom:0",
                         width = "28%"),
-    shiny::actionButton(inputId = ns("saveButton"),
-                        title = "Click to save annotated file to disk",
-                        class="btn-default",
-                        label = "Save File",
-                        icon = icon("floppy-disk"),
-                        style = "margin:1%;margin-top:0%;margin-bottom:0",
-                        width = "38%"),
+    bslib::input_task_button(id = ns("saveButton"),
+                             title = "Click to save annotated file to disk",
+                             # class="btn-default",
+                             label = "Save File",
+                             label_busy = "Saving...",
+                             icon = icon("floppy-disk"),
+                             type = "default",
+                             style = "margin:1%;margin-top:0%;margin-bottom:0;width:38%"),
     shiny::actionButton(inputId = ns("nextButton"),
                         title = "Click to go to next file alphabetically",
                         label = ">",
@@ -23,20 +24,20 @@ fileNavSauceUI <- function(id) {
 }
 
 fileNavSauceServer <- function(id,
-                          loadedFile,
-                          rawPitchDB,
-                          fileHandler,
-                          saveOptionButton,
-                          skipCheckedFilesToggle,
-                          outputDirInput,
-                          # fileSelectBox,
-                          filenameColumnInput,
-                          nPlotted,
-                          annotations,
-                          refilterSubset,
-                          destroyLoadedAudio,
-                          fileDelimiter,
-                          plotFlag) {
+                               loadedFile,
+                               rawPitchDB,
+                               fileHandler,
+                               saveOptionButton,
+                               skipCheckedFilesToggle,
+                               outputDirInput,
+                               # fileSelectBox,
+                               filenameColumnInput,
+                               nPlotted,
+                               annotations,
+                               refilterSubset,
+                               destroyLoadedAudio,
+                               fileDelimiter,
+                               plotFlag) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -48,7 +49,7 @@ fileNavSauceServer <- function(id,
         return(NULL)
 
       if (file.access(outputDirInput(), mode = 2) == 0) { # TODO: check this
-        shiny::updateActionButton(session, "saveButton", icon = icon("spinner"))
+        shinyjs::addClass("saveButton", "btn-warning")
 
         # Save all of the files that have changed
         files_to_save <- fileHandler$filenames[fileHandler$hasChanged]
@@ -63,7 +64,7 @@ fileNavSauceServer <- function(id,
                  \(i) {
                    pbar$inc(1L)
                    rPraat::pitch.write(rawPitchDB$data[[files_to_save[i]]], filepaths[i])
-                   },
+                 },
                  1L)
 
         fileHandler$hasChanged[fileHandler$hasChanged][write_status == 0L] <- FALSE
@@ -80,21 +81,24 @@ fileNavSauceServer <- function(id,
         # TODO: Save summary csv file in output directory
         pbar$close()
         message(paste0("Saved ", length(write_status), " files"))
-        shiny::updateActionButton(session, "saveButton", icon = icon("check"))
+        # bslib::update_task_button(session, "saveButton", icon = icon("check"))
+        shinyjs::removeClass("saveButton", "btn-warning")
+        shinyjs::addClass("saveButton", "btn-success")
 
         # Create an observer that waits until the dataset is modified (denoted
         # by a change in plotFlag$value due to in-place data.table modifications).
         # Upon modification, the save button icon changes back to a floppy disk
         # to denote that there are unsaved changes
-        saveObserver <<- shiny::observeEvent(list(plotFlag$value,
-                                                  fileHandler$notes,
-                                                  fileHandler$badges), {
-                                                    shiny::updateActionButton(session, "saveButton", icon = icon("floppy-disk"))
-                                                  },
-                                             once = TRUE,
-                                             ignoreInit = TRUE)
-
-
+        saveObserver <<-
+          shiny::observeEvent(
+            list(plotFlag$value,
+                 fileHandler$notes,
+                 fileHandler$badges), {
+                   shinyjs::removeClass("saveButton", "btn-success")
+                 },
+            once = TRUE,
+            ignoreInit = TRUE
+            )
 
       }
     }
