@@ -52,7 +52,7 @@ octaveShiftSauceServer <- function(id,
       # subset_to_change <- loadedFile$data[vals_to_change,]
       # n_to_change <- length(vals_to_change)
       # new_frame_values <- numeric(n_to_change)
-browser()
+# browser()
       # TODO: this may need to be changed to a for loop to populate three
       #       different vectors so they can be saved in lastTransformation
       # print(rawPitchDB$data[[file]][["frame"]][[1]])

@@ -609,23 +609,23 @@ openSauceEditor <- function(
 
     # TODO: Remove this, see #87
     # Update the y-axis variable as needed
-    shiny::observeEvent(input$yValColumnInput,ignoreInit = TRUE, {
-      if (is.null(loadedFile$data))
-        return(NULL)
-      changeTransformedColumn()
-    })
+    # shiny::observeEvent(input$yValColumnInput,ignoreInit = TRUE, {
+    #   if (is.null(loadedFile$data))
+    #     return(NULL)
+    #   changeTransformedColumn()
+    # })
 
     # When we change the y-axis variable, we need to create a new column
     # to plot with that incorporates the pulse transformation factors that
     # correct for pitch halving/doubling
-    changeTransformedColumn <- shiny::reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
-      new_values <- loadedFile$data[['pulse_transform']] * loadedFile$data[[input$yValColumnInput]]
-      loadedFile$data[, (transformedColumn$name) := new_values]
-      refilterSubset()
-    })
+    # changeTransformedColumn <- shiny::reactive({
+    #   if (input_fakeY() == "f0") {
+    #     input_fakeY("original_f0")
+    #   } else {
+    #     input_fakeY("f0")
+    #   }
+    #   refilterSubset()
+    # })
 
     # Retrieve the currently selected points on the plot when needed
     getBrushedPoints <- shiny::reactive({
@@ -721,21 +721,15 @@ openSauceEditor <- function(
       colorColumn
     })
 
-    # Update the column used for the y-axis values
-    # TODO: Remove this
-    plot_yval <- reactive({
-      if(is.null(input$hideToggleInput))
-        return(NULL)
-
-      req(input$yValColumnInput)
-      req(transformedColumn$name)
+    shiny::observeEvent(input$hideToggleInput, {
+      req(loadedFile)
+      req(plotSubset)
 
       if (input$hideToggleInput)
-        return(input$yValColumnInput)
-
-      return(transformedColumn$name)
+        input_fakeY("original_f0")
+      else
+        input_fakeY("f0")
     })
-
 
     # Update the color coding for the current points
     plot_colorCodePoints <- reactive({
@@ -882,7 +876,7 @@ openSauceEditor <- function(
       # Set up the main aesthetics for the plot
       ggplot2::ggplot(plotSubset$data,
                       ggplot2::aes(x = t,
-                                   y = f0,
+                                   y = !!rlang::sym(input_fakeY()),
                                    group = file))+
         plot_candidates() +
         plot_line +
@@ -1416,7 +1410,8 @@ openSauceEditor <- function(
 
     # Reactives that return a static value. These don't change for the
     # sauce editor, but many submodules expect reactives.
-    input_fakeY <- reactive({"f0"})
+    # input_fakeY <- reactive({"f0"})
+    input_fakeY <- reactiveVal("f0")
     input_fakeX <- reactive({"t"})
     input_fakeFile <- reactive({"file"})
 
@@ -1432,7 +1427,7 @@ openSauceEditor <- function(
                                     reactive(input$colorCodeColumnInput),
                                     reactive(input$useBadgesToggle),
                                     reactive(input$useNotesToggle),
-                                    changeTransformedColumn,
+                                    # changeTransformedColumn,
                                     fileHandler,
                                     plotSettings,
                                     refilterSubset,

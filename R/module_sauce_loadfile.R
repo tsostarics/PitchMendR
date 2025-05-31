@@ -65,7 +65,6 @@ loadSauceFileServer <- function(id,
                                 colorCodeColumnInput,
                                 useBadgesToggle,
                                 useNotesToggle,
-                                changeTransformedColumn,
                                 fileHandler,
                                 plotSettings,
                                 refilterSubset,
@@ -191,7 +190,7 @@ loadSauceFileServer <- function(id,
       shinyjs::removeClass("loadFileButton", "btn-primary")
       shinyjs::addClass("loadFileButton", "btn-warning")
 
-      pbar <- Progress$new(session, min = 0, max = inputFiles$n)
+      pbar <- Progress$new(session, min = 0, max = inputFiles$n + sum(inputFiles$hasOutput))
 
       if (input$numCoresInput > 1L) {
         requireNamespace("future")
@@ -242,6 +241,8 @@ loadSauceFileServer <- function(id,
       loadedFile$data[, keep_pulse := where_not_zero(f0)]
       loadedFile$data[, f0_i := 1L]
 
+      loadedFile$data[, original_f0 := f0]
+
       # Forcefully add pulse id, overwrites in instances where the
       # ordering gets messed up
       loadedFile$data[, pulse_id := .I]
@@ -252,6 +253,20 @@ loadSauceFileServer <- function(id,
       # }
       #
       # changeTransformedColumn()
+
+      # TODO: write faster version of pitch.readlines2 that only loads the first candidate values
+      pbar$set(message = "Checking original values...")
+      for (infile in inputFiles$names[inputFiles$hasOutput]) {
+        fp <- file.path(input$inputDirInput, infile)
+        original_f0_values <-
+          vapply(pitch.read2(fp)[["frame"]],
+               \(f) f[["frequency"]][1L],
+               1.0)
+
+        loadedFile$data[file == infile, original_f0 := original_f0_values]
+
+        pbar$inc(1L)
+      }
 
       # Update the fileHandler with the information from the loaded file
       fileHandler$filenames <- inputFiles$names
