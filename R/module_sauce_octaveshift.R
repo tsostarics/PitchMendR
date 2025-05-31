@@ -49,20 +49,36 @@ octaveShiftSauceServer <- function(id,
 
       # TODO: some of this information needs to be retained in lastTransformation
       #       since it can't just be multiplied by the inverse ratio anymore
-      subset_to_change <- loadedFile$data[vals_to_change,]
-      n_to_change <- length(vals_to_change)
-      new_frame_values <- numeric(n_to_change)
-
+      # subset_to_change <- loadedFile$data[vals_to_change,]
+      # n_to_change <- length(vals_to_change)
+      # new_frame_values <- numeric(n_to_change)
+browser()
       # TODO: this may need to be changed to a for loop to populate three
       #       different vectors so they can be saved in lastTransformation
+      # print(rawPitchDB$data[[file]][["frame"]][[1]])
+      # new_freq_values <-
+        # vapply(seq_len(n_to_change),
+        #        \(i) {
+        #
+        #          file    <- subset_to_change[[i, "file"]]
+        #          frame_i <- subset_to_change[[i, "frame_i"]]
+        #          frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
+        #          swapFrameValue(frame, 1L, get_value_octave_away(frame, octave))
+        #        }, numeric(1))
+
+
       new_freq_values <-
-        vapply(seq_len(n_to_change),
-               \(i) {
-                 file    <- subset_to_change[[i, "file"]]
-                 frame_i <- subset_to_change[[i, "frame_i"]]
+        vapply(vals_to_change,
+               \(id) {
+                 file    <- loadedFile$data[[id, "file"]]
+                 frame_i <- loadedFile$data[[id, "frame_i"]]
                  frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
                  swapFrameValue(frame, 1L, get_value_octave_away(frame, octave))
                }, numeric(1))
+
+
+      # print(rawPitchDB$data[[file]][["frame"]][[1]])
+
 
       loadedFile$data[vals_to_change, f0 := new_freq_values]
       plotSubset$data[plot_vals_to_change, f0 := new_freq_values]

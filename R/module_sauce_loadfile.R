@@ -240,6 +240,7 @@ loadSauceFileServer <- function(id,
       # TODO: HARD CODE COLUMNS HERE, SORTING MIGHT NOT EVEN BE NECESSARY
       # if (!selectionColumnInput() %in% loaded_colnames)
       loadedFile$data[, keep_pulse := where_not_zero(f0)]
+      loadedFile$data[, f0_i := 1L]
 
       # Forcefully add pulse id, overwrites in instances where the
       # ordering gets messed up
@@ -271,6 +272,7 @@ loadSauceFileServer <- function(id,
       # if (!"file_checked" %in% loaded_colnames) {
       #   loadedFile$data[, file_checked := FALSE]
       fileHandler$fileChecked <- setNames(rep(FALSE, inputFiles$n), fileHandler$filenames)
+      fileHandler$fileChecked[inputFiles$hasOutput] <- TRUE
       # } else {
       #   loaded_file_check <- loadedFile$data[, .(file_checked = ifelse(is.na(file_checked[1]), FALSE, file_checked[1])), by = c(filenameColumnInput())]
       #

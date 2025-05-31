@@ -58,7 +58,7 @@ fileNavSauceServer <- function(id,
 
         pbar <- Progress$new(session, min = 0, max = n_to_save)
         pbar$set(value = 0, message = paste0("Saving ", n_to_save, " files..."))
-
+        browser()
         write_status <-
           vapply(seq_along(files_to_save),
                  \(i) {
