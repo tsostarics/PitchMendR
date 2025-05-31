@@ -152,6 +152,7 @@ loadSauceFileServer <- function(id,
 
     output$nfiles <- shiny::renderText({nfiles_string()})
 
+
     # fileDelimiter <- shiny::reactiveVal(value=",")
     shiny::observeEvent(input$loadFileButton, {
       message("Load File Pressed")
@@ -176,12 +177,11 @@ loadSauceFileServer <- function(id,
         # return(NULL) # doesn't seem right unless creation triggers another check
       }
 
-
-
-
       message("Loading files")
       loadedFile$data <- NULL # If previous data was loaded, throw it out
       rawPitchDB$data <- NULL #
+
+      update_inputFiles(input, inputFiles, nfiles_string)
 
       # browser()
       # TODO: Go through files to read and check the output directory to see

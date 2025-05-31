@@ -84,7 +84,6 @@ fileNavSauceServer <- function(id,
         # bslib::update_task_button(session, "saveButton", icon = icon("check"))
         shinyjs::removeClass("saveButton", "btn-warning")
         shinyjs::addClass("saveButton", "btn-success")
-
         # Create an observer that waits until the dataset is modified (denoted
         # by a change in plotFlag$value due to in-place data.table modifications).
         # Upon modification, the save button icon changes back to a floppy disk
