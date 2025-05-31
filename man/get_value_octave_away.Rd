@@ -4,14 +4,14 @@
 \alias{get_value_octave_away}
 \title{Get pitch candidate an octave away from current F0}
 \usage{
-get_value_octave_away(frame, octave, threshold = 5)
+get_value_octave_away(frame, octave, threshold = 0.25)
 }
 \arguments{
 \item{frame}{List from pitch object. E.g., \code{pitchObj$frame[[i]]}}
 
 \item{octave}{String, either "halve" or "double"}
 
-\item{threshold}{Threshold value in Hz, default 5 but subject to tuning}
+\item{threshold}{Threshold value in semitones, default .25 (25 cents) but subject to tuning}
 }
 \value{
 integer index of the candidate an octave away. If no such

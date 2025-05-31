@@ -4,7 +4,7 @@
 \alias{pitch.read2}
 \title{pitch.read2}
 \usage{
-pitch.read2(fileNamePitch, encoding = "UTF-8")
+pitch.read2(fileNamePitch, encoding = "UTF-8", f0_only = FALSE)
 }
 \arguments{
 \item{fileNamePitch}{file name of Pitch object}

@@ -34,7 +34,7 @@
 #' p$frame[[4]]$frequency[2]
 #' p$frame[[4]]$strength[2]
 #' }
-pitch.read2 <- function(fileNamePitch, encoding = "UTF-8") {
+pitch.read2 <- function(fileNamePitch, encoding = "UTF-8", f0_only = FALSE) {
   if (!isString(fileNamePitch)) {
     stop("Invalid 'fileNamePitch' parameter.")
   }
@@ -67,6 +67,9 @@ pitch.read2 <- function(fileNamePitch, encoding = "UTF-8") {
     x <- pitch.read2(fileNamePitch, encoding = "auto")
     return(x)
   }
+
+  if (f0_only)
+    return(pitch.read_f0_lines_only(flines))
 
   pitch_ind <- pitch.read_lines2(flines)
   class(pitch_ind[[1]])["type"] <- "Pitch 1"
@@ -245,4 +248,73 @@ isString <- function(string) {
   (inherits(string, "character"))  &
     (length(string) == 1L) &
     (!is.na(string))
+}
+
+
+# Streamlined version of pitch.read_lines that just extracts the F0 values
+# for the first candidate of each frame
+pitch.read_f0_lines_only <- function(flines, find = 1L, collection = FALSE) {
+  if (collection  ||  flines[find-1L+ 1L] == "File type = \"ooTextFile\"") {    # TextFile or shortTextFile
+    if (!collection) {
+      if (length(flines)-find+1L < 11L) {
+        stop("Unknown Pitch format.")
+      }
+
+      if (flines[find-1L+ 2L] != "Object class = \"Pitch 1\"") {
+        stop("Unknown Pitch format.")
+      }
+
+      if (flines[find-1L+ 3L] != "") {
+        stop("Unknown Pitch format.")
+      }
+
+      if (nchar(flines[find-1L+ 4L]) < 1L) {
+        stop("Unknown Pitch format.")
+      }
+    } else {
+      find <- find - 3
+    }
+
+    find <- find-1L
+    if (str_contains(flines[find+ 4], "xmin")) {  # TextFile
+
+      cand_1_f0 <-
+        strTrim2(ptst[which(grepl("candidates [1]:", flines, fixed = TRUE))+1L])
+
+      frequency <-
+        as.numeric(
+          vapply(cand_1_f0,
+                 \(cur_line) {
+                   .Internal(substr(cur_line, 13L, nchar(cur_line)))
+                 }, "char")
+        )
+    } else {
+      nx <- as.integer(            flines[find+ 6L])
+      maxnCandidates <- as.integer(flines[find+ 10L]) # needed??
+
+      frequency <- numeric(nx)
+      iline <- find+ 11L  # index of line to read
+
+
+      for (I in seq.int(1L, nx)) {
+        iline <- iline + 1L
+        nCandidates <- as.integer(flines[iline]); iline <- iline + 1L
+
+        nmbr <- flines[iline]
+        if (nmbr != "--undefined--") {
+          frequency[I] <- as.numeric(nmbr)
+        } else {
+          frequency[I] <- NA_real_
+        }
+
+
+        iline <- iline + 2L + 2 * (nCandidates -1L)
+      }
+    }
+
+  }else {   # unknown format
+    stop("Unknown Pitch format.")
+  }
+
+  frequency
 }

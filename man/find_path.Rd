@@ -4,7 +4,7 @@
 \alias{find_path}
 \title{find path}
 \usage{
-find_path(ptst, filename)
+find_path(pitchobj, filename)
 }
 \description{
 creates a data.table by loading the relevant f0 info from the pitch obj
