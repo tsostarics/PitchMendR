@@ -256,16 +256,38 @@ loadSauceFileServer <- function(id,
 
       # TODO: write faster version of pitch.readlines2 that only loads the first candidate values
       pbar$set(message = "Checking original values...")
-      for (infile in inputFiles$names[inputFiles$hasOutput]) {
-        fp <- file.path(input$inputDirInput, infile)
-        original_f0_values <-
-          vapply(pitch.read2(fp)[["frame"]],
-               \(f) f[["frequency"]][1L],
-               1.0)
 
-        loadedFile$data[file == infile, original_f0 := original_f0_values]
+      has_mismatching_n_frames <-
+      vapply(inputFiles$names[inputFiles$hasOutput],
+             \(infile) {
+               fp <- file.path(input$inputDirInput, infile)
+               original_f0_values <-
+                 vapply(pitch.read2(fp)[["frame"]],
+                        \(f) f[["frequency"]][1L],
+                        1.0)
 
-        pbar$inc(1L)
+               tryCatch({
+                 loadedFile$data[file == infile, original_f0 := original_f0_values]
+                 return(FALSE)
+                 }, error = \(e) return(TRUE))
+             }, TRUE)
+
+      if (any(has_mismatching_n_frames)) {
+        shinyWidgets::show_alert(
+
+          title = "File mismatch",
+          type = 'error',
+          width = "35em",
+          html = TRUE,
+          text =
+            tags$div(style = css(`text-align` = 'left'),
+                     shiny::markdown(c("These files were found in the input and output directories, but they did not have the same number of frames. I have loaded the file from the **output** directory.",
+                                       "If you want to load the file from the input directory instead, please delete the file from the output directory or change the output directory.",
+                                       "",
+                                       "Did you create new Pitch files in the input directory using a different time step or window length since the last time you used PitchMendR with this dataset?",
+                                       paste0(" - ", inputFiles$names[has_mismatching_n_frames])))
+            )
+        )
       }
 
       # Update the fileHandler with the information from the loaded file
