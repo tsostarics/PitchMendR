@@ -16,3 +16,15 @@ update_cdf <- function(rawPitchDB, plotted_file, which_frame, new_candidate_i) {
   new_indices <- rev(cdf[["cand_i"]][these_candidates])
   cdf[these_candidates, "cand_i" := new_indices]
 }
+
+
+get_vals_to_change <- function(selectedPoints, plotSubset) {
+  vals_to_change <- selectedPoints$data$pulse_id # pulse ID for the full dataset == row id
+  plot_vals_to_change <- match(selectedPoints$data$pulse_id, plotSubset$data$pulse_id) # ensures correct order
+  plot_vals_to_change <- plot_vals_to_change[!is.na(plot_vals_to_change)]
+  n_to_change <- length(vals_to_change)
+
+  list(LF  = vals_to_change,
+       PS = plot_vals_to_change,
+       n = length(vals_to_change))
+}

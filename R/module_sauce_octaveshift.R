@@ -42,10 +42,8 @@ octaveShiftSauceServer <- function(id,
     get_and_set_new_freq_values <- function(octave) {
       octave <- rlang::arg_match0(octave, c("halve", "double"))
       selectedPoints$data <- getBrushedPoints()
-# browser()
-      vals_to_change <- selectedPoints$data$pulse_id # pulse ID for the full dataset == row id
-      plot_vals_to_change <- match(selectedPoints$data$pulse_id, plotSubset$data$pulse_id) # ensures correct order
-      plot_vals_to_change <- plot_vals_to_change[!is.na(plot_vals_to_change)]
+      to_change <- get_vals_to_change(selectedPoints, plotSubset)
+
 
       # TODO: some of this information needs to be retained in lastTransformation
       #       since it can't just be multiplied by the inverse ratio anymore
@@ -68,7 +66,7 @@ octaveShiftSauceServer <- function(id,
 
 
       new_freq_values <-
-        vapply(vals_to_change,
+        vapply(to_change$LF,
                \(id) {
                  file    <- loadedFile$data[[id, "file"]]
                  frame_i <- loadedFile$data[[id, "frame_i"]]
@@ -88,8 +86,8 @@ octaveShiftSauceServer <- function(id,
       # print(rawPitchDB$data[[file]][["frame"]][[1]])
 
 
-      loadedFile$data[vals_to_change, f0 := new_freq_values]
-      plotSubset$data[plot_vals_to_change, f0 := new_freq_values]
+      loadedFile$data[to_change$LF, f0 := new_freq_values]
+      plotSubset$data[to_change$PS, f0 := new_freq_values]
 
       files_changed <- unique(selectedPoints$data[["file"]])
       fileHandler$hasChanged[files_changed] <- TRUE
