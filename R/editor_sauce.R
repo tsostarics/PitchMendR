@@ -656,7 +656,7 @@ openSauceEditor <- function(
       plotted_indices <- getIndices()
       if (is.null(plotted_indices))
         return(NULL)
-      plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(f0),]
+      plotSubset$data <<- loadedFile$data[plotted_indices,]#[where_not_zero(f0),]
 
 
       # Update our count of how many files are plotted
@@ -972,14 +972,8 @@ openSauceEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
-      # browser()
-
 
       if (!is.null(selectedPoints$data)) {
-
-
-        # browser()
-
         if (nPlotted$is_one) {
 
           plotted_file <- fileHandler$filenames[fileHandler$isPlotted]
@@ -1002,11 +996,7 @@ openSauceEditor <- function(
 
             frame <- rawPitchDB$data[[plotted_file]][["frame"]][[frames[i]]]
 
-            this_frame <- which(cdf[["frame_i"]] == frames[i])
             selected_cand <- br_cdf[["cand_i"]][i]
-
-            print(cdf[this_frame,])
-
 
             # Nothing needs to be swapped if selected cand == current cand (always 1 for voiced)
             if (selected_cand == 1L)
@@ -1018,14 +1008,10 @@ openSauceEditor <- function(
             #  3: The table with the currently plotted data (new f0 val)
             #  4: The candidate-level dataframe (swap candidate indices)
             new_f0 <- swapFrameValue(frame, 1L, selected_cand)
-
             loadedFile$data[id, "f0"  := new_f0]
             plotSubset$data[pid, "f0" := new_f0]
 
-            these_candidates <- this_frame[cdf[["cand_i"]][this_frame] %in% c(1L, selected_cand)]
-print(selected_cand)
-            new_indices <- rev(cdf[["cand_i"]][these_candidates])
-            rawPitchDB$cdf[[plotted_file]][these_candidates, "cand_i" := new_indices]
+            update_cdf(rawPitchDB, plotted_file, frames[i], selected_cand)
 
             loadedFile$data[id,  "f0_i" := 1L]
             plotSubset$data[pid, "f0_i" := 1L]
@@ -1033,8 +1019,6 @@ print(selected_cand)
             if (!loadedFile$data[[id, "is_voiced"]]) {
               loadedFile$data[id,  "zero_index"  := selected_cand]
               plotSubset$data[pid, "zero_index"  := selected_cand]
-              loadedFile$data[id,  "f0_i" := 1L]
-              plotSubset$data[pid, "f0_i" := 1L]
             }
           }
         } else {
@@ -1097,7 +1081,6 @@ print(selected_cand)
         plot_vals_to_change <- plot_vals_to_change[!is.na(plot_vals_to_change)]
         n_to_change <- length(vals_to_change)
 
-        # browser()
         for (i in seq_len(n_to_change)) {
           id <- vals_to_change[i]
           pid <- plot_vals_to_change[i]
@@ -1121,18 +1104,19 @@ print(selected_cand)
             # If it hasn't been created yet, it will be handled automatically
             # due to how the cdf is created.
             if (!is.null(rawPitchDB$cdf[[file]])) {
-              this_frame <- which(rawPitchDB$cdf[[file]][["frame_i"]] == frame_i)
-              these_candidates <- this_frame[rawPitchDB$cdf[[file]][["cand_i"]][this_frame] %in% c(1L, zi)]
-              new_indices <- rev(rawPitchDB$cdf[[file]][["cand_i"]][these_candidates])
+              update_cdf(rawPitchDB, file, frame_i, zi)
 
-              rawPitchDB$cdf[[file]][these_candidates, "cand_i" := new_indices]
+              # this_frame <- which(rawPitchDB$cdf[[file]][["frame_i"]] == frame_i)
+              # these_candidates <- this_frame[rawPitchDB$cdf[[file]][["cand_i"]][this_frame] %in% c(1L, zi)]
+              # new_indices <- rev(rawPitchDB$cdf[[file]][["cand_i"]][these_candidates])
+              # rawPitchDB$cdf[[file]][these_candidates, "cand_i" := new_indices]
             }
 
 
           }
         }
 
-        loadedFile$data[vals_to_change,     "keep_pulse" := FALSE]
+        loadedFile$data[vals_to_change,      "keep_pulse" := FALSE]
         plotSubset$data[plot_vals_to_change, "keep_pulse" := FALSE]
         files_changed <- unique(selectedPoints$data[["file"]])
         fileHandler$hasChanged[files_changed] <- TRUE
