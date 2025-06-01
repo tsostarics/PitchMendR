@@ -73,7 +73,15 @@ octaveShiftSauceServer <- function(id,
                  file    <- loadedFile$data[[id, "file"]]
                  frame_i <- loadedFile$data[[id, "frame_i"]]
                  frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
-                 swapFrameValue(frame, 1L, get_value_octave_away(frame, octave))
+
+                 new_index <- get_value_octave_away(frame, octave)
+
+                 new_f0 <- swapFrameValue(frame, 1L, new_index)
+
+                 if (new_index != 1L)
+                   update_cdf(rawPitchDB, file, frame_i, new_index)
+
+                 new_f0
                }, numeric(1))
 
 
