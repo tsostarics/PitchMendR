@@ -28,3 +28,29 @@ get_vals_to_change <- function(selectedPoints, plotSubset) {
        PS = plot_vals_to_change,
        n = length(vals_to_change))
 }
+
+get_vals_to_change.voicing <- function(selectedPoints, plotSubset) {
+  # browser()
+  vals_to_change <- selectedPoints$data$pulse_id # pulse ID for the full dataset == row id
+  is_voiced <- selectedPoints$data$is_voiced
+
+  plot_vals_to_change <- match(vals_to_change, plotSubset$data$pulse_id) # ensures correct order
+  plot_vals_to_change <- plot_vals_to_change[!is.na(plot_vals_to_change)]
+  n_to_change <- length(vals_to_change)
+
+  list(
+    any_voiced   = any(is_voiced),
+    any_unvoiced = any(!is_voiced),
+    voiced   = list(LF  = vals_to_change[is_voiced],
+                    PS = plot_vals_to_change[is_voiced],
+                    n = length(vals_to_change[is_voiced])),
+    unvoiced = list(LF  = vals_to_change[!is_voiced],
+                    PS = plot_vals_to_change[!is_voiced],
+                    n = length(vals_to_change[!is_voiced])),
+    LF = vals_to_change,
+    PS = plot_vals_to_change,
+    n = length(vals_to_change)
+  )
+
+
+}

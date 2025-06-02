@@ -904,59 +904,25 @@ openSauceEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
+      to_change <- get_vals_to_change.voicing(selectedPoints, plotSubset)
+      if (to_change$any_voiced)
+        remove_pulses(to_change[["voiced"]],
+                      loadedFile, plotSubset, rawPitchDB)
 
-      if (!is.null(selectedPoints$data)) {
-        to_change <- get_vals_to_change(selectedPoints, plotSubset)
+      if (to_change$any_unvoiced) {
+        if (nPlotted$is_one) {
+          keep_pulses_one(to_change[["unvoiced"]],
+                          loadedFile, plotSubset, rawPitchDB, fileHandler, input)
 
-        for (i in seq_len(to_change$n)) {
-          id  <- to_change$LF[i]
-          pid <- to_change$PS[i]
-
-          file    <- loadedFile$data[["file"]][id]
-          frame_i <- loadedFile$data[["frame_i"]][id]
-          frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
-
-          # This is typically true, but if a transformation has been applied previously then it won't be
-          if (loadedFile$data[["is_voiced"]][id]) {
-            zi <- loadedFile$data[["zero_index"]][id]
-
-            swapFrameValue(frame, 1L, zi)
-            loadedFile$data[id,  "f0_i" := zi]
-            plotSubset$data[pid, "f0_i" := zi]
-
-            loadedFile$data[id,  "zero_index" := 1L]
-            plotSubset$data[pid, "zero_index" := 1L]
-          } else {
-            cur_f0_i <- loadedFile$data[["f0_i"]][id]
-            if (cur_f0_i == 1L) {
-              max_strength_i <- which.max(frame[["strength"]])
-              swapFrameValue(frame, 1L, max_strength_i)
-              loadedFile$data[id,  "zero_index" := max_strength_i]
-              plotSubset$data[pid, "zero_index" := max_strength_i]
-
-              # f0_i doesn't change since the value from max_strength_i takes the first position
-            } else {
-              swapFrameValue(frame, 1L, cur_f0_i)
-              loadedFile$data[id,  "f0_i" := 1L]
-              plotSubset$data[pid, "f0_i" := 1L]
-
-              loadedFile$data[id,  "zero_index" := cur_f0_i]
-              plotSubset$data[pid, "zero_index" := cur_f0_i]
-
-            }
-          }
+        } else {
+          keep_pulses_multi(to_change[["unvoiced"]],
+                            loadedFile, plotSubset, rawPitchDB)
         }
+      }
 
-
-        loadedFile$data[to_change$LF, "keep_pulse" := !keep_pulse]
-        plotSubset$data[to_change$PS, "keep_pulse" := !keep_pulse]
-
-        files_changed <- unique(selectedPoints$data[["file"]])
-        fileHandler$hasChanged[files_changed] <- TRUE
-        selectedPoints$data <- NULL
+      set_values(to_change, NA, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
-      }
     })
 
     # When the user clicks the toggle button, toggle the logical keep_pulse value
@@ -972,95 +938,15 @@ openSauceEditor <- function(
       selectedPoints$data <- getBrushedPoints()
 
       if (!is.null(selectedPoints$data)) {
+        to_change <- get_vals_to_change(selectedPoints, plotSubset)
+
         if (nPlotted$is_one) {
-
-          plotted_file <- fileHandler$filenames[fileHandler$isPlotted]
-          br_cdf <- shiny::brushedPoints(rawPitchDB$cdf[[plotted_file]],
-                                         input$plot_brush,
-                                         xvar = "t",
-                                         yvar = "f0")
-          # Summarize cdf to the max cand_i to avoid duplicates
-          br_cdf <- br_cdf[br_cdf[, .I[cand_rank == max(cand_rank)], by = frame_i]$V1,]
-
-          # Grab the pulse ids for this file, then only ids from the brushed frames
-          frames <- br_cdf[["frame_i"]]
-          vals_to_change <-
-            loadedFile$data[["pulse_id"]][fileHandler$indices[[plotted_file]]][br_cdf$frame_i]
-          plot_vals_to_change <- match(vals_to_change, plotSubset$data$pulse_id) # ensures correct order
-
-          for (i in seq_along(frames)) {
-            id  <- vals_to_change[i]
-            pid <- plot_vals_to_change[i]
-            frame_i <- frames[i]
-
-            frame <- rawPitchDB$data[[plotted_file]][["frame"]][[frame_i]]
-
-            selected_cand <- br_cdf[["cand_i"]][i]
-
-            # Nothing needs to be swapped if selected cand == current cand (always 1 for voiced)
-            if (selected_cand == 1L)
-              next
-
-            # We need to update a few things:
-            #  1: The raw pitch file in the database (swap candidate values)
-            #  2: The table with all the data (new f0 val)
-            #  3: The table with the currently plotted data (new f0 val)
-            #  4: The candidate-level dataframe (swap candidate indices)
-            new_f0 <- swapFrameValue(frame, 1L, selected_cand)
-            loadedFile$data[id,  "f0" := new_f0]
-            plotSubset$data[pid, "f0" := new_f0]
-
-            update_cdf(rawPitchDB, plotted_file, frame_i, selected_cand)
-
-            loadedFile$data[id,  "f0_i" := 1L]
-            plotSubset$data[pid, "f0_i" := 1L]
-
-            if (!loadedFile$data[["is_voiced"]][id]) {
-              loadedFile$data[id,  "zero_index" := selected_cand]
-              plotSubset$data[pid, "zero_index" := selected_cand]
-            }
-          }
+          keep_pulses_one(NULL, loadedFile, plotSubset, rawPitchDB, fileHandler, input)
         } else {
-          to_change <- get_vals_to_change(selectedPoints, plotSubset)
-
-          for (i in seq_len(to_change$n)) {
-            id  <- to_change$LF[i]
-            pid <- to_change$PS[i]
-
-            file    <- loadedFile$data[["file"]][id]
-            frame_i <- loadedFile$data[["frame_i"]][id]
-            frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
-
-            # This is typically true, but if a transformation has been applied previously then it won't be
-            if (!loadedFile$data[["is_voiced"]][id]) {
-              swapFrameValue(frame, 1L, cur_f0_i)
-              loadedFile$data[id,  "f0_i" := 1L]
-              plotSubset$data[pid, "f0_i" := 1L]
-
-              loadedFile$data[id,  "zero_index" := cur_f0_i]
-              plotSubset$data[pid, "zero_index" := cur_f0_i]
-            } else {
-              cur_f0_i <- loadedFile$data[["f0_i"]]
-              if (cur_f0_i == 1L) {
-                max_strength_i <- which.max(frame[["strength"]])
-                swapFrameValue(frame, 1L, max_strength_i)
-                loadedFile$data[id,  "zero_index" := max_strength_i]
-                plotSubset$data[pid, "zero_index" := max_strength_i]
-
-              }
-              # f0_i doesn't change since the value from max_strength_i takes the first position
-            }
-          }
+          keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
         }
 
-
-        loadedFile$data[to_change$LF, "is_voiced"  := TRUE]
-        plotSubset$data[to_change$PS, "is_voiced"  := TRUE]
-        loadedFile$data[to_change$LF, "keep_pulse" := TRUE]
-        plotSubset$data[to_change$PS, "keep_pulse" := TRUE]
-        files_changed <- unique(selectedPoints$data[["file"]])
-        fileHandler$hasChanged[files_changed] <- TRUE
-        selectedPoints$data <- NULL
+        set_values(to_change, TRUE, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
       }})
@@ -1073,39 +959,8 @@ openSauceEditor <- function(
       if (!is.null(selectedPoints$data)) {
         to_change <- get_vals_to_change(selectedPoints, plotSubset)
 
-        for (i in seq_len(to_change$n)) {
-          id  <- to_change$LF[i]
-          pid <- to_change$PS[i]
-
-          file    <- loadedFile$data[["file"]][id]
-          frame_i <- loadedFile$data[["frame_i"]][id]
-          frame   <- rawPitchDB$data[[file]][["frame"]][[frame_i]]
-          zi      <- loadedFile$data[["zero_index"]][id]
-
-          # This is typically true, but if a transformation has been applied previously then it won't be
-          if (loadedFile$data[["is_voiced"]][id]) {
-            swapFrameValue(frame, 1L, zi)
-            loadedFile$data[id,  "f0_i" := zi]
-            plotSubset$data[pid, "f0_i" := zi]
-
-            loadedFile$data[id,  "zero_index" := 1L]
-            plotSubset$data[pid, "zero_index" := 1L]
-
-            # If the candidate df has already been made (after viewing a file by
-            # itself) then we need to also update the candidate indices in that.
-            # If it hasn't been created yet, it will be handled automatically
-            # due to how the cdf is created.
-            if (!is.null(rawPitchDB$cdf[[file]])) {
-              update_cdf(rawPitchDB, file, frame_i, zi)
-            }
-          }
-        }
-
-        loadedFile$data[to_change$LF, "keep_pulse" := FALSE]
-        plotSubset$data[to_change$PS, "keep_pulse" := FALSE]
-        files_changed <- unique(selectedPoints$data[["file"]])
-        fileHandler$hasChanged[files_changed] <- TRUE
-        selectedPoints$data <- NULL
+        remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
+        set_values(to_change, FALSE, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
       }
