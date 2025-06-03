@@ -96,8 +96,8 @@ openSauceEditor <- function(
                           label = "Clear Selection"),
       # profvis::profvis_ui("profileUI"),
       # undoTransformUI('octaveShift'),
-      praatUI_button("praatIO"),
-      playAudioUI("playAudio"),
+      praatsauceUI_button("praatIO"),
+      playAudio_sauceUI("playAudio"),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         title = "Click to check off currently plotted files",
@@ -377,7 +377,7 @@ openSauceEditor <- function(
                           loadSauceFileUI('loadSauceFile', input_directory, output_directory),
                           tags$br(),
                           tags$span(title = "Click to expand audio options",
-                                    praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
+                                    praatsauceUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
                           # )
             ),
             shiny::column(width = 6,
@@ -446,7 +446,6 @@ openSauceEditor <- function(
     horiz_bounds       <- shiny::reactiveValues(xlim = NULL, full = NULL)
     defaultPitchRange  <- shiny::reactiveValues(min = 100, max = 500)
     selectionColumn    <- shiny::reactiveVal()
-
 
     # Temporary button to clear the selection, see issue #46
     observeEvent(input$clearSelectButton, {
@@ -1369,7 +1368,7 @@ openSauceEditor <- function(
 
     # Handles the praat IO
     audioInfo <-
-      praatServer("praatIO",
+      praatsauceServer("praatIO",
                   loadedFile,
                   fileHandler,
                   input_fakeFile,
@@ -1379,14 +1378,15 @@ openSauceEditor <- function(
                   reactive(input$plot_brush))
 
     # Handles playing audio within the app
-    audioServer <- playAudioServer("playAudio",
+    audioServer <- playAudio_sauceServer("playAudio",
                                    loadedFile,
                                    currentWave,
                                    destroyLoadedAudio,
                                    audioInfo,
                                    nPlotted,
                                    plotSubset,
-                                   reactive(input$plot_brush))
+                                   reactive(input$plot_brush),
+                                   fileHandler)
 
 
     # Handles the colors of the app and plot, doesn't return additional functionality

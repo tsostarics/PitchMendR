@@ -362,8 +362,6 @@ loadSauceFileServer <- function(id,
           }
 
         }
-        print(fileHandler$badges)
-        print(fileHandler$notes)
       }
 
 
