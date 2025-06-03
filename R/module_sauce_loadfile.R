@@ -68,7 +68,8 @@ loadSauceFileServer <- function(id,
                                 fileHandler,
                                 plotSettings,
                                 refilterSubset,
-                                updatePlot
+                                updatePlot,
+                                annotationDB
 ) {
   moduleServer(id, function(input, output, session) {
 
@@ -339,6 +340,32 @@ loadSauceFileServer <- function(id,
       # }
 
       loadedFile$data[["flagged_samples"]] <- FALSE
+
+      summary_filepath <- file.path(input$outputDirInput, "pitchmendr_notes.tsv")
+      fileHandler$badges <- setNames(character(inputFiles$n), fileHandler$filenames)
+      fileHandler$notes <- setNames(character(inputFiles$n), fileHandler$filenames)
+
+      if (file.exists(summary_filepath)) {
+
+        summary_table <- data.table::fread(summary_filepath)
+        stopifnot(all(c("file", "tags", "notes") %in% colnames(summary_table)))
+        files <- summary_table$file
+        badges <- summary_table$tags
+        notes <- summary_table$notes
+# browser()
+        # Not super elegant but ensures we're only working with valid files
+        for (i in seq_along(files)) {
+          cur_file <- files[i]
+          if (cur_file %in% fileHandler$filenames) {
+            fileHandler$badges[cur_file] <- badges[i]
+            fileHandler$notes[cur_file]  <- notes[i]
+          }
+
+        }
+        print(fileHandler$badges)
+        print(fileHandler$notes)
+      }
+
 
       # If we're using annotation badges, then add the tags column if it doesn't
       # already exist. Otherwise update the fileHandler's badges with what's

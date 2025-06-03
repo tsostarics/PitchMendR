@@ -432,7 +432,7 @@ openSauceEditor <- function(
                                          indices = NULL,
                                          hasChanged = NULL)
     nPlotted           <- shiny::reactiveValues(n = NULL, is_one = NULL)
-    lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
+    # lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
 
     # Dataset holders
     rawPitchDB         <- shiny::reactiveValues(data = NULL,
@@ -1088,19 +1088,18 @@ openSauceEditor <- function(
       # Check off the displayed file if we're only looking at 1
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        # annotations$saveNotes()
-        # annotations$saveBadges()
+        annotations$saveNotes()
+        annotations$saveBadges()
       }
 
       selected_files <- grepl(input$filterRegex,fileHandler$filenames)
 
       if (any(selected_files)) {
-
         fileHandler$isPlotted <- selected_files
 
         refilterSubset()
-        # annotations$updateBadges()
-        # annotations$updateNotes()
+        annotations$updateBadges()
+        annotations$updateNotes()
         destroyLoadedAudio()
       }
 
@@ -1121,8 +1120,8 @@ openSauceEditor <- function(
     plotBrushed <- reactive({
       if (is.null(loadedFile$data))
         return(NULL)
-      # annotations$saveNotes()
-      # annotations$saveBadges()
+      annotations$saveNotes()
+      annotations$saveBadges()
       selected_files <- fileHandler$filenames %in% filesBrushed$filenames
 
       # any short circuits on the first TRUE value
@@ -1132,8 +1131,8 @@ openSauceEditor <- function(
 
         refilterSubset()
 
-        # annotations$updateBadges()
-        # annotations$updateNotes()
+        annotations$updateBadges()
+        annotations$updateNotes()
         destroyLoadedAudio()
       }
     })
@@ -1200,12 +1199,12 @@ openSauceEditor <- function(
                        if (!is.null(input$uneditedFileSelectBox) && !identical(input$uneditedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-                         # annotations$saveBadges()
-                         # annotations$saveNotes()
+                         annotations$saveBadges()
+                         annotations$saveNotes()
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$uneditedFileSelectBox] <- TRUE
-                         # annotations$updateBadges()
-                         # annotations$updateNotes()
+                         annotations$updateBadges()
+                         annotations$updateNotes()
                          refilterSubset()
                          updatePlot()
                          # updatePlotSettingsData()
@@ -1218,12 +1217,12 @@ openSauceEditor <- function(
                        if (!is.null(input$editedFileSelectBox) && !identical(input$editedFileSelectBox, character(0))) {
                          if (nPlotted$is_one)
                            fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-                         # annotations$saveBadges()
-                         # annotations$saveNotes()
+                         annotations$saveBadges()
+                         annotations$saveNotes()
                          fileHandler$isPlotted[] <- FALSE
                          fileHandler$isPlotted[fileHandler$filenames == input$editedFileSelectBox] <- TRUE
-                         # annotations$updateBadges()
-                         # annotations$updateNotes()
+                         annotations$updateBadges()
+                         annotations$updateNotes()
                          refilterSubset()
                          updatePlot()
                          # updatePlotSettingsData()
@@ -1398,14 +1397,15 @@ openSauceEditor <- function(
 
     # Handles the notes and tags for annotations
     # TODO: Update module to use a summary output document
-    annotations <- annotationServer("annotations",
+    annotations <- annotation_sauceServer("annotations",
                                     loadedFile,
                                     fileHandler,
                                     updatePlot,
                                     input_fakeFile,
                                     reactive(input$useNotesToggle),
                                     reactive(input$useBadgesToggle),
-                                    nPlotted)
+                                    nPlotted,
+                                    loadFile$outputDirInput)
 
     # Handles the file forward/backward and save file functionality
     filenav <- fileNavSauceServer("fileNav",

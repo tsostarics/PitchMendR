@@ -56,7 +56,7 @@ fileNavSauceServer <- function(id,
         filepaths <- file.path(outputDirInput(), files_to_save)
         n_to_save <- length(files_to_save)
 
-        pbar <- Progress$new(session, min = 0, max = n_to_save)
+        pbar <- Progress$new(session, min = 0, max = n_to_save+1)
         pbar$set(value = 0, message = paste0("Saving ", n_to_save, " files..."))
         # browser()
         write_status <-
@@ -78,6 +78,9 @@ fileNavSauceServer <- function(id,
         #   return(NULL)
         # }
 
+
+        annotations$exportAnnotations()
+        pbar$set(value = n_to_save + 1, message = "Saving pitchmendr_notes.tsv...")
         # TODO: Save summary csv file in output directory
         pbar$close()
         message(paste0("Saved ", length(write_status), " files"))
@@ -134,8 +137,8 @@ fileNavSauceServer <- function(id,
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
         fileHandler$hasChanged[fileHandler$isPlotted] <- TRUE # ensures the file will be saved
-        # annotations$saveNotes()
-        # annotations$saveBadges()
+        annotations$saveNotes()
+        annotations$saveBadges()
       }
 
       fileHandler$isPlotted[] <- FALSE
@@ -164,8 +167,8 @@ fileNavSauceServer <- function(id,
         saveData()
       }
       refilterSubset()
-      # annotations$updateBadges()
-      # annotations$updateNotes()
+      annotations$updateBadges()
+      annotations$updateNotes()
       destroyLoadedAudio()
     })
 
@@ -180,8 +183,8 @@ fileNavSauceServer <- function(id,
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
         fileHandler$hasChanged[fileHandler$isPlotted] <- TRUE # ensures the file will be saved
-        # annotations$saveNotes()
-        # annotations$saveBadges()
+        annotations$saveNotes()
+        annotations$saveBadges()
       }
 
       fileHandler$isPlotted[] <- FALSE
@@ -210,8 +213,8 @@ fileNavSauceServer <- function(id,
         saveData()
       }
       refilterSubset()
-      # annotations$updateBadges()
-      # annotations$updateNotes()
+      annotations$updateBadges()
+      annotations$updateNotes()
       destroyLoadedAudio()
     })
 
