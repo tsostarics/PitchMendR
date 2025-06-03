@@ -457,7 +457,6 @@ openSauceEditor <- function(
       boundKeys[[input$keys]]()
     })
 
-    # callModule(profvis::profvis_server, "profileUI")
 
     # Modal to display the implemented keybindings
     shinyjs::onclick(id = "keysQuestion", {
@@ -596,9 +595,9 @@ openSauceEditor <- function(
       if (nPlotted$is_one)
         plotSubset$data <<- loadedFile$data[plotted_indices,]
       else
-        plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(f0),]
+        plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(original_f0) | where_not_zero(f0),]
 
-
+# browser()
       # Update the x-axis for the plot
       horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[["t"]]))
       horiz_bounds$xlim <<- horiz_bounds$full
@@ -829,7 +828,6 @@ openSauceEditor <- function(
 
       if (!is.null(selectedPoints$data)) {
         to_change <- get_vals_to_change(selectedPoints, plotSubset)
-# browser()
         if (nPlotted$is_one) {
           to_change <- keep_pulses_one(NULL, loadedFile, plotSubset, rawPitchDB, fileHandler, input)
         } else {

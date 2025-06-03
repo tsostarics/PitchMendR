@@ -56,7 +56,6 @@ sauce_diagnosticsServer <- function(id,
         return(NULL)
 
       saveData()
-      # browser()
       filtered_data <- loadedFile$data[where_not_zero(get("f0")),]
 
       uneditedFiles$filenames <-
@@ -121,7 +120,6 @@ sauce_diagnosticsServer <- function(id,
       proxy <- DT::dataTableProxy('taggedFilesTable')
 
       observeEvent(input$taggedFilesTable_rows_selected, {
-        # browser()
         if (is.null(input$taggedFilesTable_rows_selected))
           return(NULL)
 

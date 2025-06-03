@@ -84,7 +84,6 @@ annotation_sauceServer <- function(id, loadedFile, fileHandler, updatePlot,
         shinyjs::disable("notepadInput")
         return(NULL)
       }
-# browser()
       if (!nPlotted$is_one) {
         shiny::updateTextAreaInput(session, "notepadInput", value = character(0))
         shinyjs::disable("notepadInput")

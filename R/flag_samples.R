@@ -62,7 +62,6 @@ flag_potential_errors <- function(data,
 
   if (.ignore_0s) {
     requireNamespace("data.table", quietly = TRUE)
-    # browser()
     # We need a unique id to use; the load file button will add this for us
     # but just in case it's not there we need to have it available
     if (!"pulse_id" %in% colnames(data))
@@ -242,7 +241,6 @@ annotate_errors <- function(data,
       stop("F0_semitones column not found. Please add column or set .add_semitones to TRUE or NA.")
   }
 
-  # browser()
   if (.add_semitones) {
     if (!is.null(.speaker)){
       if (is.na(.speaker)){

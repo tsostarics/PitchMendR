@@ -1,7 +1,6 @@
 
 remove_pulses <- function(to_change,
                           loadedFile, plotSubset, rawPitchDB) {
-  # to_change <- get_vals_to_change(selectedPoints, plotSubset)
 
   for (i in seq_len(to_change$n)) {
     id  <- to_change$LF[i]
@@ -71,7 +70,6 @@ swap_clicked_candidate <- function(to_change,
     return(NULL)
   }
 
-  # browser()
 
   id <- plotSubset$data[frame_i == clicked_cdf[["frame_i"]],][["pulse_id"]]
   frame_i <- clicked_cdf[["frame_i"]]
@@ -86,7 +84,6 @@ swap_clicked_candidate <- function(to_change,
 
 
   clicked_candidate <-  clicked_cdf[["cand_i"]]
-# browser()
   if (clicked_candidate == 1L) {
     # If the user clicks on the current f0 candidate (ie a dot or triangle)
     if (is_voiced) {
@@ -157,8 +154,6 @@ keep_pulses_one <- function(to_change_unvoiced = NULL,
   }
 
   plot_vals_to_change <- match(vals_to_change, plotSubset$data$pulse_id) # ensures correct order
-# i <- 1L
-# browser()
   for (i in seq_along(frames)) {
     id  <- vals_to_change[i]
     pid <- plot_vals_to_change[i]

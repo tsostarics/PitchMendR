@@ -184,10 +184,6 @@ loadSauceFileServer <- function(id,
 
       update_inputFiles(input, inputFiles, nfiles_string)
 
-      # browser()
-      # TODO: Go through files to read and check the output directory to see
-      #       if there are any files that have been edited already
-      # browser()
       shinyjs::removeClass("loadFileButton", "btn-primary")
       shinyjs::addClass("loadFileButton", "btn-warning")
 
@@ -266,9 +262,34 @@ loadSauceFileServer <- function(id,
                  vapply(pitch.read2(fp)[["frame"]],
                         \(f) f[["frequency"]][1L],
                         1.0)
-
+# browser()
                tryCatch({
-                 loadedFile$data[file == infile, original_f0 := original_f0_values]
+                 this_file_pulse_ids <- loadedFile$data[file == infile,][["pulse_id"]]
+                 loadedFile$data[this_file_pulse_ids, original_f0 := original_f0_values]
+                 frames <- rawPitchDB$data[[infile]]$frame
+
+                 which_are_zero_now <-
+                   vapply(frames,
+                        \(f) f$frequency[1L] < 1,
+                        TRUE)
+                 current_zero_pulse_ids <- this_file_pulse_ids[which_are_zero_now]
+
+                 zero_frame_indices <- loadedFile$data[["frame_i"]][current_zero_pulse_ids]
+                 original_f0_to_compare <- original_f0_values[which_are_zero_now]
+                 # Which candidate has the original f0 value?
+                 original_f0_candidate <-
+                   vapply(seq_len(length(original_f0_to_compare)),
+                        \(i) {
+                          # print(i)
+                          freq_diffs <-
+                            frames[[zero_frame_indices[i]]]$frequency -  original_f0_to_compare[i]
+                          which(abs(freq_diffs) < 1e-10)
+                        }, 1L)
+
+                 loadedFile$data[current_zero_pulse_ids, f0_i := original_f0_candidate]
+                 loadedFile$data[current_zero_pulse_ids, zero_index := 1L]
+                 loadedFile$data[current_zero_pulse_ids, f0 := original_f0_values[which_are_zero_now]]
+
                  return(FALSE)
                  }, error = \(e) return(TRUE))
              }, TRUE)
@@ -294,7 +315,6 @@ loadSauceFileServer <- function(id,
       # Update the fileHandler with the information from the loaded file
       fileHandler$filenames <- inputFiles$names
       fileHandler$isPlotted <- rep(TRUE, inputFiles$n) # upon file load, plot all files
-      # browser()
       fileHandler$indices <-
         setNames(
           lapply(fileHandler$filenames,
@@ -304,40 +324,10 @@ loadSauceFileServer <- function(id,
 
       fileHandler$hasChanged <- setNames(rep(FALSE, inputFiles$n), fileHandler$filenames)
 
-      # Add the file_checked column if it doesn't exist. If it does,
-      # then validate that the column has no missing values and update
-      # the fileHandler with which files have already been checked.
-      # if (!"file_checked" %in% loaded_colnames) {
-      #   loadedFile$data[, file_checked := FALSE]
       fileHandler$fileChecked <- setNames(rep(FALSE, inputFiles$n), fileHandler$filenames)
       fileHandler$fileChecked[inputFiles$hasOutput] <- TRUE
-      # } else {
-      #   loaded_file_check <- loadedFile$data[, .(file_checked = ifelse(is.na(file_checked[1]), FALSE, file_checked[1])), by = c(filenameColumnInput())]
-      #
-      #   file_checks <- loaded_file_check$file_checked
-      #   names(file_checks) <- loaded_file_check[[filenameColumnInput()]]
-      #   fileHandler$fileChecked <- file_checks[fileHandler$filenames]
-      # }
 
       plotSettings$showLine <- TRUE
-      # output$workingFileOutput <- shiny::renderText({
-      #   paste0("Working File:\n", clean_file(fileSelectBox()))
-      # })
-      # If we've loaded another file in the same session then we need
-      # to reset the flag samples button. If flagged_samples already exists,
-      # then set the button to success and use that column for the color coding,
-      # otherwise remove the success class and reset the color coding column
-      # TODO: CHECK THIS
-      # if ("flagged_samples" %in% loaded_colnames) {
-      #   shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
-      #   shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-      #   shinyWidgets::updateMaterialSwitch(parent_session, "useFlaggedColumnToggle", value = TRUE)
-      #   set_selectize_choices(parent_session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-      # } else {
-      #   shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success") # Will remove if it exists, otherwise takes no effect
-      #   shiny::updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
-      #   set_selectize_choices(session, "colorCodeColumnInput", loadedFile, colorCodeColumnInput())()
-      # }
 
       loadedFile$data[["flagged_samples"]] <- FALSE
 
@@ -352,7 +342,6 @@ loadSauceFileServer <- function(id,
         files <- summary_table$file
         badges <- summary_table$tags
         notes <- summary_table$notes
-# browser()
         # Not super elegant but ensures we're only working with valid files
         for (i in seq_along(files)) {
           cur_file <- files[i]
@@ -364,42 +353,7 @@ loadSauceFileServer <- function(id,
         }
       }
 
-
-      # If we're using annotation badges, then add the tags column if it doesn't
-      # already exist. Otherwise update the fileHandler's badges with what's
-      # in the loaded file dataframe.
-      # if (useBadgesToggle()) {
-      #   if (!"tags" %in% loaded_colnames) {
-      #     loadedFile$data[, tags := NA_character_]
-      #     fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
-      #     names(fileHandler$badges) <- fileHandler$filenames
-      #   } else {
-      #     # The tags are held in a column which means that each file has its
-      #     # tags listed N times for N rows even though they're the same value.
-      #     # So, we only need to take the first one.
-      #     fileHandler$badges = loadedFile$data[, .(tags = tags[1]), by = c(filenameColumnInput())][['tags']]
-      #     names(fileHandler$badges) <- fileHandler$filenames
-      #     loadedFile$data[,tags := as.character(tags)]
-      #   }
-      # }
-
-      # If we're using the notes field, then add the notes column if it doesn't
-      # alreadye exist. Otherwise, load the notes from the dataframe the same
-      # way we loaded the tags.
-      # if (useNotesToggle()) {
-      #   if (!"notes" %in% colnames(loadedFile$data)) {
-      #     loadedFile$data[, notes := NA_character_]
-      #     fileHandler$notes <- rep(NA_character_, length(fileHandler$filenames))
-      #     names(fileHandler$notes) <- fileHandler$filenames
-      #   } else {
-      #     fileHandler$notes = loadedFile$data[, .(notes = notes[1]), by = c(filenameColumnInput())][['notes']]
-      #     names(fileHandler$notes) <- fileHandler$filenames
-      #     loadedFile$data[,notes := as.character(notes)]
-      #   }
-      # }
-
       # Now that we've loaded the file, we can force update the plot
-      # browser()
       pbar$close()
       refilterSubset()
       updatePlot()
@@ -440,21 +394,6 @@ loadSauceFileServer <- function(id,
       refilterSubset()
 
     })
-
-    # Reactively update the appearance of the loadfile button
-    # observe({
-    #   # browser()
-    #   message("Observer triggered")
-    #   if (!is.null(input$inputDirInput)) {
-    #     shinyjs::removeClass("loadFileButton", class = "btn-warning")
-    #     shinyjs::addClass("loadFileButton", class = "btn-primary")
-    #     shiny::updateActionButton(session,inputId =  "loadFileButton",icon = icon("upload"))
-    #   } else {
-    #     shinyjs::removeClass("loadFileButton", class = "btn-primary")
-    #     shinyjs::addClass("loadFileButton", class = "btn-warning")
-    #     shiny::updateActionButton(session, inputId= "loadFileButton",icon = shiny::icon("spinner"))
-    #   }
-    # })
 
     return(list(outputDirInput = reactive(input$outputDirInput),
                 inputDirInput  = reactive(input$inputDirInput)))

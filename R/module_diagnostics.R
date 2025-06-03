@@ -56,7 +56,6 @@ diagnosticsServer <- function(id,
         return(NULL)
 
       saveData()
-      # browser()
       filtered_data <- loadedFile$data[where_not_zero(get(yValColumnInput())),]
 
       uneditedFiles$filenames <-

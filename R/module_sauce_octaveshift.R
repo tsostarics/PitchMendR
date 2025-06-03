@@ -14,14 +14,6 @@ octaveShiftSauceUI <- function(id) {
                         style = "margin: 1%;margin-top:0%;margin-bottom:0"))
 }
 
-# undoTransformUI <- function(id) {
-#   ns <- NS(id)
-#   shiny::actionButton(
-#     inputId = ns("undoTransformButton"),
-#     title = "Click to undo last doubling/halving transform",
-#     label = "Undo Transform"
-#   )
-# }
 
 octaveShiftSauceServer <- function(id,
                               loadedFile,
@@ -49,7 +41,6 @@ octaveShiftSauceServer <- function(id,
       # subset_to_change <- loadedFile$data[vals_to_change,]
       # n_to_change <- length(vals_to_change)
       # new_frame_values <- numeric(n_to_change)
-# browser()
       # TODO: this may need to be changed to a for loop to populate three
       #       different vectors so they can be saved in lastTransformation
       # print(rawPitchDB$data[[file]][["frame"]][[1]])
@@ -79,10 +70,6 @@ octaveShiftSauceServer <- function(id,
 
                  new_f0
                }, numeric(1))
-
-
-      # print(rawPitchDB$data[[file]][["frame"]][[1]])
-
 
       loadedFile$data[to_change$LF, f0 := new_freq_values]
       plotSubset$data[to_change$PS, f0 := new_freq_values]
@@ -132,27 +119,27 @@ octaveShiftSauceServer <- function(id,
 
     # TODO: this needs to be completely reworked with lastTransformation
     #       updated to have more information saved regarding files, frame_ids, etc.
-    undoTransformation <- reactive({
-      if (is.null(loadedFile$data) || is.null(lastTransformation$pulse_ids))
-        return(NULL)
-      plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
-
-      loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
-      loadedFile$data[lastTransformation$pulse_ids, c(transformedColumn$name) := get(yValColumnInput()) * pulse_transform]
-      plotSubset$data[plot_vals_to_change, pulse_transform := 1.0]
-      plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(yValColumnInput()) * pulse_transform]
-
-      lastTransformation$pulse_ids <- NULL
-      selectedPoints$data <- NULL
-
-      updatePlot()
-    })
+    # undoTransformation <- reactive({
+    #   if (is.null(loadedFile$data) || is.null(lastTransformation$pulse_ids))
+    #     return(NULL)
+    #   plot_vals_to_change <- plotSubset$data$pulse_id %in% loadedFile$data$pulse_id[lastTransformation$pulse_ids]
+    #
+    #   loadedFile$data[lastTransformation$pulse_ids, pulse_transform := 1.0]
+    #   loadedFile$data[lastTransformation$pulse_ids, c(transformedColumn$name) := get(yValColumnInput()) * pulse_transform]
+    #   plotSubset$data[plot_vals_to_change, pulse_transform := 1.0]
+    #   plotSubset$data[plot_vals_to_change, c(transformedColumn$name) := get(yValColumnInput()) * pulse_transform]
+    #
+    #   lastTransformation$pulse_ids <- NULL
+    #   selectedPoints$data <- NULL
+    #
+    #   updatePlot()
+    # })
 
     # Undo the last transformation, resetting the transformation to 1
-    shiny::observeEvent(input$undoTransformButton, {
-      message("Undo Pressed")
-      undoTransformation()
-    })
+    # shiny::observeEvent(input$undoTransformButton, {
+    #   message("Undo Pressed")
+    #   undoTransformation()
+    # })
 
 
     # Multiply selected points by 2 (fixes halving errors)
@@ -170,7 +157,8 @@ octaveShiftSauceServer <- function(id,
     })
 
     return(list(halvePulses = halvePulses,
-                doublePulses = doublePulses,
-                undoTransformation = undoTransformation))
+                doublePulses = doublePulses
+                # undoTransformation = undoTransformation
+                ))
   })
 }
