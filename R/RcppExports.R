@@ -9,7 +9,7 @@
 #'
 #' @export
 find_path <- function(pitchobj, filename) {
-    .Call(`_PitchMendR_find_path`, pitchobj, filename)
+    .Call('_PitchMendR_find_path', PACKAGE = 'PitchMendR', pitchobj, filename)
 }
 
 #' Swap frame candidates
@@ -23,6 +23,6 @@ find_path <- function(pitchobj, filename) {
 #'
 #' @export
 swapFrameValue <- function(frame, i, j) {
-    .Call(`_PitchMendR_swapFrameValue`, frame, i, j)
+    .Call('_PitchMendR_swapFrameValue', PACKAGE = 'PitchMendR', frame, i, j)
 }
 

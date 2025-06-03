@@ -8,6 +8,7 @@
 #' @param which_frame which frame to subset to
 #' @param new_candidate_i index of the new candidate, typically not 1L
 #'
+#' @import data.table
 #' @returns nothing, updates specified candidate dataframe in place
 update_cdf <- function(rawPitchDB, plotted_file, which_frame, new_candidate_i) {
   cdf <- rawPitchDB$cdf[[plotted_file]]
