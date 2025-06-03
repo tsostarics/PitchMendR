@@ -1,12 +1,16 @@
+#' PitchMendR
+#'
+#' @importFrom Rcpp evalCpp sourceCpp
+#' @useDynLib PitchMendR
+#' @name PitchMendR
+NULL
+
 utils::globalVariables(c("F0_of_err",
                          "F0_semitones",
                          "carryover_err",
                          "carryover_only",
                          "err",
                          "flagged_samples",
-                         ":=",
-                         ".I",
-                         ".SD",
                          ".",
                          "boundkeys",
                          "frame",
