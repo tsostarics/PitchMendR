@@ -310,7 +310,7 @@ openSauceEditor <- function(
                       ))
 
       )),
-    diagnosticsUI('diagnostics'),
+    sauce_diagnosticsUI('diagnostics'),
     bslib::nav_panel(
       tags$head(tags$style("body{overflow:hidden;}")),
       title = "Setup",
@@ -396,7 +396,7 @@ openSauceEditor <- function(
     # Handlers for the X and Y axis
     horiz_bounds       <- shiny::reactiveValues(xlim = NULL, full = NULL)
     defaultPitchRange  <- shiny::reactiveValues(min = 100, max = 500)
-    selectionColumn    <- shiny::reactiveVal()
+    selectionColumn    <- shiny::reactiveVal("keep_pulse")
 
     shinyjs::onevent("mouseup",
                      id = "pulsePlot",
@@ -556,17 +556,6 @@ openSauceEditor <- function(
       plotFlag$value <- !plotFlag$value
     })
 
-    # TODO: Remove this, see #87
-    # The selectionColumn is usually keep_pulse, but if it ever changes then
-    # we need to instantiate the new column accordingly
-    observeEvent(input$selectionColumnInputButton, {
-      selectionColumn(isolate(input$selectionColumnInput))
-
-      if (!is.null(loadedFile$data) && !selectionColumn() %in% colnames(loadedFile$data)) {
-        loadedFile$data[, (selectionColumn()) := where_not_zero(get(input$yValColumnInput))]
-        refilterSubset()
-      }
-    })
     # Retrieve the currently selected points on the plot when needed
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
@@ -1321,7 +1310,7 @@ openSauceEditor <- function(
                                           parent_session = session)
 
     # Handles the Progress pane
-    diagnostics <- diagnosticsServer('diagnostics',
+    diagnostics <- sauce_diagnosticsServer('diagnostics',
                                      loadedFile,
                                      parent_session = session,
                                      fileHandler,
