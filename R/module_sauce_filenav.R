@@ -133,8 +133,9 @@ fileNavSauceServer <- function(id,
       #$ Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        annotations$saveNotes()
-        annotations$saveBadges()
+        fileHandler$hasChanged[fileHandler$isPlotted] <- TRUE # ensures the file will be saved
+        # annotations$saveNotes()
+        # annotations$saveBadges()
       }
 
       fileHandler$isPlotted[] <- FALSE
@@ -163,8 +164,8 @@ fileNavSauceServer <- function(id,
         saveData()
       }
       refilterSubset()
-      annotations$updateBadges()
-      annotations$updateNotes()
+      # annotations$updateBadges()
+      # annotations$updateNotes()
       destroyLoadedAudio()
     })
 
@@ -178,8 +179,9 @@ fileNavSauceServer <- function(id,
       # Check off the file that's currently plotted before we move to the next file
       if (nPlotted$is_one) {
         fileHandler$fileChecked[fileHandler$isPlotted] <- TRUE
-        annotations$saveNotes()
-        annotations$saveBadges()
+        fileHandler$hasChanged[fileHandler$isPlotted] <- TRUE # ensures the file will be saved
+        # annotations$saveNotes()
+        # annotations$saveBadges()
       }
 
       fileHandler$isPlotted[] <- FALSE
@@ -208,8 +210,8 @@ fileNavSauceServer <- function(id,
         saveData()
       }
       refilterSubset()
-      annotations$updateBadges()
-      annotations$updateNotes()
+      # annotations$updateBadges()
+      # annotations$updateNotes()
       destroyLoadedAudio()
     })
 
