@@ -1010,13 +1010,39 @@ openSauceEditor <- function(
         return(NULL)
 
 
-      clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
+      clickedPoint <- shiny::nearPoints(plotSubset$data,
                                         input$plot_click,
                                         xvar = "t",
                                         yvar = "f0",
                                         addDist = TRUE)
 
       if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
+        point_is_voiced <- clickedPoint[["is_voiced"]]
+
+        first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
+        plot_vals_to_change <- plotSubset$data$pulse_id == first_id
+
+        to_change <-
+          list(LF = first_id,
+               PS = match(first_id, plotSubset$data$pulse_id),
+               1)
+
+        if (point_is_voiced)
+          remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
+        else {
+          if (nPlotted$is_one) {
+            # edit this
+            keep_pulses_one(to_change[["unvoiced"]],
+                            loadedFile, plotSubset, rawPitchDB, fileHandler, input)
+
+          } else {
+            keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
+          }
+        }
+
+        set_values(to_change, NA, loadedFile, plotSubset, selectedPoints, fileHandler)
+
+
         first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
         plot_vals_to_change <- plotSubset$data$pulse_id == first_id
 

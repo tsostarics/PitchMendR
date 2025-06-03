@@ -29,6 +29,8 @@ get_vals_to_change <- function(selectedPoints, plotSubset) {
        n = length(vals_to_change))
 }
 
+get_click_val <- function()
+
 get_vals_to_change.voicing <- function(selectedPoints, plotSubset) {
   # browser()
   vals_to_change <- selectedPoints$data$pulse_id # pulse ID for the full dataset == row id
