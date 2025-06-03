@@ -55,6 +55,82 @@ set_values <- function(to_change, to = NA, loadedFile, plotSubset, selectedPoint
   to
 }
 
+swap_clicked_candidate <- function(to_change,
+                               loadedFile, plotSubset, rawPitchDB, fileHandler, input) {
+  plotted_file <- fileHandler$filenames[fileHandler$isPlotted]
+
+  clicked_cdf <- shiny::nearPoints(rawPitchDB$cdf[[plotted_file]],
+                                   input$plot_click,
+                                   xvar = "t",
+                                   yvar = "f0",
+                                   threshold = 10L,
+                                   maxpoints = 1L)
+
+  # If the user clicks something not near a candidate
+  if (is.null(clicked_cdf) | nrow(clicked_cdf) == 0) {
+    return(NULL)
+  }
+
+  # browser()
+
+  id <- plotSubset$data[frame_i == clicked_cdf[["frame_i"]],][["pulse_id"]]
+  frame_i <- clicked_cdf[["frame_i"]]
+  is_voiced <-  loadedFile$data$is_voiced[id]
+
+  pid <- match(id, plotSubset$data$pulse_id)
+
+  to_change <-
+    list(LF = id,
+         PS = pid,
+         n = 1L)
+
+
+  clicked_candidate <-  clicked_cdf[["cand_i"]]
+# browser()
+  if (clicked_candidate == 1L) {
+    # If the user clicks on the current f0 candidate (ie a dot or triangle)
+    if (is_voiced) {
+      # message("Removing clicked pulse")
+      # Unvoice the clicked point
+      remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
+      set_values(to_change, FALSE, loadedFile, plotSubset, list(data = clicked_cdf), fileHandler)
+
+    } else {
+      # Voice the clicked point
+      # message("Voicing clicked pulse")
+      frame <- rawPitchDB$data[[plotted_file]][["frame"]][[clicked_cdf[["frame_i"]]]]
+      new_f0 <- swapFrameValue(frame, 1L, clicked_candidate)
+      loadedFile$data[id,  "f0" := new_f0]
+      plotSubset$data[pid, "f0" := new_f0]
+
+      update_cdf(rawPitchDB, plotted_file, frame_i, clicked_candidate)
+
+      loadedFile$data[id,  "f0_i" := 1L]
+      plotSubset$data[pid, "f0_i" := 1L]
+
+      loadedFile$data[id,  "zero_index" := clicked_candidate]
+      plotSubset$data[pid, "zero_index" := clicked_candidate]
+
+      set_values(to_change, TRUE, loadedFile, plotSubset, list(data = clicked_cdf), fileHandler)
+    }
+  } else {
+    # message("Swapping clicked pulse")
+    frame <- rawPitchDB$data[[plotted_file]][["frame"]][[clicked_cdf[["frame_i"]]]]
+
+    # If the user clicks on a different candidate, then we need to swap the
+    # F0 value to that candidate and voice the frame
+    new_f0 <- swapFrameValue(frame, 1L, clicked_candidate)
+    loadedFile$data[id,  "f0" := new_f0]
+    plotSubset$data[pid, "f0" := new_f0]
+
+    update_cdf(rawPitchDB, plotted_file, frame_i, clicked_candidate)
+    set_values(to_change, TRUE, loadedFile, plotSubset, list(data = clicked_cdf), fileHandler)
+  }
+
+  to_change
+
+}
+
 keep_pulses_one <- function(to_change_unvoiced = NULL,
                             loadedFile, plotSubset, rawPitchDB, fileHandler, input) {
   plotted_file <- fileHandler$filenames[fileHandler$isPlotted]
@@ -74,10 +150,15 @@ keep_pulses_one <- function(to_change_unvoiced = NULL,
     only_change_these <- vals_to_change %in% to_change_unvoiced$PS
     vals_to_change <- vals_to_change[only_change_these]
     frames <- frames[only_change_these]
+  } else {
+    to_change_unvoiced <- list(LF = vals_to_change,
+                               PS = match(vals_to_change, plotSubset$data[["pulse_id"]]),
+                               n = length(vals_to_change))
   }
 
   plot_vals_to_change <- match(vals_to_change, plotSubset$data$pulse_id) # ensures correct order
-
+# i <- 1L
+# browser()
   for (i in seq_along(frames)) {
     id  <- vals_to_change[i]
     pid <- plot_vals_to_change[i]
@@ -106,6 +187,7 @@ keep_pulses_one <- function(to_change_unvoiced = NULL,
     plotSubset$data[pid, "f0_i" := 1L]
 
     if (!loadedFile$data[["is_voiced"]][id]) {
+      message("Swapping zi")
       loadedFile$data[id,  "zero_index" := selected_cand]
       plotSubset$data[pid, "zero_index" := selected_cand]
     }
@@ -133,7 +215,6 @@ keep_pulses_multi <- function(to_change, loadedFile, plotSubset, rawPitchDB) {
       loadedFile$data[id,  "zero_index" := cur_f0_i]
       plotSubset$data[pid, "zero_index" := cur_f0_i]
     } else {
-      cur_f0_i <- loadedFile$data[["f0_i"]]
       if (cur_f0_i == 1L) {
         max_strength_i <- which.max(frame[["strength"]])
         swapFrameValue(frame, 1L, max_strength_i)

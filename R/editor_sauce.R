@@ -915,6 +915,7 @@ openSauceEditor <- function(
                           loadedFile, plotSubset, rawPitchDB, fileHandler, input)
 
         } else {
+          message("KPM")
           keep_pulses_multi(to_change[["unvoiced"]],
                             loadedFile, plotSubset, rawPitchDB)
         }
@@ -922,7 +923,7 @@ openSauceEditor <- function(
 
       set_values(to_change, NA, loadedFile, plotSubset, selectedPoints, fileHandler)
 
-        updatePlot()
+      updatePlot()
     })
 
     # When the user clicks the toggle button, toggle the logical keep_pulse value
@@ -939,17 +940,20 @@ openSauceEditor <- function(
 
       if (!is.null(selectedPoints$data)) {
         to_change <- get_vals_to_change(selectedPoints, plotSubset)
-
+# browser()
         if (nPlotted$is_one) {
-          keep_pulses_one(NULL, loadedFile, plotSubset, rawPitchDB, fileHandler, input)
+          message("KPO")
+          to_change <- keep_pulses_one(NULL, loadedFile, plotSubset, rawPitchDB, fileHandler, input)
         } else {
           keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
         }
 
+        message("Setting to_change to TRUE")
         set_values(to_change, TRUE, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
-      }})
+      }
+      })
 
     removePulses <- reactive({
       if (is.null(loadedFile$data))
@@ -1009,48 +1013,43 @@ openSauceEditor <- function(
       if (is.null(loadedFile$data))
         return(NULL)
 
+      if (nPlotted$is_one) {
+        swap_clicked_candidate(to_change,
+                               loadedFile, plotSubset, rawPitchDB, fileHandler, input)
+        # set_values() handled in swap_clicked_candidate()
+      } else {
+        clickedPoint <- shiny::nearPoints(plotSubset$data,
+                                          input$plot_click,
+                                          xvar = "t",
+                                          yvar = "f0",
+                                          threshold = 10L,
+                                          maxpoints = 1L)
 
-      clickedPoint <- shiny::nearPoints(plotSubset$data,
-                                        input$plot_click,
-                                        xvar = "t",
-                                        yvar = "f0",
-                                        addDist = TRUE)
+        if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
+          point_is_voiced <- clickedPoint[["is_voiced"]]
 
-      if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
-        point_is_voiced <- clickedPoint[["is_voiced"]]
+          first_id <- clickedPoint[["pulse_id"]] # Get the pulse_id of the closest point
+          plot_vals_to_change <- match(first_id, plotSubset$data$pulse_id)
 
-        first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        plot_vals_to_change <- plotSubset$data$pulse_id == first_id
+          to_change <-
+            list(LF = first_id,
+                 PS = plot_vals_to_change,
+                 n = 1L)
 
-        to_change <-
-          list(LF = first_id,
-               PS = match(first_id, plotSubset$data$pulse_id),
-               1)
-
-        if (point_is_voiced)
-          remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
-        else {
-          if (nPlotted$is_one) {
-            # edit this
-            keep_pulses_one(to_change[["unvoiced"]],
-                            loadedFile, plotSubset, rawPitchDB, fileHandler, input)
-
+          # If we're looking at just a single file, then we should be able to
+          # click on a candidate and swap the voicing.
+          if (point_is_voiced) {
+            remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
+            set_values(to_change, FALSE, loadedFile, plotSubset, selectedPoints, fileHandler)
           } else {
             keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
+            set_values(to_change, TRUE, loadedFile, plotSubset, selectedPoints, fileHandler)
           }
         }
-
-        set_values(to_change, NA, loadedFile, plotSubset, selectedPoints, fileHandler)
-
-
-        first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        plot_vals_to_change <- plotSubset$data$pulse_id == first_id
-
-        loadedFile$data[first_id,            keep_pulse := !keep_pulse]
-        plotSubset$data[plot_vals_to_change, keep_pulse := !keep_pulse]
-        clickedPoint <- NULL
-        updatePlot()
       }
+
+      clickedPoint <- NULL
+      updatePlot()
     })
     ########################################################
 
