@@ -84,7 +84,7 @@ sauce_diagnosticsServer <- function(id,
             original_variance = .var_of_diffs(.data[["original_f0"]][where_not_zero(.data[["original_f0"]])],
                                               .data[["t"]],
                                               samplerate),
-            new_variance = .var_of_diffs(.data[["f0"]][.data[["keep_pulse"]] & where_not_zero(.data[["f0"]])],
+            new_variance = .var_of_diffs(.data[["f0"]][.data[["is_voiced"]] & where_not_zero(.data[["f0"]])],
                                          .data[["t"]],
                                          samplerate)) |>
           dplyr::ungroup()

@@ -36,14 +36,10 @@ remove_pulses <- function(to_change,
 set_values <- function(to_change, to = NA, loadedFile, plotSubset, selectedPoints, fileHandler) {
   # NA used as a third value for toggle_pulses
   if (is.na(to)) {
-    loadedFile$data[to_change$LF, "keep_pulse" := !keep_pulse]
-    plotSubset$data[to_change$PS, "keep_pulse" := !keep_pulse]
     loadedFile$data[to_change$LF, "is_voiced"  := !is_voiced]
     plotSubset$data[to_change$PS, "is_voiced"  := !is_voiced]
   } else {
     stopifnot(is.logical(to))
-    loadedFile$data[to_change$LF, "keep_pulse" := to]
-    plotSubset$data[to_change$PS, "keep_pulse" := to]
     loadedFile$data[to_change$LF, "is_voiced"  := to]
     plotSubset$data[to_change$PS, "is_voiced"  := to]
   }

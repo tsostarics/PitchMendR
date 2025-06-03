@@ -235,7 +235,7 @@ loadSauceFileServer <- function(id,
 
       # TODO: HARD CODE COLUMNS HERE, SORTING MIGHT NOT EVEN BE NECESSARY
       # if (!selectionColumnInput() %in% loaded_colnames)
-      loadedFile$data[, keep_pulse := where_not_zero(f0)]
+      # loadedFile$data[, is_voiced := where_not_zero(f0)]
       loadedFile$data[, f0_i := 1L]
 
       loadedFile$data[, original_f0 := f0]

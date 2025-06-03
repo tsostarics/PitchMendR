@@ -396,7 +396,7 @@ openSauceEditor <- function(
     # Handlers for the X and Y axis
     horiz_bounds       <- shiny::reactiveValues(xlim = NULL, full = NULL)
     defaultPitchRange  <- shiny::reactiveValues(min = 100, max = 500)
-    selectionColumn    <- shiny::reactiveVal("keep_pulse")
+    selectionColumn    <- shiny::reactiveVal("is_voiced")
 
     shinyjs::onevent("mouseup",
                      id = "pulsePlot",
@@ -737,7 +737,7 @@ openSauceEditor <- function(
           plot_line <- list(ggplot2::geom_line(data =plotSubset$data,
                                                color = lineColor))
         } else {
-          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[["keep_pulse"]],],
+          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[["is_voiced"]],],
                                                color = lineColor))
         }
       }
@@ -756,13 +756,13 @@ openSauceEditor <- function(
         plot_points <-
           list(ggplot2::geom_point(data = plotSubset$data[1,], # ensures that the dummy dataframe is within the bounds of the current plot
                                    # Using shape so the scale_shape_manual doesn't throw a warning
-                                   aes(shape = keep_pulse),
+                                   aes(shape = is_voiced),
                                    alpha = 0))
       } else {
         # TODO: make this more robust
         # ..colorvar <- if ("flagged_samples" %in% colnames(loadedFile$data)) "flagged_samples" else NULL
         plot_points <- ggplot2::geom_point(aes(color = flagged_samples,
-                                               shape = keep_pulse),
+                                               shape = is_voiced),
                                            size = input$sizeSlider)
       }
 
