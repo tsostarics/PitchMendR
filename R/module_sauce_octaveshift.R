@@ -44,7 +44,6 @@ octaveShiftSauceServer <- function(id,
       selectedPoints$data <- getBrushedPoints()
       to_change <- get_vals_to_change(selectedPoints, plotSubset)
 
-
       # TODO: some of this information needs to be retained in lastTransformation
       #       since it can't just be multiplied by the inverse ratio anymore
       # subset_to_change <- loadedFile$data[vals_to_change,]
@@ -75,8 +74,7 @@ octaveShiftSauceServer <- function(id,
                  new_index <- get_value_octave_away(frame, octave)
 
                  new_f0 <- swapFrameValue(frame, 1L, new_index)
-
-                 if (new_index != 1L)
+                 if (new_index != 1L &!is.null(rawPitchDB$cdf[[file]]))
                    update_cdf(rawPitchDB, file, frame_i, new_index)
 
                  new_f0
@@ -118,7 +116,6 @@ octaveShiftSauceServer <- function(id,
         return(NULL)
 
       new_freq_values <- get_and_set_new_freq_values("halve")
-
       current_pitch_range <- isolate(pitchRangeInput())
       min_transform_value <- min(new_freq_values[where_not_zero(new_freq_values)],
                                  na.rm = TRUE)

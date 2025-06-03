@@ -49,7 +49,7 @@ set_values <- function(to_change, to = NA, loadedFile, plotSubset, selectedPoint
     plotSubset$data[to_change$PS, "is_voiced"  := to]
   }
 
-  files_changed <- unique(selectedPoints$data[["file"]])
+  files_changed <- unique(loadedFile$data[["file"]][to_change$LF])
   fileHandler$hasChanged[files_changed] <- TRUE
   selectedPoints$data <- NULL
   to
@@ -187,7 +187,6 @@ keep_pulses_one <- function(to_change_unvoiced = NULL,
     plotSubset$data[pid, "f0_i" := 1L]
 
     if (!loadedFile$data[["is_voiced"]][id]) {
-      message("Swapping zi")
       loadedFile$data[id,  "zero_index" := selected_cand]
       plotSubset$data[pid, "zero_index" := selected_cand]
     }

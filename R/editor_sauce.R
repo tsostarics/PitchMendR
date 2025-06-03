@@ -62,8 +62,8 @@ openSauceEditor <- function(
                                       "b",
                                       "d",
                                       "a",
-                                      "ctrl+z",
-                                      "command+z",
+                                      # "ctrl+z",
+                                      # "command+z",
                                       "v",
                                       "p",
                                       "o",
@@ -95,7 +95,7 @@ openSauceEditor <- function(
                           title = "Click to remove selection boxes that won't go away!",
                           label = "Clear Selection"),
       # profvis::profvis_ui("profileUI"),
-      undoTransformUI('octaveShift'),
+      # undoTransformUI('octaveShift'),
       praatUI_button("praatIO"),
       playAudioUI("playAudio"),
       shiny::actionButton(
@@ -375,7 +375,7 @@ openSauceEditor <- function(
                           # bslib::card(height = "100%",
                           title = "Directory Settings",
                           loadSauceFileUI('loadSauceFile', input_directory, output_directory),
-                          "",
+                          tags$br(),
                           tags$span(title = "Click to expand audio options",
                                     praatUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
                           # )
@@ -436,7 +436,7 @@ openSauceEditor <- function(
 
     # Dataset holders
     rawPitchDB         <- shiny::reactiveValues(data = NULL,
-                                                cdfs = NULL)
+                                                cdf = NULL)
     loadedFile         <- shiny::reactiveValues(data = NULL)
     plotSubset         <- shiny::reactiveValues(data = NULL)     # Subset of loadedFile$data for the currently plotted file(s) only
     transformedColumn  <- shiny::reactiveValues(name = NULL)
@@ -479,8 +479,8 @@ openSauceEditor <- function(
         "d" = keyBindAction(octaveShift$doublePulses, "[D] Pressed (Double Pulses)"),
         "a" = keyBindAction(octaveShift$halvePulses,  "[A] Pressed (Halve Pulses)"),
         "v" = keyBindAction(plotMatches,              "[V] pressed (Plot Matches)"),
-        "ctrl+z" = keyBindAction(octaveShift$undoTransformation,    "[Ctrl+Z] Pressed (Undo Transform)"),
-        "command+z" = keyBindAction(octaveShift$undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
+        # "ctrl+z" = keyBindAction(octaveShift$undoTransformation,    "[Ctrl+Z] Pressed (Undo Transform)"),
+        # "command+z" = keyBindAction(octaveShift$undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
         "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"),
         "o" = keyBindAction(audioInfo$sendToPraat(), "[O] Pressed (Send to Praat)"),
         "j" = keyBindAction(audioServer$playAudio, "[J] Pressed (Play Audio Selection)")
@@ -525,8 +525,8 @@ openSauceEditor <- function(
                        inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
                        inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
                        inline_kbd_button('o', " - {KEY}: Open in Praat"),
-                       inline_kbd_button('j', " - {KEY}: Play current audio file/selection"),
-                       inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
+                       inline_kbd_button('j', " - {KEY}: Play current audio file/selection")
+                       # inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
                                       `margin-bottom` = "none"),
@@ -632,7 +632,7 @@ openSauceEditor <- function(
       yval <- transformedColumn$name
       if (!is.null(input$hideToggleInput) && input$hideToggleInput)
         yval <- input$yValColumnInput
-
+# message("getBrushed triggered")
       shiny::brushedPoints(plotSubset$data,
                            input$plot_brush,
                            xvar = "t",
@@ -656,12 +656,20 @@ openSauceEditor <- function(
       plotted_indices <- getIndices()
       if (is.null(plotted_indices))
         return(NULL)
-      plotSubset$data <<- loadedFile$data[plotted_indices,]#[where_not_zero(f0),]
 
 
       # Update our count of how many files are plotted
       nPlotted$n <- sum(fileHandler$isPlotted)
       nPlotted$is_one <- nPlotted$n == 1
+
+      # If only one file is plotted, then we need to plot all candidates or else
+      # we won't be able to interact with the candidates correctly. If there are
+      # multiple files, omit the candidates for speed
+      if (nPlotted$is_one)
+        plotSubset$data <<- loadedFile$data[plotted_indices,]
+      else
+        plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(f0),]
+
 
       # Update the x-axis for the plot
       horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[["t"]]))
@@ -915,7 +923,6 @@ openSauceEditor <- function(
                           loadedFile, plotSubset, rawPitchDB, fileHandler, input)
 
         } else {
-          message("KPM")
           keep_pulses_multi(to_change[["unvoiced"]],
                             loadedFile, plotSubset, rawPitchDB)
         }
@@ -942,13 +949,10 @@ openSauceEditor <- function(
         to_change <- get_vals_to_change(selectedPoints, plotSubset)
 # browser()
         if (nPlotted$is_one) {
-          message("KPO")
           to_change <- keep_pulses_one(NULL, loadedFile, plotSubset, rawPitchDB, fileHandler, input)
         } else {
           keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
         }
-
-        message("Setting to_change to TRUE")
         set_values(to_change, TRUE, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
@@ -1102,9 +1106,11 @@ openSauceEditor <- function(
 
     })
 
+
     # Display the filenames of the selected points when the user makes a selection
     output$brushedFileNames <- shiny::renderText({
       if (!is.null(loadedFile$data)) {
+        # message("brush filenames")
         selectedPoints$data <- getBrushedPoints()
         filesBrushed$filenames <- unique(selectedPoints$data[[input$filenameColumnInput]])
         paste0("# Brushed: ", length(filesBrushed$filenames), "\n\n",
