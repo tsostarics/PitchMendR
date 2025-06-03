@@ -1211,9 +1211,9 @@ openSauceEditor <- function(
     # Reactives that return a static value. These don't change for the
     # sauce editor, but many submodules expect reactives.
     # input_fakeY <- reactive({"f0"})
-    input_fakeY <- reactiveVal("f0")
-    input_fakeX <- reactive({"t"})
-    input_fakeFile <- reactive({"file"})
+    input_fakeY    <- shiny::reactiveVal("f0")
+    input_fakeX    <- shiny::reactive({"t"})
+    input_fakeFile <- shiny::reactive({"file"})
 
     # Handles file loading and initial setup with loaded data
     loadFile <- loadSauceFileServer("loadSauceFile",
@@ -1298,7 +1298,7 @@ openSauceEditor <- function(
                                           fileHandler,
                                           transformedColumn,
                                           selectedPoints,
-                                          lastTransformation,
+                                          # lastTransformation,
                                           getBrushedPoints,
                                           updatePlot,
                                           input_fakeY,

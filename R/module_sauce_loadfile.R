@@ -54,6 +54,7 @@ loadSauceFileUI <- function(id, input_directory, output_directory) {
 
 }
 
+#' @importFrom stats setNames
 loadSauceFileServer <- function(id,
                                 parent_session,
                                 loadedFile,
@@ -187,11 +188,11 @@ loadSauceFileServer <- function(id,
       shinyjs::removeClass("loadFileButton", "btn-primary")
       shinyjs::addClass("loadFileButton", "btn-warning")
 
-      pbar <- Progress$new(session, min = 0, max = inputFiles$n + sum(inputFiles$hasOutput))
+      pbar <- shiny::Progress$new(session, min = 0, max = inputFiles$n + sum(inputFiles$hasOutput))
 
       if (input$numCoresInput > 1L) {
-        requireNamespace("future")
-        requireNamespace("furrr")
+        rlang::is_installed("future")
+        rlang::is_installed("furrr")
         future::plan("multisession", workers = input$numCoresInput)
         rawPitchDB$data <- furrr::future_map(inputFiles$paths, pitch.read2)
         names(rawPitchDB$data) <- inputFiles$names
@@ -262,7 +263,7 @@ loadSauceFileServer <- function(id,
                  vapply(pitch.read2(fp)[["frame"]],
                         \(f) f[["frequency"]][1L],
                         1.0)
-# browser()
+
                tryCatch({
                  this_file_pulse_ids <- loadedFile$data[file == infile,][["pulse_id"]]
                  loadedFile$data[this_file_pulse_ids, original_f0 := original_f0_values]
@@ -384,7 +385,7 @@ loadSauceFileServer <- function(id,
       loadedFile$data[, ("flagged_samples") := flagged_values]
 
       if (!data.table::is.data.table(loadedFile$data))
-        loadedFile$data <- data.table(loadedFile$data)
+        loadedFile$data <- data.table::data.table(loadedFile$data)
 
       shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
       shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")

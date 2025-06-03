@@ -1,3 +1,5 @@
+# borrowed from https://github.com/bbTomas/rPraat/blob/master/R/rpraat.R
+
 #' pitch.read2
 #'
 #' Reads Pitch object from Praat. Modified from the function in `{rPraat}`.
@@ -5,24 +7,9 @@
 #'
 #' @param fileNamePitch file name of Pitch object
 #' @param encoding File encoding (default: \code{"UTF-8"}), \code{"auto"} for auto-detect of Unicode encoding
+#' @param f0_only Logical, if TRUE will use a faster routine to just load the first candidate from each frame
 #'
 #' @return A Pitch object represents periodicity candidates as a function of time.
-#' @return   [ref: Praat help, https://www.fon.hum.uva.nl/praat/manual/Pitch.html]
-#' @return   \code{p$xmin} ... start time (seconds)
-#' @return   \code{p$xmax} ... end time (seconds)
-#' @return   \code{p$nx}   ... number of frames
-#' @return   \code{p$dx}   ... time step = frame duration (seconds)
-#' @return   \code{p$x1}   ... time associated with the first frame (seconds)
-#' @return   \code{p$t}    ... vector of time instances associated with all frames
-#' @return   \code{p$ceiling}        ... a frequency above which a candidate is considered voiceless (Hz)
-#' @return   \code{p$maxnCandidates} ... maximum number of candidates in frame
-#' @return   \code{p$frame[[1]]} to \code{p$frame[[p$nx]]} ... frames
-#' @return      \code{p$frame[[1]]$intensity}   ... intensity of the frame
-#' @return      \code{p$frame[[1]]$nCandidates} ... actual number of candidates in this frame
-#' @return      \code{p$frame[[1]]$frequency} ... vector of candidates' frequency (in Hz)
-#' @return                               (for a voiced candidate), or \code{0} (for an unvoiced candidate)
-#' @return      \code{p$frame[[1]]$strength}  ... vector of degrees of periodicity of candidates (between \code{0} and \code{1})
-#'
 #' @importFrom rPraat str_contains
 #' @examples
 #' \dontrun{
@@ -45,7 +32,7 @@ pitch.read2 <- function(fileNamePitch, encoding = "UTF-8", f0_only = FALSE) {
   enc <- encoding
 
   if (encoding == "auto") {
-    enc <- detectEncoding(fileNamePitch)
+    enc <- .detectEncoding(fileNamePitch)
   }
 
   if (enc == "UTF-8") {
@@ -243,7 +230,6 @@ pitch.read_lines2 <- function(flines, find = 1L, collection = FALSE) {
 strTrim2 <- function(x) .Internal(gsub("^\\s+|\\s+$", "", x, FALSE, FALSE, FALSE, FALSE))
 
 # Modified from rPraat
-#' @export
 isString <- function(string) {
   (inherits(string, "character"))  &
     (length(string) == 1L) &
@@ -279,7 +265,7 @@ pitch.read_f0_lines_only <- function(flines, find = 1L, collection = FALSE) {
     if (str_contains(flines[find+ 4], "xmin")) {  # TextFile
 
       cand_1_f0 <-
-        strTrim2(ptst[which(grepl("candidates [1]:", flines, fixed = TRUE))+1L])
+        strTrim2(flines[which(grepl("candidates [1]:", flines, fixed = TRUE))+1L])
 
       frequency <-
         as.numeric(
@@ -317,4 +303,28 @@ pitch.read_f0_lines_only <- function(flines, find = 1L, collection = FALSE) {
   }
 
   frequency
+}
+
+
+.detectEncoding <- function(fileName) {
+  # Inspired by Weirong Chen.
+
+  encodings <- c("UTF-8", "UTF-16", "UTF-16BE")   # "UTF-16LE" does not work anymore
+  encodingWeight <- numeric(length(encodings))
+
+  for (I in 1:length(encodings)) {
+    encoding <- encodings[I]
+
+    if (encoding == "UTF-8") {
+      flines <- readr::read_lines(fileName, locale = readr::locale(encoding = "UTF-8"))  # Does not support UTF-16 at this point :-(
+    } else {
+      fid <- file(fileName, open = "r", encoding = encoding)
+      flines <- suppressWarnings(readLines(fid))   # does not work with tests/testthat/utf8.TextGrid  :-(
+      close(fid)
+    }
+
+    encodingWeight[I] <- length(grep('Text', flines))
+  }
+
+  return(encodings[which.max(encodingWeight)])
 }

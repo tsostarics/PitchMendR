@@ -6,6 +6,11 @@
 \usage{
 find_path(pitchobj, filename)
 }
+\arguments{
+\item{pitchobj}{A pitch object (i.e., a List) from rPraat::pitch.read or PitchMendR::pitch.read2}
+
+\item{filename}{Character vector of length 1, filename to use}
+}
 \description{
 creates a data.table by loading the relevant f0 info from the pitch obj
 }

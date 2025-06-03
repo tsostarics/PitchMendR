@@ -4,12 +4,23 @@
 #' @title find path
 #'
 #' @description creates a data.table by loading the relevant f0 info from the pitch obj
+#' @param pitchobj A pitch object (i.e., a List) from rPraat::pitch.read or PitchMendR::pitch.read2
+#' @param filename Character vector of length 1, filename to use
 #'
 #' @export
 find_path <- function(pitchobj, filename) {
     .Call(`_PitchMendR_find_path`, pitchobj, filename)
 }
 
+#' Swap frame candidates
+#'
+#' Given a list of frames, swap the candidates at the given 1-indexed positions
+#' in place and then return the new value at i
+#'
+#' @param frame List of frames from a Pitch object
+#' @param i first index, must be integer
+#' @param j second index, must be integer
+#'
 #' @export
 swapFrameValue <- function(frame, i, j) {
     .Call(`_PitchMendR_swapFrameValue`, frame, i, j)

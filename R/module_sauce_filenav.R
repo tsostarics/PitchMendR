@@ -56,7 +56,7 @@ fileNavSauceServer <- function(id,
         filepaths <- file.path(outputDirInput(), files_to_save)
         n_to_save <- length(files_to_save)
 
-        pbar <- Progress$new(session, min = 0, max = n_to_save+1)
+        pbar <- shiny::Progress$new(session, min = 0, max = n_to_save+1)
         pbar$set(value = 0, message = paste0("Saving ", n_to_save, " files..."))
         write_status <-
           vapply(seq_along(files_to_save),

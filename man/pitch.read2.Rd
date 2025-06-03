@@ -10,44 +10,11 @@ pitch.read2(fileNamePitch, encoding = "UTF-8", f0_only = FALSE)
 \item{fileNamePitch}{file name of Pitch object}
 
 \item{encoding}{File encoding (default: \code{"UTF-8"}), \code{"auto"} for auto-detect of Unicode encoding}
+
+\item{f0_only}{Logical, if TRUE will use a faster routine to just load the first candidate from each frame}
 }
 \value{
 A Pitch object represents periodicity candidates as a function of time.
-
-\link{ref: Praat help, https://www.fon.hum.uva.nl/praat/manual/Pitch.html}
-
-\code{p$xmin} ... start time (seconds)
-
-\code{p$xmax} ... end time (seconds)
-
-\code{p$nx}   ... number of frames
-
-\code{p$dx}   ... time step = frame duration (seconds)
-
-\code{p$x1}   ... time associated with the first frame (seconds)
-
-\code{p$t}    ... vector of time instances associated with all frames
-
-\code{p$ceiling}        ... a frequency above which a candidate is considered voiceless (Hz)
-
-\code{p$maxnCandidates} ... maximum number of candidates in frame
-
-\code{p$frame[[1]]} to \code{p$frame[[p$nx]]} ... frames
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{ \code{p$frame[[1]]$intensity}   ... intensity of the frame
-}\if{html}{\out{</div>}}
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{ \code{p$frame[[1]]$nCandidates} ... actual number of candidates in this frame
-}\if{html}{\out{</div>}}
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{ \code{p$frame[[1]]$frequency} ... vector of candidates' frequency (in Hz)
-}\if{html}{\out{</div>}}
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{                          (for a voiced candidate), or \code{0} (for an unvoiced candidate)
-}\if{html}{\out{</div>}}
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{ \code{p$frame[[1]]$strength}  ... vector of degrees of periodicity of candidates (between \code{0} and \code{1})
-}\if{html}{\out{</div>}}
 }
 \description{
 Reads Pitch object from Praat. Modified from the function in \code{{rPraat}}.

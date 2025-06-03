@@ -6,3 +6,6 @@ Praat.exe
 www/
 app.R
 rsconnect/
+.*.Pitch
+.*.csv
+.*.tsv

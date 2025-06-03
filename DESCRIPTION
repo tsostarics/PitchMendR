@@ -21,10 +21,15 @@ Imports:
     htmltools,
     keys,
     Rcpp,
+    readr,
     rlang,
+    rPraat,
     shiny (>= 1.7.4),
     shinyjqui,
     shinyjs,
     shinyWidgets
 LinkingTo: 
     Rcpp
+Suggests: 
+    furrr,
+    future

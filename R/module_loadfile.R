@@ -247,7 +247,7 @@ loadFileServer <- function(id,
       loadedFile$data[, ("flagged_samples") := flagged_values]
 
       if (!data.table::is.data.table(loadedFile$data))
-        loadedFile$data <- data.table(loadedFile$data)
+        loadedFile$data <- data.table::data.table(loadedFile$data)
 
       shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
       shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")

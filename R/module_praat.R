@@ -124,7 +124,7 @@ praatServer <- function(id, loadedFile, fileHandler, filenameColumnInput, pitchR
 
     })
 
-    shiny::observeEvent(debounce(input$fileNameGlue, 200),{
+    shiny::observeEvent(shiny::debounce(input$fileNameGlue, 200),{
 
       output$gluePathExample <- shiny::renderText(glueExample())
     })

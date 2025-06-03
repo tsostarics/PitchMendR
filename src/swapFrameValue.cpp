@@ -1,6 +1,15 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+//' Swap frame candidates
+//'
+//' Given a list of frames, swap the candidates at the given 1-indexed positions
+//' in place and then return the new value at i
+//'
+//' @param frame List of frames from a Pitch object
+//' @param i first index, must be integer
+//' @param j second index, must be integer
+//'
 //' @export
 // [[Rcpp::export]]
 double swapFrameValue(List frame, int i, int j) {

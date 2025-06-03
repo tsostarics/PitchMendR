@@ -4,6 +4,8 @@ using namespace Rcpp;
 //' @title find path
 //'
 //' @description creates a data.table by loading the relevant f0 info from the pitch obj
+//' @param pitchobj A pitch object (i.e., a List) from rPraat::pitch.read or PitchMendR::pitch.read2
+//' @param filename Character vector of length 1, filename to use
 //'
 //' @export
 // [[Rcpp::export]]
