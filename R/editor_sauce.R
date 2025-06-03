@@ -225,12 +225,12 @@ openSauceEditor <- function(
                                               shiny::fluidRow(
                                                 shiny::actionButton(width = "48%",
                                                                     inputId = "keepButton",
-                                                                    label = "Keep",
+                                                                    label = "Voice",
                                                                     title = "Click to keep selected points",
                                                                     style = "margin:1%;margin-top:0%;margin-bottom:0"),
                                                 shiny::actionButton(width = "48%",
                                                                     inputId = "removeButton",
-                                                                    label = "Remove",
+                                                                    label = "Unvoice",
                                                                     title = "Click to remove selected points",
                                                                     style = "margin: 1%;margin-top:0%;margin-bottom:0")),
                                               octaveShiftSauceUI('octaveShift')
