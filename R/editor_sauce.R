@@ -447,6 +447,17 @@ openSauceEditor <- function(
     defaultPitchRange  <- shiny::reactiveValues(min = 100, max = 500)
     selectionColumn    <- shiny::reactiveVal()
 
+    shinyjs::onevent("mouseup",
+                     id = "pulsePlot",
+                     shinyjs::runjs('
+                     var brush_elements = document.querySelectorAll("[id=\'pulsePlot_brush\']");
+                     if (brush_elements.length > 1) {
+                     for (var i = 0; i < brush_elements.length; i++){
+                      brush_elements[i].remove();
+                     }
+                     }
+                     '))
+
     # Temporary button to clear the selection, see issue #46
     observeEvent(input$clearSelectButton, {
       session$resetBrush('plot_brush')
