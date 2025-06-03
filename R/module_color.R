@@ -64,22 +64,11 @@ colorServer <- function(id,
                         dark_mode_in) {
   moduleServer(id, function(input, output, session) {
     # Update the color pickers only when the user leaves the input, if we use
-    # observeEvent then the plot will re-render when using updateColourInput
-    # when changing the theme, which we don't want
-    shinyjs::onevent(event = "click", id = ('lineColor'), {
-      message("Changing line color")
-      plotSettings_ref$setColors[1] <- input$lineColor
-    })
+    # observeEvent then the plot will re-render multiple times
 
-    shinyjs::onevent(event = "click", id = ('keepTrueColor'), {
-      message("Changing true color")
-      plotSettings_ref$setColors[3] <- input$keepTrueColor
-    })
-
-    shinyjs::onevent(event = "click", id = ('keepFalseColor'), {
-      message("Changing false color")
-      plotSettings_ref$setColors[2] <- input$keepFalseColor
-    })
+    shinyjs::onevent(event = "mousedown", id = "navbar", {
+      plotSettings_ref$setColors <- c(input$lineColor, input$keepFalseColor, input$keepTrueColor)
+    }, asis = TRUE,add = TRUE)
 
     set_theme_colors <- reactive({
       if (dark_mode_in() == "dark") {

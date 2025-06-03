@@ -247,33 +247,6 @@ openSauceEditor <- function(
                       shiny::column(width = 3,
                                     bslib::card(
                                       class = "h-100",
-                                      # TODO: These don't need to exist here, everything is standardized
-                                      tags$span(title = "Select column that indexes individual files/contours",
-                                                shiny::selectizeInput("filenameColumnInput",
-                                                                      label ="Column name that identifies individual files",
-                                                                      choices = "file",
-                                                                      selected = "file",
-                                                                      multiple = FALSE,
-                                                                      width = "100%")),
-                                      tags$span(title = "Select column that identifies the x-axis for the plot",
-                                                shiny::selectizeInput("xValColumnInput",
-                                                                      label ="X-value column name",
-                                                                      choices = xvar,
-                                                                      selected = xvar,
-                                                                      multiple = FALSE,
-                                                                      width = "100%")),
-                                      tags$span(title = "Select column that identifies the y-axis for the plot",
-                                                shiny::selectizeInput("yValColumnInput",
-                                                                      label ="Y-value column name",
-                                                                      choices = yvar,
-                                                                      selected = yvar,
-                                                                      multiple = FALSE,
-                                                                      width = "100%")),
-                                      submitTextInput("selectionColumnInput",
-                                                      title = "Click button set column name",
-                                                      label = "Column name for keep/remove annotations (will be added if it doesn't exist)",
-                                                      value = "keep_pulse",
-                                                      width = "100%"),
                                       shiny::markdown(mds = "## UI Options"),
                                       tags$span(title = "Toggle to save file to disk when plot refreshes with new files",
                                                 shinyWidgets::awesomeCheckbox(
@@ -334,29 +307,7 @@ openSauceEditor <- function(
                                                   status = "info")),
                                       tags$span(title = "Drag to change size of points",
                                                 shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 2)),
-                                      # Tabset panel to hide/show color code
-                                      # column input based on whether the
-                                      # useFlaggedColumnToggle is set to TRUE.
-                                      # Needs to be done this way instead of
-                                      # using uiOutput, otherwise the plot won't
-                                      # render until the user manually goes to
-                                      # the settings tab so the selectize input
-                                      # initializes
-                                      shiny::tabsetPanel(type = "hidden",
-                                                         id = "switchColorCode",
-                                                         shiny::tabPanelBody("showColorCodeColumnInput",
-                                                                             tags$span(title = "Select column to use for color coding",
-                                                                                       shiny::selectizeInput(
-                                                                                         inputId = "colorCodeColumnInput",
-                                                                                         label = NULL,
-                                                                                         choices = "flagged_samples",
-                                                                                         selected = "flagged_samples",
-                                                                                         multiple = FALSE,
-                                                                                         width = "100%"
-                                                                                       ))),
-                                                         shiny::tabPanelBody("hideColorCodeColumnInput", NULL)))
-                      ),
-                      shiny::column(width = 6, columnInfo_UI("columnInfo")),
+                      ))
 
       )),
     diagnosticsUI('diagnostics'),
@@ -616,33 +567,11 @@ openSauceEditor <- function(
         refilterSubset()
       }
     })
-
-    # TODO: Remove this, see #87
-    # Update the y-axis variable as needed
-    # shiny::observeEvent(input$yValColumnInput,ignoreInit = TRUE, {
-    #   if (is.null(loadedFile$data))
-    #     return(NULL)
-    #   changeTransformedColumn()
-    # })
-
-    # When we change the y-axis variable, we need to create a new column
-    # to plot with that incorporates the pulse transformation factors that
-    # correct for pitch halving/doubling
-    # changeTransformedColumn <- shiny::reactive({
-    #   if (input_fakeY() == "f0") {
-    #     input_fakeY("original_f0")
-    #   } else {
-    #     input_fakeY("f0")
-    #   }
-    #   refilterSubset()
-    # })
-
     # Retrieve the currently selected points on the plot when needed
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
       if (!is.null(input$hideToggleInput) && input$hideToggleInput)
         yval <- input$yValColumnInput
-# message("getBrushed triggered")
       shiny::brushedPoints(plotSubset$data,
                            input$plot_brush,
                            xvar = "t",
@@ -704,41 +633,6 @@ openSauceEditor <- function(
       plotSettings$showLine <- !plotSettings$showLine
     })
 
-    shiny::observeEvent(input$colorCodeColumnInput,ignoreInit = FALSE, {
-      if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput) | is.null(input$useFlaggedColumnToggle))
-        return(NULL)
-
-      if (input$useFlaggedColumnToggle) {
-        updatePlot()
-      }
-    })
-
-
-    shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = FALSE, {
-      # message("flag toggle")
-      if (input$useFlaggedColumnToggle){
-        shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
-      } else {
-        shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "hideColorCodeColumnInput")
-      }
-      updatePlot()
-    })
-
-    # TODO: Remove this, only do color coding for flagged samples
-    # Update the column used for color coding.
-    plot_colorColumn <- reactive({
-      if(is.null(input$useFlaggedColumnToggle))
-        return(NULL)
-      req(selectionColumn())
-      req(input$colorCodeColumnInput)
-      req(loadedFile)
-      colorColumn <- selectionColumn()
-      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(loadedFile$data))
-        colorColumn <- input$colorCodeColumnInput
-
-      colorColumn
-    })
-
     shiny::observeEvent(input$hideToggleInput, {
       req(loadedFile)
       req(plotSubset)
@@ -751,21 +645,10 @@ openSauceEditor <- function(
 
     # Update the color coding for the current points
     plot_colorCodePoints <- reactive({
-      if(is.null(input$useFlaggedColumnToggle)) # FALSE is meaningful, can't use req
-        return(NULL)
-      req(input$colorCodeColumnInput)
       req(loadedFile)
       req(plotSettings)
-
       color_values <-  plotSettings$setColors[2:3]
-
-      if ((!input$useFlaggedColumnToggle || is.logical(loadedFile$data[[input$colorCodeColumnInput]]))) {
-        # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-        if (input$useFlaggedColumnToggle)
-          color_values <- c(color_values[2], color_values[1])
         return(list(ggplot2::scale_color_manual(values = color_values)))
-      }
-      NULL
     })
 
     # Wrapper for the above styling options
@@ -1121,7 +1004,7 @@ openSauceEditor <- function(
       if (!is.null(loadedFile$data)) {
         # message("brush filenames")
         selectedPoints$data <- getBrushedPoints()
-        filesBrushed$filenames <- unique(selectedPoints$data[[input$filenameColumnInput]])
+        filesBrushed$filenames <- unique(selectedPoints$data[["file"]])
         paste0("# Brushed: ", length(filesBrushed$filenames), "\n\n",
                paste(filesBrushed$filenames, collapse = "\n"))
       }
@@ -1183,19 +1066,6 @@ openSauceEditor <- function(
                          choices = fileHandler$filenames[fileHandler$fileChecked])
     })
 
-    # TODO: Replace this with the number of files
-    # observe({
-    #   if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
-    #     input_filepaths <- list.files(input$inputDirInput, ".Pitch$", include.dirs = FALSE)
-    #     # input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp|wav|zip|msi$", input_filepaths,ignore.case = TRUE)]
-    #     input_filenames <- basename(input_filepaths)
-    #     hasOutput <- input_filenames %in% list.files(input$outputDirInput, include.dirs = FALSE)
-    #
-    #     shiny::updateSelectizeInput(session,
-    #                                 inputId = "fileSelectBox",
-    #                                 choices = paste0(input_filepaths, c("*", "")[hasOutput+1]))
-    #   }
-    # })
 
 
     # The unedited and edited selectInput boxes' default behavior will change
