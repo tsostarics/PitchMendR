@@ -1,8 +1,20 @@
-#' Open web-version editor
+#' Run pulse editor GUI
 #'
-#' Runs the web app version of the app
+#' Runs the shiny app
 #'
 #' @param ... not used
+#' @param input_directory Directory containing the csv files to load
+#' @param output_directory Directory to save annotated csv files to
+#' @param audio_directory Directory containing .wav files to play or send to
+#' praat
+#' @param textgrid_directory Directory containing .TextGrid files to send to
+#' praat
+#' @param praat_path For Windows, the path to a Praat executable. For linux and
+#' mac, this should just be Praat assuming it's available as a terminal command.
+#' @param yvar Y variable to use, should exist in the file to be loaded. Default
+#' is `'f0'`.
+#' @param xvar X variable touse, should exist in the file to be loaded. Default
+#' is `'t_ms'`.
 #'
 #' @return Nothing
 #' @export
@@ -10,15 +22,15 @@
 #' @importFrom shiny tags isolate reactive moduleServer observeEvent icon req reactiveValues observe
 #' @importFrom rlang sym
 #' @importFrom stats median
-demoEditor <- function(...) {
-  options(shiny.maxRequestSize = 10 * 1024^2)
-  # Keyboard shortcuts run in the RStudio viewer will also execute in RStudio,
-  # so we'll try to open a new file to avoid cases where keybindings modify
-  # an active file.
-  # try({
-  #   rstudioapi::documentNew("")
-  #   messsage("Opening new file to avoid keyboard shortcut conflicts")
-  #   })
+openSauceEditor <- function(
+    input_directory = get_example_f0_data("."),
+    output_directory = "./",
+    audio_directory = "./audio",
+    textgrid_directory = "./audio",
+    praat_path = "./Praat.exe",
+    yvar = "f0",
+    xvar = "t",
+    ...) {
   ui <- bslib::page_navbar(
 
     id = "navbar",
@@ -32,38 +44,13 @@ demoEditor <- function(...) {
     sidebar = bslib::sidebar(
       gap = ".75rem",
       title = tags$header("Tools", class = "sidebar-title", style = "margin-bottom: .25rem; padding-bottom: .5rem"),
-
-      tags$head(
-        tags$style(
-          shiny::HTML("
-          .smallPlayButton {
-            width: 75%;
-
-          }
-          .bigPlayButton {
-          width: 100%
-          }
-          .hideStopButton {
-            display: none;
-          }
-          .showStopButton {
-            width: 20%;
-            padding-left: 0px;
-            padding-right: 0px;
-            border: none;
-            margin-left: 5.5px;
-            padding-top: .7em;
-            padding-bottom: .7em;
-          }"))
-      ),
       shinyjs::useShinyjs(), # Placed here to avoid a warning if placed above a tab
       keys::useKeys(),
       use_keyboardcss(),
       # singleton(
       #   htmltools::includeCSS(
       #     system.file("cssfiles/button_animation.css", package = "PitchMendR")
-      #   )
-      # ),
+      #   )),
       windowResizeUI("windowListener"),
       # The keys here should match the default keybindings set up in the server
       keys::keysInput("keys",keys = c("f",
@@ -75,8 +62,8 @@ demoEditor <- function(...) {
                                       "b",
                                       "d",
                                       "a",
-                                      "ctrl+z",
-                                      "command+z",
+                                      # "ctrl+z",
+                                      # "command+z",
                                       "v",
                                       "p",
                                       "o",
@@ -107,7 +94,10 @@ demoEditor <- function(...) {
       shiny::actionButton("clearSelectButton",
                           title = "Click to remove selection boxes that won't go away!",
                           label = "Clear Selection"),
-      undoTransformUI('octaveShift'),
+      # profvis::profvis_ui("profileUI"),
+      # undoTransformUI('octaveShift'),
+      praatsauceUI_button("praatIO"),
+      playAudio_sauceUI("playAudio"),
       shiny::actionButton(
         inputId = "checkVisibleFilesButton",
         title = "Click to check off currently plotted files",
@@ -136,6 +126,9 @@ demoEditor <- function(...) {
       background-color:#f8f8f8;
       }
       .form-group {
+        margin-bottom: 0px;
+      }
+      .compressed-sidebar-title {
         margin-bottom: 8px;
       }
     "))
@@ -147,10 +140,16 @@ demoEditor <- function(...) {
           height = NULL,
           heights_equal = "row",
           style = htmltools::css(grid_template_columns = "275px 9fr"),
+          # tags$head(
+          #  tags$style(HTML("
+          #    #pitchRangeInput-label.control-label {
+          #      width: 100px;
+          #    }
+          #    "
+          #  ))
+          # ),
           bslib::card( height = "88vh",
                        title = "Plot Settings",
-                       # loadFile_workingFileOutput('loadFile'),
-                       shiny::textOutput(outputId = "workingFileOutput"),
                        shiny::uiOutput(outputId = "pitchRangeUI"),
                        tags$span(title = "Horizontal zoom in/out", "Timespan Controls"),
                        tags$span(style = "display:inline-flex;flex-direction: row; justify-content: space-between;",
@@ -204,6 +203,7 @@ demoEditor <- function(...) {
               options = list(containment = "parent",
                              save = TRUE)),
             shiny::uiOutput("brushToolTip",inline = TRUE),
+
             fill = TRUE,
             height="88vh",
             width = '80vw',
@@ -212,7 +212,7 @@ demoEditor <- function(...) {
             tags$head(tags$style(shiny::HTML(".bslib-gap-spacing { gap: 8px; } "))),
             bslib::layout_columns(height = "20%",width = '80vw',fillable = TRUE,id = "controlButtons",
                                   bslib::card(fill = TRUE,
-                                              web_fileNavUI("web_fileNav"),
+                                              fileNavSauceUI("fileNav"),
                                               annotationUI("annotations")
                                   ),
                                   bslib::card(fill = TRUE,
@@ -225,15 +225,15 @@ demoEditor <- function(...) {
                                               shiny::fluidRow(
                                                 shiny::actionButton(width = "48%",
                                                                     inputId = "keepButton",
-                                                                    label = "Keep",
+                                                                    label = "Voice",
                                                                     title = "Click to keep selected points",
                                                                     style = "margin:1%;margin-top:0%;margin-bottom:0"),
                                                 shiny::actionButton(width = "48%",
                                                                     inputId = "removeButton",
-                                                                    label = "Remove",
+                                                                    label = "Unvoice",
                                                                     title = "Click to remove selected points",
                                                                     style = "margin: 1%;margin-top:0%;margin-bottom:0")),
-                                              octaveShiftUI('octaveShift')
+                                              octaveShiftSauceUI('octaveShift')
                                   )
             )
             # )
@@ -247,40 +247,14 @@ demoEditor <- function(...) {
                       shiny::column(width = 3,
                                     bslib::card(
                                       class = "h-100",
-                                      tags$span(title = "Select column that indexes individual files/contours",
-                                                shiny::selectizeInput("filenameColumnInput",
-                                                                      label ="Column name that identifies individual files",
-                                                                      choices = "Filename",
-                                                                      selected = "Filename",
-                                                                      multiple = FALSE,
-                                                                      width = "100%")),
-                                      tags$span(title = "Select column that identifies the x-axis for the plot",
-                                                shiny::selectizeInput("xValColumnInput",
-                                                                      label ="X-value column name",
-                                                                      choices = "t_ms",
-                                                                      selected = "t_ms",
-                                                                      multiple = FALSE,
-                                                                      width = "100%")),
-                                      tags$span(title = "Select column that identifies the y-axis for the plot",
-                                                shiny::selectizeInput("yValColumnInput",
-                                                                      label ="Y-value column name",
-                                                                      choices = "f0",
-                                                                      selected = "f0",
-                                                                      multiple = FALSE,
-                                                                      width = "100%")),
-                                      submitTextInput("selectionColumnInput",
-                                                      title = "Click button set column name",
-                                                      label = "Column name for keep/remove annotations (will be added if it doesn't exist)",
-                                                      value = "keep_pulse",
-                                                      width = "100%"),
                                       shiny::markdown(mds = "## UI Options"),
-                                      # tags$span(title = "Toggle to save file to disk when plot refreshes with new files",
-                                      #           shinyWidgets::awesomeCheckbox(
-                                      #             inputId = "saveOptionButton",
-                                      #             label = "Save on file navigation (disable to improve responsiveness)",
-                                      #             value = FALSE,width = "100%",
-                                      #             status = "info"
-                                      #           )),
+                                      tags$span(title = "Toggle to save file to disk when plot refreshes with new files",
+                                                shinyWidgets::awesomeCheckbox(
+                                                  inputId = "saveOptionButton",
+                                                  label = "Save on file navigation (disable to improve responsiveness)",
+                                                  value = FALSE,width = "100%",
+                                                  status = "info"
+                                                )),
                                       tags$span(title = "Toggle to skip checked files when using previous/next file buttons",
                                                 shinyWidgets::awesomeCheckbox(
                                                   inputId = "skipCheckedFilesToggle",
@@ -322,7 +296,7 @@ demoEditor <- function(...) {
                                     bslib::card(
                                       class = "h-100",
                                       title = "Color Settings",
-                                      "Override default color settings below:",
+                                      "Override plot aesthetics below:",
                                       colorUI("colors"),
                                       tags$span(title = "Toggle to use column in dataset for color coding",
                                                 shinyWidgets::materialSwitch(
@@ -333,32 +307,10 @@ demoEditor <- function(...) {
                                                   status = "info")),
                                       tags$span(title = "Drag to change size of points",
                                                 shiny::sliderInput("sizeSlider", "Point Size", min = 1, max = 10, value = 2)),
-                                      # Tabset panel to hide/show color code
-                                      # column input based on whether the
-                                      # useFlaggedColumnToggle is set to TRUE.
-                                      # Needs to be done this way instead of
-                                      # using uiOutput, otherwise the plot won't
-                                      # render until the user manually goes to
-                                      # the settings tab so the selectize input
-                                      # initializes
-                                      shiny::tabsetPanel(type = "hidden",
-                                                         id = "switchColorCode",
-                                                         shiny::tabPanelBody("showColorCodeColumnInput",
-                                                                             tags$span(title = "Select column to use for color coding",
-                                                                                       shiny::selectizeInput(
-                                                                                         inputId = "colorCodeColumnInput",
-                                                                                         label = NULL,
-                                                                                         choices = "flagged_samples",
-                                                                                         selected = "flagged_samples",
-                                                                                         multiple = FALSE,
-                                                                                         width = "100%"
-                                                                                       ))),
-                                                         shiny::tabPanelBody("hideColorCodeColumnInput", NULL)))
-                      ),
-                      shiny::column(width = 6, columnInfo_UI("columnInfo")),
+                      ))
 
       )),
-    diagnosticsUI('diagnostics'),
+    sauce_diagnosticsUI('diagnostics'),
     bslib::nav_panel(
       tags$head(tags$style("body{overflow:hidden;}")),
       title = "Setup",
@@ -369,65 +321,46 @@ demoEditor <- function(...) {
           tags$head(tags$style("body{overflow:hidden;}")),
 
           shiny::fluidRow(
-            shiny::column(width = 12,
-                          # class = "h-100",
-                          tags$span(title = "Click to browse for and upload a csv file",
-                                    shiny::fileInput("rawFileUpload",
-                                                     "Choose CSV File",
-                                                     multiple = FALSE,
-                                                     buttonLabel = tags$span(icon("file-csv"), "Upload"),
-                                                     accept = c(".csv", ".txt"))),
-                          shiny::markdown(
-                            mds = c("## Example Data",
-                                    "",
-                                    "Click the button below to load a demo file with 36 contours")
-                          ),
-                          shiny::actionButton(
-                            inputId = "loadFileButton",
-                            title = "Click to load example data",
-                            # label = shiny::uiOutput(outputId = "loadFileButtonLabel"),
-                            label = "Load Demo Data",
-                            style = "margin-bottom:8px;",
-                            class = "btn-primary",
-                            icon = icon("file-import"),
-                            # style = "color: #fff; background-color: #337ab7; border-color: #2e6da4",
-                            # shiny::icon("upload")
-                          ),
+            shiny::column(width = 6,
+                          class = "h-100",
+                          # bslib::card(height = "100%",
+                          title = "Directory Settings",
+                          loadSauceFileUI('loadSauceFile', input_directory, output_directory),
+                          tags$br(),
+                          tags$span(title = "Click to expand audio options",
+                                    praatsauceUI_input("praatIO", praat_path, audio_directory, textgrid_directory))
+                          # )
             ),
-            shiny::markdown(
-              mds = c(
-                "## Flagging samples",
-                "",
-                "Click the button below to automatically annotate potential F0 tracking errors as regions of interest.",
-                "Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
-                "",
-                "If the column `F0_semitones` already exists, it will be used to identify errors.
+            shiny::column(width = 6,
+                          class = "h-100",
+                          # bslib::card(
+                          title = "Flagging Samples",
+                          shiny::markdown(
+                            mds = c(
+                              "## Flagging samples",
+                              "",
+                              "Click the button below to automatically annotate potential F0 tracking errors as regions of interest.",
+                              "Note that this is not perfect and may flag samples that are not tracking errors and miss samples that are tracking errors.",
+                              "",
+                              "If the column `F0_semitones` already exists, it will be used to identify errors.
                     If not, this column will be added by computing semitones from the speaker's median pitch.
                     Check the settings tab for the column names used for the time, pitch, and filename values.",
-                "",
-                "The column `flagged_samples` will be added if it doesn't exist.
+                              "",
+                              "The column `flagged_samples` will be added if it doesn't exist.
                     Once the column is added, or if it already exists, the button will turn green.
                     Clicking it again will rerun the algorithm, and previous values will be overwritten."
-              )
-            ),
-            shiny::actionButton(
-              inputId = "flagSamplesButton",
-              title = "Click to flag potential errors in loaded dataset",
-              icon = icon('flag'),
-              width = "100%",
-              label = "Flag Samples"
+                            )
+                          ),
+                          flagSamplesButton_UI("loadSauceFile")
             )
-
-            # )
           )
         )
       )
-    )
-    ,
+    ),
     bslib::nav_panel(
       title = "How-to",
       shiny::column(width = 7,
-                    howto_UI("howto", FALSE)
+                    howto_UI("howto", TRUE)
       )
     )
   )
@@ -447,11 +380,14 @@ demoEditor <- function(...) {
                                          fileChecked = NULL,
                                          badges = NULL,
                                          notes = NULL,
-                                         indices = NULL)
+                                         indices = NULL,
+                                         hasChanged = NULL)
     nPlotted           <- shiny::reactiveValues(n = NULL, is_one = NULL)
-    lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
+    # lastTransformation <- shiny::reactiveValues(pulse_ids = NULL)
 
     # Dataset holders
+    rawPitchDB         <- shiny::reactiveValues(data = NULL,
+                                                cdf = NULL)
     loadedFile         <- shiny::reactiveValues(data = NULL)
     plotSubset         <- shiny::reactiveValues(data = NULL)     # Subset of loadedFile$data for the currently plotted file(s) only
     transformedColumn  <- shiny::reactiveValues(name = NULL)
@@ -460,7 +396,18 @@ demoEditor <- function(...) {
     # Handlers for the X and Y axis
     horiz_bounds       <- shiny::reactiveValues(xlim = NULL, full = NULL)
     defaultPitchRange  <- shiny::reactiveValues(min = 100, max = 500)
-    selectionColumn    <- shiny::reactiveVal()
+    selectionColumn    <- shiny::reactiveVal("is_voiced")
+
+    shinyjs::onevent("mouseup",
+                     id = "pulsePlot",
+                     shinyjs::runjs('
+                     var brush_elements = document.querySelectorAll("[id=\'pulsePlot_brush\']");
+                     if (brush_elements.length > 1) {
+                     for (var i = 0; i < brush_elements.length; i++){
+                      brush_elements[i].remove();
+                     }
+                     }
+                     '))
 
     # Temporary button to clear the selection, see issue #46
     observeEvent(input$clearSelectButton, {
@@ -493,14 +440,12 @@ demoEditor <- function(...) {
         "d" = keyBindAction(octaveShift$doublePulses, "[D] Pressed (Double Pulses)"),
         "a" = keyBindAction(octaveShift$halvePulses,  "[A] Pressed (Halve Pulses)"),
         "v" = keyBindAction(plotMatches,              "[V] pressed (Plot Matches)"),
-        "ctrl+z" = keyBindAction(octaveShift$undoTransformation,    "[Ctrl+Z] Pressed (Undo Transform)"),
-        "command+z" = keyBindAction(octaveShift$undoTransformation, "[Command+Z] Pressed (Undo Transform)")
-        # "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"),
-        # "o" = keyBindAction(audioInfo$sendToPraat(), "[O] Pressed (Send to Praat)"),
-        # "j" = keyBindAction(audioServer$playAudio, "[J] Pressed (Play Audio Selection)")
+        # "ctrl+z" = keyBindAction(octaveShift$undoTransformation,    "[Ctrl+Z] Pressed (Undo Transform)"),
+        # "command+z" = keyBindAction(octaveShift$undoTransformation, "[Command+Z] Pressed (Undo Transform)"),
+        "p" = keyBindAction(audioInfo$closePraatFiles(), "[P] Pressed (Clear Praat Objects)"),
+        "o" = keyBindAction(audioInfo$sendToPraat(), "[O] Pressed (Send to Praat)"),
+        "j" = keyBindAction(audioServer$playAudio, "[J] Pressed (Play Audio Selection)")
       )
-
-
 
     # Watch for the key's we've declared bindings for. If one is pressed on the
     # editor page, then call the reactive it's associated with (see boundKeys)
@@ -512,8 +457,6 @@ demoEditor <- function(...) {
       boundKeys[[input$keys]]()
     })
 
-
-    # callModule(profvis::profvis_server, "profileUI")
 
     # Modal to display the implemented keybindings
     shinyjs::onclick(id = "keysQuestion", {
@@ -540,10 +483,10 @@ demoEditor <- function(...) {
                        inline_kbd_button('d', " - {KEY}: Double selected pulses"),
                        inline_kbd_button('a', " - {KEY}: Halve selected pulses"),
                        inline_kbd_button('v', " - {KEY}: Plot files matching regex"),
-                       # inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
-                       # inline_kbd_button('o', " - {KEY}: Open in Praat"),
-                       # inline_kbd_button('j', " - {KEY}: Play current audio file/selection"),
-                       inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
+                       inline_kbd_button('p', " - {KEY}: Clear Praat objects"),
+                       inline_kbd_button('o', " - {KEY}: Open in Praat"),
+                       inline_kbd_button('j', " - {KEY}: Play current audio file/selection")
+                       # inline_kbd_button(c("ctrl", "z"), " - {KEY}: Undo last transform")
                      )),
                    tags$p(style = css(`font-size` = ".85em",
                                       `margin-bottom` = "none"),
@@ -564,11 +507,12 @@ demoEditor <- function(...) {
 
 
     # Change the horizontal bounds whenever we change the x variable to use
-    observeEvent(input$xValColumnInput, {
+    # TODO: Remove this
+    observeEvent(input_fakeX,{ #input$xValColumnInput, {
       if(is.null(plotSubset$data))
         return(NULL)
 
-      horiz_bounds$full <- suppressWarnings(range(plotSubset$data[[input$xValColumnInput]]))
+      horiz_bounds$full <- suppressWarnings(range(plotSubset$data[["t"]]))
       horiz_bounds$xlim <- horiz_bounds$full
     })
 
@@ -611,46 +555,15 @@ demoEditor <- function(...) {
       plotFlag$value <- !plotFlag$value
     })
 
-    # The selectionColumn is usually keep_pulse, but if it ever changes then
-    # we need to instantiate the new column accordingly
-    observeEvent(input$selectionColumnInputButton, {
-      selectionColumn(isolate(input$selectionColumnInput))
-
-      if (!is.null(loadedFile$data) && !selectionColumn() %in% colnames(loadedFile$data)) {
-        loadedFile$data[, (selectionColumn()) := where_not_zero(get(input$yValColumnInput))]
-        refilterSubset()
-      }
-    })
-
-    # Update the y-axis variable as needed
-    shiny::observeEvent(input$yValColumnInput,ignoreInit = TRUE, {
-      if (is.null(loadedFile$data))
-        return(NULL)
-      changeTransformedColumn()
-    })
-
-    # When we change the y-axis variable, we need to create a new column
-    # to plot with that incorporates the pulse transformation factors that
-    # correct for pitch halving/doubling
-    changeTransformedColumn <- shiny::reactive({
-      if (is.null(loadedFile$data))
-        return(NULL)
-      transformedColumn$name <- paste(input$yValColumnInput, "transformed", sep = "_")
-      new_values <- loadedFile$data[['pulse_transform']] * loadedFile$data[[input$yValColumnInput]]
-      loadedFile$data[, (transformedColumn$name) := new_values]
-      refilterSubset()
-    })
-
     # Retrieve the currently selected points on the plot when needed
     getBrushedPoints <- shiny::reactive({
       yval <- transformedColumn$name
       if (!is.null(input$hideToggleInput) && input$hideToggleInput)
         yval <- input$yValColumnInput
-
       shiny::brushedPoints(plotSubset$data,
                            input$plot_brush,
-                           xvar = input$xValColumnInput,
-                           yvar = yval)
+                           xvar = "t",
+                           yvar = "f0")
 
     })
 
@@ -671,16 +584,22 @@ demoEditor <- function(...) {
       if (is.null(plotted_indices))
         return(NULL)
 
-      plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(get(input$yValColumnInput)),]
-
-      # loadedFile$data[plotted_indices,]
 
       # Update our count of how many files are plotted
       nPlotted$n <- sum(fileHandler$isPlotted)
       nPlotted$is_one <- nPlotted$n == 1
 
+      # If only one file is plotted, then we need to plot all candidates or else
+      # we won't be able to interact with the candidates correctly. If there are
+      # multiple files, omit the candidates for speed
+      if (nPlotted$is_one)
+        plotSubset$data <<- loadedFile$data[plotted_indices,]
+      else
+        plotSubset$data <<- loadedFile$data[plotted_indices,][where_not_zero(original_f0) | where_not_zero(f0),]
+
+# browser()
       # Update the x-axis for the plot
-      horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[[input$xValColumnInput]]))
+      horiz_bounds$full <<- suppressWarnings(range(plotSubset$data[["t"]]))
       horiz_bounds$xlim <<- horiz_bounds$full
     }
 
@@ -702,72 +621,22 @@ demoEditor <- function(...) {
       plotSettings$showLine <- !plotSettings$showLine
     })
 
-    shiny::observeEvent(input$colorCodeColumnInput,ignoreInit = TRUE, {
-      if (is.null(loadedFile$data) | is.null(input$colorCodeColumnInput) | is.null(input$useFlaggedColumnToggle))
-        return(NULL)
-
-      if (input$useFlaggedColumnToggle) {
-        updatePlot()
-      }
-    })
-
-
-    shiny::observeEvent(input$useFlaggedColumnToggle,ignoreInit = FALSE, {
-      # message("flag toggle")
-      if (input$useFlaggedColumnToggle){
-        shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "showColorCodeColumnInput")
-      } else {
-        shiny::updateTabsetPanel(inputId = "switchColorCode", selected = "hideColorCodeColumnInput")
-      }
-      updatePlot()
-    })
-
-    # Update the column used for color coding.
-    plot_colorColumn <- reactive({
-      if(is.null(input$useFlaggedColumnToggle))
-        return(NULL)
-      req(selectionColumn())
-      req(input$colorCodeColumnInput)
+    shiny::observeEvent(input$hideToggleInput, {
       req(loadedFile)
-      colorColumn <- selectionColumn()
-      if (input$useFlaggedColumnToggle && input$colorCodeColumnInput %in% colnames(loadedFile$data))
-        colorColumn <- input$colorCodeColumnInput
-
-      colorColumn
-    })
-
-    # Update the column used for the y-axis values
-    plot_yval <- reactive({
-      if(is.null(input$hideToggleInput))
-        return(NULL)
-
-      req(input$yValColumnInput)
-      req(transformedColumn$name)
+      req(plotSubset)
 
       if (input$hideToggleInput)
-        return(input$yValColumnInput)
-
-      return(transformedColumn$name)
+        input_fakeY("original_f0")
+      else
+        input_fakeY("f0")
     })
-
 
     # Update the color coding for the current points
     plot_colorCodePoints <- reactive({
-      if(is.null(input$useFlaggedColumnToggle)) # FALSE is meaningful, can't use req
-        return(NULL)
-      req(input$colorCodeColumnInput)
       req(loadedFile)
       req(plotSettings)
-
       color_values <-  plotSettings$setColors[2:3]
-
-      if ((!input$useFlaggedColumnToggle || is.logical(loadedFile$data[[input$colorCodeColumnInput]]))) {
-        # Make sure the color order is correct for the TRUE and FALSE values if not using the color code column
-        if (input$useFlaggedColumnToggle)
-          color_values <- c(color_values[2], color_values[1])
         return(list(ggplot2::scale_color_manual(values = color_values)))
-      }
-      NULL
     })
 
     # Wrapper for the above styling options
@@ -811,6 +680,45 @@ demoEditor <- function(...) {
       "Multiple Files"
     })
 
+    plot_candidates <- reactive({
+      req(nPlotted)
+      req(rawPitchDB)
+
+      if (!nPlotted$is_one)
+        return(NULL)
+
+
+      plotted_file <- fileHandler$filenames[fileHandler$isPlotted]
+      cdf <- rawPitchDB$cdf[[plotted_file]]
+
+      if (is.null(cdf)) {
+        cdf <-
+          rawPitchDB$cdf[[plotted_file]] <-
+          data.table::rbindlist(
+            lapply(
+              seq_len(rawPitchDB$data[[plotted_file]]$nx),
+              \(i){
+                f <- rawPitchDB$data[[plotted_file]][["frame"]][[i]]
+                t <- rawPitchDB$data[[plotted_file]][["t"]][i]
+
+                data.frame(cand_i    = seq_len(f[["nCandidates"]]),
+                           cand_rank = data.table::frank(f[["strength"]]),
+                           f0        = f[["frequency"]],
+                           t         = t,
+                           frame_i   = i)
+              }
+            )
+          )
+      }
+
+      ggplot2::geom_text(data = cdf,
+                         ggplot2::aes(x = t,
+                                      y = f0,
+                                      label = cand_rank),
+                         inherit.aes = FALSE,
+                         color = "gray50")
+    })
+
     # Render the plot
     output$pulsePlot <- shiny::renderPlot({
       # message('Rerendering')
@@ -829,10 +737,12 @@ demoEditor <- function(...) {
           plot_line <- list(ggplot2::geom_line(data =plotSubset$data,
                                                color = lineColor))
         } else {
-          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[[selectionColumn()]],],
+          plot_line <- list(ggplot2::geom_line(data =plotSubset$data[plotSubset$data[["is_voiced"]],],
                                                color = lineColor))
         }
       }
+
+
 
       # If we hide the points, we run into an issue where there are no longer
       # any variables mapped to a varying aesthetic, which makes the legend
@@ -846,28 +756,30 @@ demoEditor <- function(...) {
         plot_points <-
           list(ggplot2::geom_point(data = plotSubset$data[1,], # ensures that the dummy dataframe is within the bounds of the current plot
                                    # Using shape so the scale_shape_manual doesn't throw a warning
-                                   aes(shape = !!sym(selectionColumn())),
+                                   aes(shape = is_voiced),
                                    alpha = 0))
       } else {
-        plot_points <- ggplot2::geom_point(aes(color = !!sym(plot_colorColumn()),
-                                               shape = !!sym(selectionColumn())),
+        # TODO: make this more robust
+        # ..colorvar <- if ("flagged_samples" %in% colnames(loadedFile$data)) "flagged_samples" else NULL
+        plot_points <- ggplot2::geom_point(aes(color = flagged_samples,
+                                               shape = is_voiced),
                                            size = input$sizeSlider)
       }
 
       # Set up the main aesthetics for the plot
       ggplot2::ggplot(plotSubset$data,
-                      ggplot2::aes(x = !!sym(input$xValColumnInput),
-                                   y = !!sym(plot_yval()),
-                                   group = !!sym(input$filenameColumnInput)))+
+                      ggplot2::aes(x = t,
+                                   y = !!rlang::sym(input_fakeY()),
+                                   group = file))+
+        plot_candidates() +
         plot_line +
         plot_points +
         plot_addStyling() +
         hide_legend_if_needed() +
-        ggplot2::labs(x = input$xValColumnInput,
-                      y = input$yValColumnInput,
+        ggplot2::labs(x = "t",
+                      y = "f0",
                       title = plot_title())
     })
-
 
     ########################################################
     # Plot editing functionality
@@ -881,16 +793,25 @@ demoEditor <- function(...) {
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
-      if (!is.null(selectedPoints$data)) {
-        # I'm using %in% to ensure that the pulse_id is correct regardless of whether it's sorted or not.
-        # Also avoids needing to keep track of the mapping between indices in each dataset
-        vals_to_change      <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change,      c(selectionColumn()) := !get(selectionColumn())]
-        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := !get(selectionColumn())]
-        selectedPoints$data <- NULL
-        updatePlot()
+      to_change <- get_vals_to_change.voicing(selectedPoints, plotSubset)
+      if (to_change$any_voiced)
+        remove_pulses(to_change[["voiced"]],
+                      loadedFile, plotSubset, rawPitchDB)
+
+      if (to_change$any_unvoiced) {
+        if (nPlotted$is_one) {
+          keep_pulses_one(to_change[["unvoiced"]],
+                          loadedFile, plotSubset, rawPitchDB, fileHandler, input)
+
+        } else {
+          keep_pulses_multi(to_change[["unvoiced"]],
+                            loadedFile, plotSubset, rawPitchDB)
+        }
       }
+
+      set_values(to_change, NA, loadedFile, plotSubset, selectedPoints, fileHandler)
+
+      updatePlot()
     })
 
     # When the user clicks the toggle button, toggle the logical keep_pulse value
@@ -906,32 +827,30 @@ demoEditor <- function(...) {
       selectedPoints$data <- getBrushedPoints()
 
       if (!is.null(selectedPoints$data)) {
-        vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, c(selectionColumn()) := TRUE]
-        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := TRUE]
-        selectedPoints$data <- NULL
+        to_change <- get_vals_to_change(selectedPoints, plotSubset)
+        if (nPlotted$is_one) {
+          to_change <- keep_pulses_one(NULL, loadedFile, plotSubset, rawPitchDB, fileHandler, input)
+        } else {
+          keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
+        }
+        set_values(to_change, TRUE, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
-
-      }})
+      }
+      })
 
     removePulses <- reactive({
       if (is.null(loadedFile$data))
         return(NULL)
       selectedPoints$data <- getBrushedPoints()
 
-      # Toggle the color of the selected points
       if (!is.null(selectedPoints$data)) {
-        vals_to_change <- loadedFile$data$pulse_id %in% selectedPoints$data$pulse_id
-        plot_vals_to_change <- plotSubset$data$pulse_id %in% selectedPoints$data$pulse_id
-        loadedFile$data[vals_to_change, c(selectionColumn()) := FALSE]
-        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := FALSE]
+        to_change <- get_vals_to_change(selectedPoints, plotSubset)
 
-        selectedPoints$data <- NULL
+        remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
+        set_values(to_change, FALSE, loadedFile, plotSubset, selectedPoints, fileHandler)
 
         updatePlot()
-
       }
     })
 
@@ -978,22 +897,43 @@ demoEditor <- function(...) {
       if (is.null(loadedFile$data))
         return(NULL)
 
+      if (nPlotted$is_one) {
+        swap_clicked_candidate(to_change,
+                               loadedFile, plotSubset, rawPitchDB, fileHandler, input)
+        # set_values() handled in swap_clicked_candidate()
+      } else {
+        clickedPoint <- shiny::nearPoints(plotSubset$data,
+                                          input$plot_click,
+                                          xvar = "t",
+                                          yvar = "f0",
+                                          threshold = 10L,
+                                          maxpoints = 1L)
 
-      clickedPoint <- shiny::nearPoints(loadedFile$data[loadedFile$data[[input$filenameColumnInput]] %in% fileHandler$filenames[fileHandler$isPlotted],],
-                                        input$plot_click,
-                                        xvar = input$xValColumnInput,
-                                        yvar = transformedColumn$name,
-                                        addDist = TRUE)
+        if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
+          point_is_voiced <- clickedPoint[["is_voiced"]]
 
-      if (!is.null(clickedPoint) & length(clickedPoint$pulse_id) != 0) {
-        first_id <- clickedPoint$pulse_id[which.min(clickedPoint$dist_)] # Get the pulse_id of the closest point
-        plot_vals_to_change <- plotSubset$data$pulse_id == first_id
+          first_id <- clickedPoint[["pulse_id"]] # Get the pulse_id of the closest point
+          plot_vals_to_change <- match(first_id, plotSubset$data$pulse_id)
 
-        loadedFile$data[first_id,            c(selectionColumn()) := !get(selectionColumn())]
-        plotSubset$data[plot_vals_to_change, c(selectionColumn()) := !get(selectionColumn())]
-        clickedPoint <- NULL
-        updatePlot()
+          to_change <-
+            list(LF = first_id,
+                 PS = plot_vals_to_change,
+                 n = 1L)
+
+          # If we're looking at just a single file, then we should be able to
+          # click on a candidate and swap the voicing.
+          if (point_is_voiced) {
+            remove_pulses(to_change, loadedFile, plotSubset, rawPitchDB)
+            set_values(to_change, FALSE, loadedFile, plotSubset, selectedPoints, fileHandler)
+          } else {
+            keep_pulses_multi(to_change, loadedFile, plotSubset, rawPitchDB)
+            set_values(to_change, TRUE, loadedFile, plotSubset, selectedPoints, fileHandler)
+          }
+        }
       }
+
+      clickedPoint <- NULL
+      updatePlot()
     })
     ########################################################
 
@@ -1002,9 +942,7 @@ demoEditor <- function(...) {
     # Editor-level diagnostics
     ########################################################
     # Show the current working directory
-    output$cwd <- shiny::renderText({
-      getwd()
-    })
+
 
 
 
@@ -1026,7 +964,6 @@ demoEditor <- function(...) {
     })
 
     plotMatches <- reactive({
-      print(input$filterRegex)
 
       # Check off the displayed file if we're only looking at 1
       if (nPlotted$is_one) {
@@ -1038,7 +975,6 @@ demoEditor <- function(...) {
       selected_files <- grepl(input$filterRegex,fileHandler$filenames)
 
       if (any(selected_files)) {
-
         fileHandler$isPlotted <- selected_files
 
         refilterSubset()
@@ -1049,11 +985,13 @@ demoEditor <- function(...) {
 
     })
 
+
     # Display the filenames of the selected points when the user makes a selection
     output$brushedFileNames <- shiny::renderText({
       if (!is.null(loadedFile$data)) {
+        # message("brush filenames")
         selectedPoints$data <- getBrushedPoints()
-        filesBrushed$filenames <- unique(selectedPoints$data[[input$filenameColumnInput]])
+        filesBrushed$filenames <- unique(selectedPoints$data[["file"]])
         paste0("# Brushed: ", length(filesBrushed$filenames), "\n\n",
                paste(filesBrushed$filenames, collapse = "\n"))
       }
@@ -1064,7 +1002,6 @@ demoEditor <- function(...) {
         return(NULL)
       annotations$saveNotes()
       annotations$saveBadges()
-
       selected_files <- fileHandler$filenames %in% filesBrushed$filenames
 
       # any short circuits on the first TRUE value
@@ -1087,7 +1024,6 @@ demoEditor <- function(...) {
       plotBrushed()
     })
     ########################################################
-
 
     ########################################################
     # Unedited/Edited file dropdowns
@@ -1117,18 +1053,6 @@ demoEditor <- function(...) {
                          choices = fileHandler$filenames[fileHandler$fileChecked])
     })
 
-    observe({
-      if(!is.null(input$inputDirInput) && !is.null(input$outputDirInput)) {
-        input_filepaths <- list.files(input$inputDirInput, include.dirs = FALSE)
-        input_filepaths <- input_filepaths[!grepl("exe|png|jpg|jpeg|svg|pdf|tiff|bmp|wav|zip|msi$", input_filepaths,ignore.case = TRUE)]
-        input_filenames <- basename(input_filepaths)
-        hasOutput <- input_filenames %in% list.files(input$outputDirInput, include.dirs = FALSE)
-
-        shiny::updateSelectizeInput(session,
-                                    inputId = "fileSelectBox",
-                                    choices = paste0(input_filepaths, c("*", "")[hasOutput+1]))
-      }
-    })
 
 
     # The unedited and edited selectInput boxes' default behavior will change
@@ -1184,7 +1108,6 @@ demoEditor <- function(...) {
 
     ########################################################
 
-
     ########################################################
     # Pitch range UI
     ########################################################
@@ -1194,7 +1117,7 @@ demoEditor <- function(...) {
       one_st_step <- ceiling(add_semitones(pitch_range[2], 1) - pitch_range[1])
 
       if (!is.null(loadedFile$data)){
-        pitch_range <- range(loadedFile$data[[transformedColumn$name]][where_not_zero(loadedFile$data[[transformedColumn$name]])])
+        pitch_range <- range(loadedFile$data[["f0"]][where_not_zero(loadedFile$data[["f0"]])])
         one_st_step <- ceiling(add_semitones(pitch_range[2], 1) - pitch_range[2])
         pitch_range <- floor(c(add_semitones(pitch_range[1], -1),
                                add_semitones(pitch_range[2], 1)))
@@ -1246,302 +1169,92 @@ demoEditor <- function(...) {
     })
     ########################################################
 
+    ########################################################
+    # Globally-accessible audio functionality
+    ########################################################
+    currentWave <- shiny::reactiveValues(value = NULL,
+                                         path = NULL,
+                                         exists = NULL,
+                                         instance = NULL)
 
-    shiny::observeEvent(input$rawFileUpload, {
+    # Destroys currentWave, not a reactive so that it ALWAYS executes when called
+    destroyLoadedAudio <- function(id = "playAudio"){
+      if (!is.null(currentWave$instance))
+        audio::close.audioInstance(currentWave$instance)
+      ns <- NS(id)
 
-      req(input$rawFileUpload)
-      # shiny::observeEvent(input$loadFileButton, {
-      # message("Load File Pressed")
+      # Change the display of the play button
+      shinyjs::addClass(ns("stopButton"), "hideStopButton",asis = TRUE)
+      shinyjs::addClass(ns("playVisibleFile"), "bigPlayButton",asis = TRUE)
+      shinyjs::removeClass(ns("playVisibleFile"), "smallPlayButton",asis = TRUE)
+      shinyjs::removeClass(ns("stopButton"),
+                           "showStopButton",asis = TRUE)
 
-      file_to_load <- input$rawFileUpload$datapath
-      # message(paste0("Loading file ", file_to_load))
-      loadedFile$data <- NULL # If previous data was loaded, throw it out
-      loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
+      currentWave$instance <<- NULL
+      currentWave$value    <<- NULL
+      currentWave$path     <<- NULL
+      currentWave$exists   <<- NULL
+    }
 
-      # Add animations to some of the important buttons
-      # shinyjs::addClass("web_fileNav-saveButton", class = "animbutton")
-      # shinyjs::addClass("checkVisibleFilesButton", class = "animbutton")
-
-      set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
-      set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
-      set_selectize_choices(session, "yValColumnInput", loadedFile, input$yValColumnInput)()
-
-
-      # If the file doesn't contain the specified columns, return null and move
-      # to the settings page
-      if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
-        # message("File doesn't contain the specified columns")
-        loadedFile$data <- NULL
-        shiny::updateNavbarPage(session, "navbar", "Settings")
-        return(NULL)
-      }
-
-      data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))
-
-      loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]
-
-      # if (!"pulse_id" %in% colnames(loadedFile$data))
-      loadedFile$data[, pulse_id := .I]  # Use .I from data.table package
-
-      if (!"pulse_transform" %in% colnames(loadedFile$data)){
-        loadedFile$data[, pulse_transform := 1.0]
-      }
-
-      changeTransformedColumn()
-
-      fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
-      fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
-      fileHandler$indices <-
-        lapply(fileHandler$filenames,
-               \(fname) which(loadedFile$data[[input$filenameColumnInput]] == fname)) |>
-        `names<-`(fileHandler$filenames)
-
-      if (!"file_checked" %in% colnames(loadedFile$data)) {
-        loadedFile$data[, file_checked := FALSE]
-        fileHandler$fileChecked <- rep(FALSE, length(fileHandler$filenames))
-      } else {
-        loaded_file_check <- loadedFile$data[, .(file_checked = ifelse(is.na(file_checked[1]), FALSE, file_checked[1])), by = c(input$filenameColumnInput)]
-
-        file_checks <- loaded_file_check$file_checked
-        names(file_checks) <- loaded_file_check[[input$filenameColumnInput]]
-        fileHandler$fileChecked <- file_checks[fileHandler$filenames]
-      }
-
-      plotSettings$showLine <- TRUE
-
-      output$workingFileOutput <- shiny::renderText({
-        paste0("Working File:\n", basename(file_to_load))
-      })
-
-      # If we've loaded another file in the same session then we need
-      # to reset flag samples button
-
-      if ("flagged_samples" %in% colnames(loadedFile$data)) {
-        shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
-        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-      } else {
-        shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
-        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
-      }
-
-      if (input$useBadgesToggle) {
-        if (!"tags" %in% colnames(loadedFile$data)) {
-          loadedFile$data[, tags := NA_character_]
-          fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
-          names(fileHandler$badges) <- fileHandler$filenames
-        } else {
-          fileHandler$badges = loadedFile$data[, .(tags = tags[1]), by = c(input$filenameColumnInput)][['tags']]
-          names(fileHandler$badges) <- fileHandler$filenames
-          loadedFile$data[,tags := as.character(tags)]
-        }
-      }
-
-      if (input$useNotesToggle) {
-        if (!"notes" %in% colnames(loadedFile$data)) {
-          loadedFile$data[, notes := NA_character_]
-          fileHandler$notes <- rep(NA_character_, length(fileHandler$filenames))
-          names(fileHandler$notes) <- fileHandler$filenames
-        } else {
-          fileHandler$notes = loadedFile$data[, .(notes = notes[1]), by = c(input$filenameColumnInput)][['notes']]
-          names(fileHandler$notes) <- fileHandler$filenames
-          loadedFile$data[,notes := as.character(notes)]
-        }
-      }
+    ########################################################
 
 
-      refilterSubset()
-      updatePlot()
-
-    })
-
-    shiny::observeEvent(input$flagSamplesButton, {
-      message("Flag Samples Pressed")
-      if (is.null(loadedFile$data))
-        return(NULL)
-      shinyjs::addClass("flagSamplesButton", class = "btn-warning")
-
-      flagged_values <-
-        flag_potential_errors(loadedFile$data,
-                              .unique_file = input$filenameColumnInput,
-                              .hz = input$yValColumnInput,
-                              .time = input$xValColumnInput,
-                              .samplerate = NA,
-                              .speaker = NULL,
-                              .as_vec = TRUE)
-
-      loadedFile$data[, ("flagged_samples") := flagged_values]
-
-      if (!data.table::is.data.table(loadedFile$data))
-        loadedFile$data <- data.table::data.table(loadedFile$data)
-
-      shinyjs::removeClass("flagSamplesButton", class = "btn-warning")
-      shinyjs::addClass(id = 'flagSamplesButton',class = "btn-success")
-      shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-      shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-      set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-      refilterSubset()
-    })
-
-    shiny::observeEvent(input$loadFileButton, {
-      # message("Load demo file Pressed")
-
-      file_to_load <- file.path(get_example_f0_data("."), "demo_data.csv")
-
-
-      # message(paste0("Loading file ", file_to_load))
-      loadedFile$data <- NULL # If previous data was loaded, throw it out
-      loadedFile$data <- data.table::fread(file_to_load)  # Use fread from data.table package
-
-      # Upon successful load of the file, change the color of the load file button
-      # so it doesn't stand out as much anymore
-      shinyjs::removeClass("loadFileButton", "btn-primary")
-
-      # Add animations to some of the important buttons
-      # shinyjs::addClass("web_fileNav-saveButton", class = "animbutton")
-      # shinyjs::addClass("checkVisibleFilesButton", class = "animbutton")
-
-      set_selectize_choices(session, "filenameColumnInput", loadedFile, input$filenameColumnInput)()
-      set_selectize_choices(session, "xValColumnInput", loadedFile, input$xValColumnInput)()
-      set_selectize_choices(session, "yValColumnInput", loadedFile, input$yValColumnInput)()
-
-
-      # If the file doesn't contain the specified columns, return null and move
-      # to the settings page
-      if (!all(c(input$filenameColumnInput, input$xValColumnInput, input$yValColumnInput) %in% colnames(loadedFile$data))) {
-        # message("File doesn't contain the specified columns")
-        loadedFile$data <- NULL
-        shiny::updateNavbarPage(session, "navbar", "Settings")
-        return(NULL)
-      }
-
-      data.table::setorderv(loadedFile$data, cols = c(input$filenameColumnInput, input$xValColumnInput))  # Use setorder from data.table package
-
-      if (!input$selectionColumnInput %in% colnames(loadedFile$data))
-        loadedFile$data[, (input$selectionColumnInput) := where_not_zero(get(input$yValColumnInput))]  # Use := operator from data.table package
-
-      loadedFile$data[, pulse_id := .I]
-
-      if (!"pulse_transform" %in% colnames(loadedFile$data)){
-        loadedFile$data[, pulse_transform := 1.0]
-      }
-
-      changeTransformedColumn()
-
-      fileHandler$filenames <- unique(loadedFile$data[[input$filenameColumnInput]])
-      fileHandler$isPlotted <- rep(TRUE, length(fileHandler$filenames))
-      fileHandler$indices <-
-        lapply(fileHandler$filenames,
-               \(fname) which(loadedFile$data[[input$filenameColumnInput]] == fname)) |>
-        `names<-`(fileHandler$filenames)
-
-      if (!"file_checked" %in% colnames(loadedFile$data)) {
-        loadedFile$data[, file_checked := FALSE]
-        fileHandler$fileChecked <- rep(FALSE, length(fileHandler$filenames))
-      } else {
-        loaded_file_check <- loadedFile$data[, .(file_checked = ifelse(is.na(file_checked[1]), FALSE, file_checked[1])), by = c(input$filenameColumnInput)]
-
-        file_checks <- loaded_file_check$file_checked
-        names(file_checks) <- loaded_file_check[[input$filenameColumnInput]]
-        fileHandler$fileChecked <- file_checks[fileHandler$filenames]
-      }
-
-      plotSettings$showLine <- TRUE
-
-      output$workingFileOutput <- shiny::renderText({
-        paste0("Working File:\n", clean_file(input$fileSelectBox))
-      })
-
-      # If we've loaded another file in the same session then we need
-      # to reset flag samples button
-
-      if ("flagged_samples" %in% colnames(loadedFile$data)) {
-        shinyjs::addClass(id = "flagSamplesButton", class = "btn-success")
-        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("check"))
-        shinyWidgets::updateMaterialSwitch(session, "useFlaggedColumnToggle", value = TRUE)
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, 'flagged_samples')()
-      } else {
-        shinyjs::removeClass(id = "flagSamplesButton", class = "btn-success")
-        shiny::updateActionButton(session, "flagSamplesButton", icon = icon("flag"))
-        set_selectize_choices(session, "colorCodeColumnInput", loadedFile, input$colorCodeColumnInput)()
-      }
-
-      if (input$useBadgesToggle) {
-        if (!"tags" %in% colnames(loadedFile$data)) {
-          loadedFile$data[, tags := NA_character_]
-          fileHandler$badges <- rep(NA_character_, length(fileHandler$filenames))
-          names(fileHandler$badges) <- fileHandler$filenames
-        } else {
-          fileHandler$badges = loadedFile$data[, .(tags = tags[1]), by = c(input$filenameColumnInput)][['tags']]
-          names(fileHandler$badges) <- fileHandler$filenames
-          loadedFile$data[,tags := as.character(tags)]
-        }
-      }
-
-      if (input$useNotesToggle) {
-        if (!"notes" %in% colnames(loadedFile$data)) {
-          loadedFile$data[, notes := NA_character_]
-          fileHandler$notes <- rep(NA_character_, length(fileHandler$filenames))
-          names(fileHandler$notes) <- fileHandler$filenames
-        } else {
-          fileHandler$notes = loadedFile$data[, .(notes = notes[1]), by = c(input$filenameColumnInput)][['notes']]
-          names(fileHandler$notes) <- fileHandler$filenames
-          loadedFile$data[,notes := as.character(notes)]
-        }
-      }
-
-      refilterSubset()
-      updatePlot()
-
-    })
+    ########################################################
+    # Setup functionality
+    ########################################################
 
 
     ########################################################
     # Other sub modules
     ########################################################
 
+    # Reactives that return a static value. These don't change for the
+    # sauce editor, but many submodules expect reactives.
+    # input_fakeY <- reactive({"f0"})
+    input_fakeY    <- shiny::reactiveVal("f0")
+    input_fakeX    <- shiny::reactive({"t"})
+    input_fakeFile <- shiny::reactive({"file"})
+
     # Handles file loading and initial setup with loaded data
-    # loadFile <- loadFileServer("loadFile",
-    #                            parent_session = session,
-    #                            loadedFile,
-    #                            reactive(input$fileSelectBox),
-    #                            reactive(input$inputDirInput),
-    #                            reactive(input$outputDirInput),
-    #                            reactive(input$filenameColumnInput),
-    #                            reactive(input$xValColumnInput),
-    #                            reactive(input$yValColumnInput),
-    #                            selectionColumn,
-    #                            reactive(input$colorCodeColumnInput),
-    #                            reactive(input$useBadgesToggle),
-    #                            reactive(input$useNotesToggle),
-    #                            changeTransformedColumn,
-    #                            fileHandler,
-    #                            plotSettings,
-    #                            refilterSubset,
-    #                            updatePlot)
-    #
-    # # Handles the praat IO
-    # audioInfo <-
-    #   praatServer("praatIO",
-    #               loadedFile,
-    #               fileHandler,
-    #               reactive(input$filenameColumnInput),
-    #               reactive(input$pitchRangeInput),
-    #               filenav$saveData,
-    #               reactive(input$navbar),
-    #               reactive(input$plot_brush))
-    #
-    # # Handles playing audio within the app
-    # audioServer <- playAudioServer("playAudio",
-    #                                loadedFile,
-    #                                currentWave,
-    #                                destroyLoadedAudio,
-    #                                audioInfo,
-    #                                nPlotted,
-    #                                plotSubset,
-    #                                reactive(input$plot_brush))
+    loadFile <- loadSauceFileServer("loadSauceFile",
+                                    parent_session = session,
+                                    loadedFile,
+                                    rawPitchDB,
+                                    input_fakeFile,
+                                    input_fakeX,
+                                    input_fakeY,
+                                    selectionColumn,
+                                    reactive(input$colorCodeColumnInput),
+                                    reactive(input$useBadgesToggle),
+                                    reactive(input$useNotesToggle),
+                                    # changeTransformedColumn,
+                                    fileHandler,
+                                    plotSettings,
+                                    refilterSubset,
+                                    updatePlot
+    )
+
+    # Handles the praat IO
+    audioInfo <-
+      praatsauceServer("praatIO",
+                  loadedFile,
+                  fileHandler,
+                  input_fakeFile,
+                  reactive(input$pitchRangeInput),
+                  filenav$saveData,
+                  reactive(input$navbar),
+                  reactive(input$plot_brush))
+
+    # Handles playing audio within the app
+    audioServer <- playAudio_sauceServer("playAudio",
+                                   loadedFile,
+                                   currentWave,
+                                   destroyLoadedAudio,
+                                   audioInfo,
+                                   nPlotted,
+                                   plotSubset,
+                                   reactive(input$plot_brush),
+                                   fileHandler)
 
 
     # Handles the colors of the app and plot, doesn't return additional functionality
@@ -1550,87 +1263,59 @@ demoEditor <- function(...) {
                 updatePlot,
                 reactive(input$dark_mode))
 
-
-    currentWave <- shiny::reactiveValues(value = NULL,
-                                         path = NULL,
-                                         exists = NULL,
-                                         instance = NULL)
-
-    destroyLoadedAudio <- function(id = "playAudio"){
-      if (!is.null(currentWave$instance))
-        audio::close.audioInstance(currentWave$instance)
-      ns <- NS(id)
-
-      shinyjs::addClass(ns("stopButton"), "hideStopButton",asis = TRUE)
-      shinyjs::addClass(ns("playVisibleFile"), "bigPlayButton",asis = TRUE)
-      shinyjs::removeClass(ns("playVisibleFile"), "smallPlayButton",asis = TRUE)
-      shinyjs::removeClass(ns("stopButton"),
-                           "showStopButton",asis = TRUE)
-
-      currentWave$instance <<- NULL
-      currentWave$value <<- NULL
-      currentWave$path <<- NULL
-      currentWave$exists <<- NULL
-    }
-
     # Handles the notes and tags for annotations
-    annotations <- annotationServer("annotations",
+    # TODO: Update module to use a summary output document
+    annotations <- annotation_sauceServer("annotations",
                                     loadedFile,
                                     fileHandler,
                                     updatePlot,
-                                    reactive(input$filenameColumnInput),
+                                    input_fakeFile,
                                     reactive(input$useNotesToggle),
                                     reactive(input$useBadgesToggle),
-                                    nPlotted)
+                                    nPlotted,
+                                    loadFile$outputDirInput)
 
     # Handles the file forward/backward and save file functionality
-    # filenav <- fileNavServer("fileNav",
-    #                          loadedFile,
-    #                          fileHandler,
-    #                          reactive(input$saveOptionButton),
-    #                          reactive(input$skipCheckedFilesToggle),
-    #                          reactive(input$outputDirInput),
-    #                          reactive(input$fileSelectBox),
-    #                          reactive(input$filenameColumnInput),
-    #                          nPlotted,
-    #                          annotations,
-    #                          refilterSubset,
-    #                          destroyLoadedAudio,
-    #                          loadFile$fileDelimiter,
-    #                          plotFlag)
-    filenav <- web_fileNavServer("web_fileNav",
-                                 loadedFile,
-                                 fileHandler,
-                                 reactive(input$skipCheckedFilesToggle),
-                                 reactive(input$filenameColumnInput),
-                                 nPlotted,
-                                 annotations,
-                                 refilterSubset,
-                                 destroyLoadedAudio)
+    filenav <- fileNavSauceServer("fileNav",
+                                  loadedFile,
+                                  rawPitchDB,
+                                  fileHandler,
+                                  reactive(input$saveOptionButton),
+                                  reactive(input$skipCheckedFilesToggle),
+                                  loadFile$outputDirInput,
+                                  input_fakeFile,
+                                  nPlotted,
+                                  annotations,
+                                  refilterSubset,
+                                  destroyLoadedAudio,
+                                  "\t", # loadFile$fileDelimiter,
+                                  plotFlag)
 
     # Handles the pitch doubling/halving and undo functionality
-    octaveShift <- octaveShiftServer('octaveShift',
-                                     loadedFile,
-                                     plotSubset,
-                                     transformedColumn,
-                                     selectedPoints,
-                                     lastTransformation,
-                                     getBrushedPoints,
-                                     updatePlot,
-                                     reactive(input$yValColumnInput),
-                                     reactive(input$pitchRangeInput),
-                                     reactive(input$lockButton),
-                                     parent_session = session)
+    octaveShift <- octaveShiftSauceServer('octaveShift',
+                                          loadedFile,
+                                          plotSubset,
+                                          fileHandler,
+                                          transformedColumn,
+                                          selectedPoints,
+                                          # lastTransformation,
+                                          getBrushedPoints,
+                                          updatePlot,
+                                          input_fakeY,
+                                          reactive(input$pitchRangeInput),
+                                          reactive(input$lockButton),
+                                          rawPitchDB,
+                                          parent_session = session)
 
     # Handles the Progress pane
-    diagnostics <- diagnosticsServer('diagnostics',
+    diagnostics <- sauce_diagnosticsServer('diagnostics',
                                      loadedFile,
                                      parent_session = session,
                                      fileHandler,
                                      transformedColumn,
-                                     reactive(input$xValColumnInput),
-                                     reactive(input$yValColumnInput),
-                                     reactive(input$filenameColumnInput),
+                                     input_fakeX,
+                                     input_fakeY,
+                                     input_fakeFile,
                                      selectionColumn,
                                      refilterSubset,
                                      updatePlot,
@@ -1645,8 +1330,8 @@ demoEditor <- function(...) {
     #       to be passed into the module server function like so
     windowResizeServer('windowListener', reactive(input$windowChange))
   }
-  shiny::shinyApp(ui, server)
 
+  shiny::shinyApp(ui, server)
 }
 
 

@@ -8,7 +8,7 @@ Description: This package provides an interface to modify pitch samples saved in
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports: 
     audio,
     bslib,
@@ -20,8 +20,16 @@ Imports:
     glue,
     htmltools,
     keys,
+    Rcpp,
+    readr,
     rlang,
+    rPraat,
     shiny (>= 1.7.4),
     shinyjqui,
     shinyjs,
     shinyWidgets
+LinkingTo: 
+    Rcpp
+Suggests: 
+    furrr,
+    future

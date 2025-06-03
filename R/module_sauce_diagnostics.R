@@ -1,4 +1,4 @@
-diagnosticsUI <- function(id) {
+sauce_diagnosticsUI <- function(id) {
   ns <- NS(id)
   bslib::nav_panel(
     title = "Progress",
@@ -31,7 +31,7 @@ diagnosticsUI <- function(id) {
   )
 }
 
-diagnosticsServer <- function(id,
+sauce_diagnosticsServer <- function(id,
                               loadedFile,
                               parent_session,
                               fileHandler,
@@ -56,10 +56,10 @@ diagnosticsServer <- function(id,
         return(NULL)
 
       saveData()
-      filtered_data <- loadedFile$data[where_not_zero(get(yValColumnInput())),]
+      filtered_data <- loadedFile$data[where_not_zero(get("f0")),]
 
       uneditedFiles$filenames <-
-        filtered_data[, .(n_edited = any(!get(selectionColumnInput()))), by = c(filenameColumnInput())][!(n_edited), .SD[[filenameColumnInput()]]]
+        filtered_data[, .(n_edited = any(!get(selectionColumnInput()))), by = c("file")][!(n_edited), .SD[["file"]]]
 
 
       output$percentRemovedText <- shiny::renderText({
@@ -74,18 +74,18 @@ diagnosticsServer <- function(id,
         })
 
       output$changeInVarianceOutput <- shiny::renderText({
-        samplerate <- median(diff(loadedFile$data[[xValColumnInput()]][1:100]))
+        samplerate <- median(diff(loadedFile$data[["t"]][1:100]))
 
         variance_values <-
           loadedFile$data |>
-          dplyr::group_by(dplyr::across(dplyr::all_of(filenameColumnInput()))) |>
+          dplyr::group_by(dplyr::across(dplyr::all_of("file"))) |>
 
           dplyr::reframe(
-            original_variance = .var_of_diffs(.data[[yValColumnInput()]][where_not_zero(.data[[yValColumnInput()]])],
-                                              .data[[xValColumnInput()]],
+            original_variance = .var_of_diffs(.data[["original_f0"]][where_not_zero(.data[["original_f0"]])],
+                                              .data[["t"]],
                                               samplerate),
-            new_variance = .var_of_diffs(.data[[transformedColumn$name]][.data[[selectionColumnInput()]] & where_not_zero(.data[[yValColumnInput()]])],
-                                         .data[[xValColumnInput()]],
+            new_variance = .var_of_diffs(.data[["f0"]][.data[["is_voiced"]] & where_not_zero(.data[["f0"]])],
+                                         .data[["t"]],
                                          samplerate)) |>
           dplyr::ungroup()
 
@@ -103,26 +103,27 @@ diagnosticsServer <- function(id,
       })
 
       file_table$data <-
-        loadedFile$data |>
-        dplyr::summarize(.by = c(filenameColumnInput(), tags, notes)) |>
+        data.frame(file = fileHandler$filenames,
+                   tags = fileHandler$badges,
+                   notes = fileHandler$notes) |>
+        dplyr::summarize(.by = c("file", tags, notes)) |>
         dplyr::filter((!is.na(notes) & notes != "") | (!is.na(tags) & tags != "")) |>
-        dplyr::arrange(filenameColumnInput())
+        dplyr::arrange("file")
 
       output$taggedFilesTable <-
         DT::renderDT({
           DT::datatable(file_table$data,
                         selection = list(mode = "single", target = "row")) |>
-            DT::formatStyle(columns = c(filenameColumnInput(), 'tags', 'notes'), cursor = "pointer")
+            DT::formatStyle(columns = c("file", 'tags', 'notes'), cursor = "pointer")
         })
 
       proxy <- DT::dataTableProxy('taggedFilesTable')
 
       observeEvent(input$taggedFilesTable_rows_selected, {
-        # browser()
         if (is.null(input$taggedFilesTable_rows_selected))
           return(NULL)
 
-        fileHandler$isPlotted <- fileHandler$filenames %in% file_table$data[input$taggedFilesTable_rows_selected,][[filenameColumnInput()]]
+        fileHandler$isPlotted <- fileHandler$filenames %in% file_table$data[input$taggedFilesTable_rows_selected,][["file"]]
         refilterSubset()
         updatePlot()
         DT::selectRows(proxy,selected = NULL)
